@@ -4,9 +4,13 @@
 
 #include "BackendRegisterCatalogue.h"
 #include "BackendRegisterInfoBase.h"
+#include "Exception.h"
+
+#include <nlohmann/json.hpp>
 
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <string>
 
 namespace ChimeraTK {
@@ -192,6 +196,23 @@ namespace ChimeraTK {
 
     void addDataConsistencyRealm(const RegisterPath& registerPath, const std::string& realmName);
 
+    /**
+     * Set the raw json configuration of a DMA channel for the given channel index. The entry is preserved verbatim by
+     * the parser; backend-specific subclasses interpret it.
+     */
+    void setDmaChannel(uint64_t index, nlohmann::json entry);
+
+    /**
+     * Return whether a DMA channel with the given index is configured.
+     */
+    [[nodiscard]] bool hasDmaChannel(uint64_t index) const;
+
+    /**
+     * Return the raw json configuration of the DMA channel with the given index. Throws a ChimeraTK::logic_error if no
+     * such channel is configured.
+     */
+    [[nodiscard]] const nlohmann::json& getDmaChannel(uint64_t index) const;
+
    protected:
     void fillFromThis(NumericAddressedRegisterCatalogue* target) const;
 
@@ -216,6 +237,12 @@ namespace ChimeraTK {
      * Map of data consistency key register paths to realm names
      */
     std::map<RegisterPath, std::string> _dataConsistencyRealms;
+
+    /**
+     * Raw json configurations of DMA channels, preserved verbatim by the parser and interpreted by backend-specific
+     * subclasses. Empty when the parsed jmap file has no 'dmaChannels' section.
+     */
+    std::map<uint64_t, nlohmann::json> _dmaChannels;
   };
 
   /********************************************************************************************************************/

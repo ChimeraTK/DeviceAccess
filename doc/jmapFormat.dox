@@ -15,6 +15,7 @@ A JMAP file is a single JSON object with the following top-level keys:
 \li \c mapFormatVersion - a version string of the file format (currently \c "1.0").
 \li \c metadata - an object holding arbitrary key-value pairs describing the firmware (see \ref jmap_metadata).
 \li \c interruptHandler - a description of the interrupt controllers (see \ref jmap_interrupts).
+\li \c dmaChannels - an optional description of backend-specific DMA channel configuration (see \ref jmap_dma_channels).
 \li \c addressSpace - the dictionary of registers and modules making up the register map (each key is a register/module name).
 
 The heart of the file is the \c addressSpace object. Each key is the name of a register, or of a \e module which groups other registers and modules below it; the object stored under a key describes that register/module. Registers are addressed by a hierarchical path, which is built from the \c addressSpace / \c children dictionary keys (the names of the modules and registers), separated by \c '/' or \c '.', e.g. \c APP/STATUS or \c APP.STATUS (\c '/' and \c '.' have synonymous meaning and can be exchanged arbitrarily). This path is used to access the register through register accessors, as described in \ref accessor1d and \ref accessor2d.
@@ -309,6 +310,19 @@ When interrupts shall be used to trigger data read-out, they can be added to nor
 \endverbatim
 This will create a push-type register (supporting ChimeraTK::AccessMode::wait_for_new_data) that will receive new values when the interrupt \c 3:0:2 arrives by polling the data from the specified address. See \ref design_AsyncNDRegisterAccessor_NumericAddressed for more details.
 
+\subsection jmap_dma_channels DMA channels
+
+The optional \c dmaChannels top-level object describes backend-specific DMA channel configuration. It is preserved verbatim by the generic parser and interpreted solely by the specific backend that consumes the jmap file; the first consumer is the XdmaBackend ring-buffer feature. A jmap file without a \c dmaChannels section is valid and parses unchanged.
+
+Each key of \c dmaChannels is the channel index as a non-negative integer (given as a plain decimal digit string, e.g. \c "0", \c "3"), matching the \c channel field of \c address objects of type \c "DMA" in the \c addressSpace. Each entry is an object that must carry a \c type field holding a string, which names the backend that interprets the entry. All other keys of an entry are backend-specific and are not interpreted by the generic parser:
+\verbatim
+"dmaChannels": {
+  "0": { "type": "Xdma", "ringBufferSize": 4096 },
+  "1": { "type": "Xdma", "ringBufferSize": 8192 }
+}
+\endverbatim
+
+The generic parser validates only the shallow envelope: the section must be an object, each key must be a parseable non-negative integer, each entry must be an object with a string-valued \c type. It does not validate that the channel indices correspond to \c "DMA" \c address space entries, as backends may support standard DMA channels without any \c dmaChannels configuration. A backend that encounters an entry whose \c type it does not support reports a \c ChimeraTK::logic_error.
 
 \subsection jmap_2d 2D multiplexed registers
 

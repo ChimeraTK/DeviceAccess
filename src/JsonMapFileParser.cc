@@ -706,6 +706,36 @@ namespace ChimeraTK::detail {
       interruptHandler.subhandler = data.at("interruptHandler");
       interruptHandler.fill({}, metadata);
 
+      // Parse the optional "dmaChannels" section: an object keyed by non-negative integer channel indices. Each key
+      // must be a plain sequence of decimal digits (no sign, no leading zeros producing a different spelling of the
+      // same value); it is parsed with std::from_chars into a uint64_t, requiring the whole string to be consumed.
+      // The entries are stored verbatim; only the shallow envelope (object, integer keys, object entries with a string
+      // 'type') is validated here, the rest is interpreted by the consuming backend.
+      if(data.contains("dmaChannels")) {
+        json dmaChannels = data.at("dmaChannels");
+        if(!dmaChannels.is_object()) {
+          throw ChimeraTK::logic_error("'dmaChannels' must be an object.");
+        }
+        for(auto& [key, entry] : dmaChannels.items()) {
+          uint64_t index = 0;
+          auto [keyEnd, e] = std::from_chars(key.data(), key.data() + key.size(), index);
+          if(e != std::errc{} || keyEnd != key.data() + key.size()) {
+            throw ChimeraTK::logic_error("DMA channel key '" + key + "' is not a non-negative integer.");
+          }
+          if(catalogue.hasDmaChannel(index)) {
+            throw ChimeraTK::logic_error("Duplicate DMA channel index '" + key + "'.");
+          }
+          if(!entry.is_object()) {
+            throw ChimeraTK::logic_error("DMA channel '" + key + "' must be an object.");
+          }
+          auto typeIt = entry.find("type");
+          if(typeIt == entry.end() || !typeIt->is_string()) {
+            throw ChimeraTK::logic_error("DMA channel '" + key + "' must contain a string 'type'.");
+          }
+          catalogue.setDmaChannel(index, entry);
+        }
+      }
+
       return {std::move(catalogue), std::move(metadata)};
     }
     catch(const ChimeraTK::logic_error& e) {

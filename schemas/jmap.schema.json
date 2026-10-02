@@ -40,6 +40,25 @@
       "additionalProperties": {
         "$ref": "#/definitions/addressSpaceEntry"
       }
+    },
+    "dmaChannels": {
+      "type": "object",
+      "description": "Optional backend-specific DMA channel configuration, keyed by non-negative integer channel indices (matching the 'channel' field of 'DMA' address-space entries). Each entry must carry a string 'type'; the remaining keys are backend-specific and opaque to this generic schema.",
+      "propertyNames": {
+        "description": "DMA channel indices are non-negative integers, e.g. '0', '3'.",
+        "pattern": "^[0-9]+$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Name of the backend that interprets this DMA channel entry."
+          }
+        },
+        "additionalProperties": true
+      }
     }
   },
   "required": ["addressSpace"],

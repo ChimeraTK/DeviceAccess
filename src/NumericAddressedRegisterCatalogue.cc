@@ -331,6 +331,7 @@ namespace ChimeraTK {
     target->_listOfInterrupts = _listOfInterrupts;
     target->_canonicalInterrupts = _canonicalInterrupts;
     target->_dataConsistencyRealms = _dataConsistencyRealms;
+    target->_dmaChannels = _dmaChannels;
   }
 
   /********************************************************************************************************************/
@@ -373,6 +374,28 @@ namespace ChimeraTK {
       }
     }
     return {};
+  }
+
+  /********************************************************************************************************************/
+
+  void NumericAddressedRegisterCatalogue::setDmaChannel(uint64_t index, nlohmann::json entry) {
+    _dmaChannels[index] = std::move(entry);
+  }
+
+  /********************************************************************************************************************/
+
+  bool NumericAddressedRegisterCatalogue::hasDmaChannel(uint64_t index) const {
+    return _dmaChannels.find(index) != _dmaChannels.end();
+  }
+
+  /********************************************************************************************************************/
+
+  const nlohmann::json& NumericAddressedRegisterCatalogue::getDmaChannel(uint64_t index) const {
+    auto it = _dmaChannels.find(index);
+    if(it == _dmaChannels.end()) {
+      throw ChimeraTK::logic_error("No DMA channel with index " + std::to_string(index) + " configured.");
+    }
+    return it->second;
   }
 
   /********************************************************************************************************************/
