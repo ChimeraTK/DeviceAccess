@@ -6,7 +6,7 @@ subclasses of `NumericAddressedBackend`. The generic parser validates only the
 shallow envelope; the content is interpreted by the specific backend (first
 consumer: the XdmaBackend ring-buffer feature, CR-008).
 
-Status: READY TO TEST
+Status: TESTS PASSED
 
 ## Requirements
 
