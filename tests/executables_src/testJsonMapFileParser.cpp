@@ -17,6 +17,7 @@ using namespace ChimeraTK;
 
 #include <unistd.h>
 
+#include <cstdio>
 #include <fstream>
 #include <string>
 #include <utility>
