@@ -394,8 +394,8 @@ namespace ChimeraTK::detail {
     // spans the whole sample word (wordBits), so the slice reads the element with its full word width in the
     // underlying transport and extracts the range via the bit offset/width. Shared by the parent channel slice and
     // the bit-field child slice creation.
-    static NumericAddressedRegisterInfo::ChannelInfo makeChannelInfo(const Representation& rep, size_t wordBits,
-        const std::optional<ChimeraTK::SelectedBy>& selectedBy) {
+    static NumericAddressedRegisterInfo::ChannelInfo makeChannelInfo(
+        const Representation& rep, size_t wordBits, const std::optional<ChimeraTK::SelectedBy>& selectedBy) {
       return {rep.bitShift, NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
           rep.type != RepresentationType::IEEE754 ? rep.isSigned : true, DataType("int" + std::to_string(wordBits)),
           selectedBy};

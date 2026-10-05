@@ -21,15 +21,6 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  SelectedByDecorator<UserType>::SelectedByDecorator(const boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
-      const boost::shared_ptr<ScalarRegisterAccessor<int64_t>>& selectorAccessor, int64_t expectedValue)
-  : NDRegisterAccessorDecorator<UserType>(target), _selectorAccessor(selectorAccessor) {
-    configure(expectedValue);
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
   void SelectedByDecorator<UserType>::configure(int64_t expectedValue) {
     _expectedValue = expectedValue;
   }
@@ -44,13 +35,46 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  void SelectedByDecorator<UserType>::doPreRead(TransferType type) {
+    // Start a fresh transfer cycle: any gate decision cached by a previous isGateOpen()/check() is no
+    // longer valid and must not be reused by the upcoming doPostRead().
+    _cacheValid = false;
+    NDRegisterAccessorDecorator<UserType>::doPreRead(type);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
   bool SelectedByDecorator<UserType>::check() {
     if(!_selectorAccessor) {
       return true;
     }
     // Read the selector register so the returned value reflects the current selector state.
     _selectorAccessor->read();
-    return evaluate();
+    _cachedGateOpen = evaluate();
+    _cacheValid = true;
+    return _cachedGateOpen;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void SelectedByDecorator<UserType>::doReadTransferSynchronously() {
+    if(!_selectorAccessor) {
+      NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
+      return;
+    }
+    // Polled semantics: only perform the physical read of the wrapped accessor when the gate is open.
+    // Reuse an earlier gate decision from this cycle (isGateOpen()/check()) if present, otherwise read the
+    // selector ourselves; cache the result so doPostRead() does not read the selector again.
+    if(!_cacheValid) {
+      _selectorAccessor->read();
+      _cachedGateOpen = evaluate();
+      _cacheValid = true;
+    }
+    if(_cachedGateOpen) {
+      NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
+    }
   }
 
   /********************************************************************************************************************/
@@ -61,12 +85,16 @@ namespace ChimeraTK {
       NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
       return;
     }
-    // Read the selector register so the gating decision reflects the current selector state. When this
-    // decorator is part of a TransferGroup the gate has already been evaluated via isGateOpen() in the
-    // group's read(); reading again here is slightly redundant but keeps standalone reads correct and is
-    // cheap (one narrow synchronous register read).
-    _selectorAccessor->read();
-    if(!evaluate()) {
+    // Reuse the gate decision made earlier in this same transfer cycle (by the TransferGroup's
+    // isGateOpen() or a check()), which already read the selector and decided whether the data element
+    // was transferred. This avoids reading the selector register a second time in the group path. In a
+    // standalone read (no group, no check()) no cache is present, so read the selector here.
+    if(!_cacheValid) {
+      _selectorAccessor->read();
+      _cachedGateOpen = evaluate();
+    }
+    _cacheValid = false;
+    if(!_cachedGateOpen) {
       // Unselected: report the read as faulty and treat it as not-new. Forwarding with updateDataBuffer
       // false lets a double-buffered target keep its previous buffer (the inactive alternative is not
       // swapped in as fresh data); the base decorator overwrites the validity from the target, so the
@@ -92,9 +120,12 @@ namespace ChimeraTK {
     if(!_selectorAccessor) {
       return true;
     }
-    // Read the selector register to reflect the current selector value before evaluating the gate.
+    // Read the selector register to reflect the current selector value before evaluating the gate, and
+    // cache the decision so the group's doPostRead() for this cycle does not read the selector again.
     _selectorAccessor->read();
-    return evaluate();
+    _cachedGateOpen = evaluate();
+    _cacheValid = true;
+    return _cachedGateOpen;
   }
 
   /********************************************************************************************************************/

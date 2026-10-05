@@ -8,6 +8,8 @@ using namespace boost::unit_test_framework;
 
 #include "CopyRegisterDecorator.h"
 #include "Device.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "NumericAddressedLowLevelTransferElement.h"
@@ -1054,59 +1056,87 @@ BOOST_AUTO_TEST_CASE(testTemporaryAbstractorWorks) {
 }
 
 /**********************************************************************************************************************/
-/**
- * Selector that mirrors the behaviour of a real selectedBy selector register: its value is populated on every
- * read, both in the transfer step and in postRead (the plain TransferElementTestAccessor populates its buffer
- * only in postRead, so a full read() would clobber the value the selectedBy gate needs to see).
- */
-struct SelectorTestAccessor : public TransferElementTestAccessor<int64_t> {
-  SelectorTestAccessor() : TransferElementTestAccessor<int64_t>({}) {}
-  void doReadTransferSynchronously() override {
-    TransferElementTestAccessor<int64_t>::doReadTransferSynchronously();
-    this->buffer_2D[0][0] = _value;
-  }
-  void doPostRead(TransferType type, bool hasNewData) override {
-    TransferElementTestAccessor<int64_t>::doPostRead(type, hasNewData);
-    this->buffer_2D[0][0] = _value;
-  }
-  int64_t _value{0};
-};
 
 /**
- * Regression test: a SelectedByDecorator used inside a TransferGroup must suppress the actual bus/register
- * transfer of the gated data element while its selector does not match (gate closed), instead of merely
- * reporting the read as faulty. This is the behaviour required by the asynchronous 'selectedByInterrupt'
- * path, where a TransferGroup honouring the gate must not read the unselected register.
+ * Regression test: a SelectedByDecorator produced by the NumericAddressedBackend for a 'selectedBy' register must
+ * suppress the actual bus/register transfer while the selector does not match (gate closed) inside a TransferGroup,
+ * instead of merely reporting the read as faulty.
+ *
+ * Uses simpleJsonFile.jmap's scalar register DAQ.SINGLE_MUXED ('selectedBy' DAQ.MUX_SEL == 0); DAQ.SINGLE_MUXED_ALT
+ * is its mutually exclusive alternative (MUX_SEL == 1). The 'not-new' property (physical transfer suppressed) is
+ * observed via the accessor's version number not advancing while the gate is closed. This is the behaviour required
+ * by the asynchronous 'selectedByInterrupt' path, where a TransferGroup honouring the gate must not read the
+ * unselected register.
  */
 BOOST_AUTO_TEST_CASE(testSelectedByGateSkipsTransfer) {
-  // Data accessor (the gated register) and a manually-fed selector accessor (gate). The decorator owns the
-  // selector accessor and reads it itself (single self-owned mode), mimicking the production decorator.
-  auto dataImpl = boost::make_shared<TransferElementTestAccessor<int32_t>>(AccessModeFlags{});
-  auto selectorImpl = boost::make_shared<SelectorTestAccessor>();
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy != nullptr);
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
 
-  auto selector = boost::make_shared<ScalarRegisterAccessor<int64_t>>(selectorImpl);
-  auto decorator = boost::make_shared<SelectedByDecorator<int32_t>>(dataImpl, selector, 1);
+  auto data = device.getScalarRegisterAccessor<int32_t>("/DAQ/SINGLE_MUXED");
 
   TransferGroup group;
-  group.addAccessor(decorator);
+  group.addAccessor(data);
 
-  // --- gate open: selector == expected value (1) -> data register is transferred ---
-  selectorImpl->_value = 1;
+  // --- gate open: MUX_SEL == 0 (matches SINGLE_MUXED) -> data register is transferred and valid ---
+  muxSel[0] = 0;
   group.read();
-  BOOST_CHECK_EQUAL(dataImpl->_readTransfer_counter, 1u);
-  BOOST_CHECK_EQUAL(decorator->dataValidity(), ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  const auto openVersion = data.getVersionNumber();
 
-  // --- gate closed: selector != expected value -> data transfer is skipped, not just marked faulty ---
-  selectorImpl->_value = 0;
+  // --- gate closed: MUX_SEL != 0 -> transfer skipped, and no new data is produced (version unchanged) ---
+  muxSel[0] = 1;
   group.read();
-  BOOST_CHECK_EQUAL(dataImpl->_readTransfer_counter, 1u); // NOT incremented -> actual transfer suppressed
-  BOOST_CHECK_EQUAL(decorator->dataValidity(), ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(data.getVersionNumber() == openVersion); // not new -> physical transfer suppressed
 
-  // --- gate open again -> transfer resumes ---
-  selectorImpl->_value = 1;
+  // --- gate open again -> transfer resumes, new data (version advances) ---
+  muxSel[0] = 0;
   group.read();
-  BOOST_CHECK_EQUAL(dataImpl->_readTransfer_counter, 2u);
-  BOOST_CHECK_EQUAL(decorator->dataValidity(), ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(data.getVersionNumber() != openVersion);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+/**
+ * Regression test mirroring testSelectedByGateSkipsTransfer but for a STANDALONE (non-group) read(): the documented
+ * polled semantics say a plain read() must only perform the physical read when the selector matches. A closed gate
+ * must therefore suppress the actual transfer of the gated data element even outside a TransferGroup, and the read
+ * must still be reported DataValidity::faulty / not-new.
+ */
+BOOST_AUTO_TEST_CASE(testSelectedByStandaloneReadSkipsTransfer) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy != nullptr);
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+
+  auto data = device.getScalarRegisterAccessor<int32_t>("/DAQ/SINGLE_MUXED");
+
+  // --- gate open: MUX_SEL == 0 (matches SINGLE_MUXED) -> data register is transferred and valid ---
+  muxSel[0] = 0;
+  data.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  const auto openVersion = data.getVersionNumber();
+
+  // --- gate closed: MUX_SEL != 0 -> standalone read must NOT perform the physical transfer (version unchanged) ---
+  muxSel[0] = 1;
+  data.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(data.getVersionNumber() == openVersion); // not new -> physical transfer suppressed
+
+  // --- gate open again -> transfer resumes, new data (version advances) ---
+  muxSel[0] = 0;
+  data.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(data.getVersionNumber() != openVersion);
+
+  device.close();
 }
 
 /**********************************************************************************************************************/

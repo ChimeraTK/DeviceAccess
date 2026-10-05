@@ -40,13 +40,11 @@ namespace ChimeraTK {
     SelectedByDecorator(const boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
         const boost::shared_ptr<NumericAddressedBackend>& backend, const SelectedBy& selectedBy);
 
-    /**
-     * Wrap 'target' with an explicitly provided selector accessor which the decorator owns and reads on
-     * each gate evaluation. Intended as a test seam (the production constructor above derives the
-     * selector accessor from the backend); the semantics are identical to the backend-based constructor.
-     */
-    SelectedByDecorator(const boost::shared_ptr<NDRegisterAccessor<UserType>>& target,
-        const boost::shared_ptr<ScalarRegisterAccessor<int64_t>>& selectorAccessor, int64_t expectedValue);
+    /** Reset the gate cache and forward the pre-read to the wrapped accessor. */
+    void doPreRead(TransferType type) override;
+
+    /** Skip the physical transfer of the wrapped accessor while the gate is closed (polled semantics). */
+    void doReadTransferSynchronously() override;
 
     /** Forward the read to the wrapped accessor and apply the gating validity. */
     void doPostRead(TransferType type, bool hasNewData) override;
@@ -74,6 +72,12 @@ namespace ChimeraTK {
     /// The scalar accessor reading the selector register (owned by this decorator).
     boost::shared_ptr<ScalarRegisterAccessor<int64_t>> _selectorAccessor;
     int64_t _expectedValue{0};
+
+    /// Cached gate decision from the most recent selector read during the current transfer cycle.
+    bool _cachedGateOpen{false};
+    /// Whether _cachedGateOpen is fresh for the current transfer cycle (set by isGateOpen()/check(),
+    /// consumed and cleared by doPostRead()).
+    bool _cacheValid{false};
 
     /// Evaluate the already-populated selector buffer against _expectedValue.
     bool evaluate();

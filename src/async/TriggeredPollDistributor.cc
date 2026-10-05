@@ -83,7 +83,6 @@ namespace ChimeraTK::async {
     return SelectorGateInfo{accessor, selectedBy->val};
   }
 
-
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK::async

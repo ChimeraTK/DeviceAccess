@@ -92,7 +92,6 @@ namespace ChimeraTK {
       }
     }
 
-
     if(firstDetectedRuntimeError == nullptr) {
       // only execute the transfers if there has been no exception yet
       for(const auto& it : _lowLevelElementsAndExceptionFlags) {

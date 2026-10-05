@@ -5,7 +5,8 @@
 namespace ChimeraTK {
 
   template<typename UserType>
-  DoubleBufferAccessor<UserType>::DoubleBufferAccessor(NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
+  DoubleBufferAccessor<UserType>::DoubleBufferAccessor(
+      NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
   : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(doubleBufferConfig), _backend(backend),
