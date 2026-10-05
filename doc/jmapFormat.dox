@@ -401,7 +401,7 @@ The \c selectedBy feature works for single (scalar or 1D, non-2D) registers as w
   }
 }
 \endverbatim
-Specifying \c selectedBy on a register that also has per-channel \c channels (a 2D register) is **valid**: it serves as the default selection for all channels that do not declare their own \c selectedBy (see \ref jmap_channel_selection and \ref jmap_module_selection_inheritance). Per-channel \c selectedBy declarations always override this register-level default.
+Specifying \c selectedBy on a register that also has per-channel \c channels (a 2D register) is **valid** and gates the **whole 2D block**: the full-2D accessor is only active while the selector register equals the given \c value (see \ref jmap_channel_selection). This register-level gate is **independent** of the per-channel \c selectedBy the channels may carry — a channel with its own declaration is gated by that value alone and is unaffected by the register-level gate, while the whole-block read is gated by the register-level value even when an individual channel slice is selected. A channel that does **not** declare its own \c selectedBy still inherits the register-level value as its per-channel default (see \ref jmap_module_selection_inheritance), so for such channels the slice and the whole block are gated by the same selector.
 
 For a hardware multiplexer, several mutually exclusive scalar alternatives can be declared as separate registers that share the same \c address and differ only in their \c selectedBy \c value. Only one of them is active at a time, selected by the selector register:
 \verbatim

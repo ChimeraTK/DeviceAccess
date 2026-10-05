@@ -8,6 +8,9 @@ onto 2D channels — but the value is currently dead metadata. This change adds 
 *active* while the selected register equals the configured value, for both polled
 accessors and interrupt-driven (`wait_for_new_data`) accessors. Reads are gated per
 register/channel-set, so mutually exclusive mux alternatives (e.g. DAQ tabs) activate
+independently. Two gating granularities exist for a 2D register: a *register-level*
+`selectedBy` (declared on the register itself) gates the **whole 2D block** through the
+full-2D accessor, while a *per-channel* `selectedBy` gates the named channel slices
 independently. `selectedBy` may only be used on read-only registers, which removes the
 entire write path from consideration.
 
@@ -42,6 +45,20 @@ Aspect: runtime enforcement of `selectedBy` on registers of the `NumericAddresse
   unselected* below). This matches the muxed-layout example where `AmplitudeCh0` (sel 0)
   and `RawCh0` (sel 1) coexist in one register: in a single read only the
   currently-selected channel set is valid.
+- **2D register-level gate (whole block)**: a `selectedBy` declared on the 2D register
+  itself (as opposed to on individual channels) gates the **whole 2D block**: the
+  full-2D accessor is only valid while the selector matches the register-level value, and
+  its physical read is skipped (treated as not-new) while the gate is closed. This gate is
+  **independent** of the per-channel `selectedBy` the channels may carry: a named channel
+  slice gated by its own per-channel value remains valid even if the register-level gate
+  is closed (the register-level declaration does **not** override or become the default
+  for channels that declare their own per-channel `selectedBy`). Conversely, the full-2D
+  read is faulted by the register-level gate even when an individual channel slice is
+  per-channel-selected. A register-level `selectedBy` on a 2D register is used **only** as
+  the whole-block gate (stored in `NumericAddressedRegisterInfo::registerSelectedBy`, see
+  *2D muxed accessor* below); channels without their own declaration still inherit it as
+  their per-channel default (via the existing channel-fill path), so for such a register
+  the slices and the whole block are gated by the same selector.
 - **Interrupt semantics (per subscription)**: `wait_for_new_data` consumers must **not
   wake** while their selection is not met. Gate evaluation is per `AsyncVariable` (per
   subscribed register/channel-set), not per interrupt domain, because one interrupt
@@ -99,7 +116,14 @@ Affected components:
 - `include/NumericAddressedBackendMuxedRegisterAccessor.h` / `src/...cc`: the full-2D
   read does **not** apply per-channel gating — per-channel gating belongs to the named
   channel-slice accessors, which carry their own decorator. The demux simply reports its
-  accessor-global validity.
+  accessor-global validity. A 2D register that declares a **register-level** `selectedBy`
+  gets its full-2D accessor additionally wrapped in a `SelectedByDecorator` (the whole-2D
+  block gate, see *2D muxed accessor* below).
+- `include/NumericAddressedRegisterCatalogue.h` / `src/NumericAddressedRegisterCatalogue.cc`:
+  `NumericAddressedRegisterInfo` gains a `registerSelectedBy` member that records a 2D
+  register's register-level `selectedBy` (the whole-block gate), distinct from the per-channel
+  `selectedBy` each `ChannelInfo` carries; the catalogue `getSelectedBy()` returns it for 2D
+  registers (see *Catalogue lookup* below).
 - `include/DoubleBufferAccessor.h` / `src/DoubleBufferAccessor.cc`: double-buffer reads
   are wrapped in a `SelectedByDecorator` (the gate also treats the read as not-new when
   unselected).
@@ -138,6 +162,17 @@ Scalar / 1D accessor (`NumericAddressedBackendRegisterAccessor`):
   which are individually wrapped in a `SelectedByDecorator` (per *Payload when
   unselected* above). The slice accessor's accessor-global validity then equals that
   channel's own selection state.
+- **Register-level gate**: when the 2D register declares a *register-level* `selectedBy`
+  (recorded in `NumericAddressedRegisterInfo::registerSelectedBy` by the parser, see
+  *Parser* below), the full-2D accessor itself is wrapped in a
+  `SelectedByDecorator` (`src/NumericAddressedBackend.cc`). This decorator gates the
+  *whole 2D block*: the full-2D read is only performed (and reported `DataValidity::ok`)
+  while the selector matches the register-level value; while the gate is closed the
+  physical transfer is skipped (not-new) and validity is `faulty`, per the polled
+  semantics. This is independent of the per-channel decorators on the channel slices: a
+  slice with its own per-channel `selectedBy` is gated solely by that value and is
+  unaffected by the register-level gate (see the *2D register-level gate (whole block)*
+  requirement).
 
 Double-buffered accessor (`DoubleBufferAccessor`):
 
@@ -174,11 +209,16 @@ Async interrupt integration (per subscription — main focus):
   *must* call `setException()`; "unselected" is not an error. `prepareIntermediateBuffers()`
   keeps returning `true`, and its domain-global `_forceFaulty`/version machinery stays
   reserved for genuine DataConsistencyRealm staleness only.
-- Note: a **full-register** subscription to a muxed 2D register (`DAQ.FD`) has no
-  register-level `selectedBy`, hence no wake suppression and no per-channel gating at the
-  full-register level; the per-channel validity only appears on the named channel-slice
-  accessors (§2D accessor above). This addresses the "different channel sets" use case at
-  the slice granularity.
+- Note: a **full-register** subscription to a muxed 2D register becomes wake/version-gated
+  exactly when the register declares a *register-level* `selectedBy`: `getSelectedBy()`
+  then returns `registerSelectedBy` and the whole-2D gate suppresses waking while the
+  register-level selector is not met (the register-level value is delivered as
+  `DataValidity::faulty` with an unchanged version). A muxed 2D register with **only**
+  per-channel `selectedBy` (e.g. `DAQ.FD`) has no register-level gate, hence no wake
+  suppression and no per-channel gating at the full-register level; the per-channel
+  validity only appears on the named channel-slice accessors (§2D accessor above). This
+  addresses the "different channel sets" use case at the slice granularity, while the
+  whole-2D gate addresses the "whole block conditional" use case.
 - Selector-chain recursion (a selector register that is itself conditionally selected) is
   out of scope (see Alternatives).
 
@@ -191,13 +231,14 @@ Catalogue lookup (`getSelectedBy`):
   base keeps `TriggeredPollDistributor` (shared with the LMap/PCIe backends) generic;
   other backends simply return `nullopt` (no gating).
 - `NumericAddressedRegisterCatalogue::getSelectedBy(path)` returns the register's
-  *effective* selection directly from the already-propagated `ChannelInfo.selectedBy`
-  (`NumericAddressedRegisterCatalogue.h:63`):
+  *effective* selection from the already-propagated metadata:
   - scalar/1D register (including generated channel slices like `DAQ.FD/AmplitudeCh0`,
     whose `selectedBy` the parser copies at `JsonMapFileParser.cc:464-465`) →
     `channels[0].selectedBy`;
-  - full 2D muxed register → `std::nullopt` (no single gate; the per-channel values are
-    only relevant inside the accessor);
+  - full 2D muxed register → `info.registerSelectedBy` (the register-level `selectedBy`
+    recorded when the 2D register declares one, gating the whole block). `nullopt` for a
+    2D register without a register-level `selectedBy`, in which case there is no single
+    gate and the per-channel values govern only inside the accessor;
   - double-buffer `BUF0`/`BUF1` views → they are plain slices of the register they view
     and inherit the same `ChannelInfo` (`JsonMapFileParser.cc:399-411`), so no special
     case.
@@ -212,10 +253,26 @@ Backend accessor construction (`getSyncRegisterAccessor`):
 - A single place to route based on `selectedBy` (`src/NumericAddressedBackend.cc`):
   - scalar/1D with a `selectedBy` → a `NumericAddressedBackendRegisterAccessor` wrapped in
     a `SelectedByDecorator` (self-owned selector read);
-  - 2D default-selected → `NumericAddressedBackendMuxedRegisterAccessor` (no per-channel
-    gate; per-channel gating lives on the slice accessors);
+  - 2D without a register-level `selectedBy` → `NumericAddressedBackendMuxedRegisterAccessor`
+    (no full-register gate; per-channel gating lives on the slice accessors);
+  - 2D **with** a register-level `selectedBy` (`info.registerSelectedBy` set) → the same
+    muxed full-2D accessor, additionally wrapped in a `SelectedByDecorator` to gate the
+    whole 2D block (see *2D muxed accessor* above). Per-channel decorators on the channel
+    slices are unaffected;
   - double-buffer → a `DoubleBufferAccessor` wrapped in a `SelectedByDecorator`.
 - No structural change to the underlying accessors; the decorator is layered on top.
+
+Parser: register-level `selectedBy` on 2D registers (`JsonMapFileParser`):
+
+- In the 2D (channels-bearing) branch, after folding the register-level/inherited
+  `selectedBy` into each channel as its per-channel default (the existing `channel->fill`
+  path), the effective *register-level* `selectedBy` (own declaration, or inherited from a
+  containing module/register) is additionally recorded in
+  `NumericAddressedRegisterInfo::registerSelectedBy`
+  (helper `applyRegisterSelectedBy2D`). This member gates the whole 2D block and is what
+  `getSelectedBy()` returns for the full-2D accessor and the async subscription. For
+  scalar/1D registers the selection is still folded into the single channel (no
+  `registerSelectedBy`).
 
 
 
@@ -257,6 +314,11 @@ Focus: **interrupt-triggered registers with `selectedBy`**, plus polled regressi
 - Catalogue tests (`testJsonMapFileParser.cpp`):
   - **C1** `getSelectedBy("DAQ.DATA")` returns `{MQ.MUX_SEL, 1}`.
   - **C2** a register with no `selectedBy` returns `std::nullopt` (regression).
+  - **C3** a 2D register with a register-level `selectedBy` returns it via `getSelectedBy()`;
+    the parser records it in `NumericAddressedRegisterInfo::registerSelectedBy` (own
+    declaration on `/REG2D_TOP` → `{/APP/TOP_SEL, 11}`; a 2D register under a selected
+    module inherits the module value, e.g. `/INHERIT/CHANB` → `{/APP/OUTPUT_SELECT, 3}`,
+    independent of per-channel overrides).
 - Polled scalar/1D gating (`testNumericAddressedBackendRegisterAccessor.cpp`):
   - **P1** selector matches → `read()` returns `DataValidity::ok` and the real data.
   - **P2** selector differs → `read()` returns `DataValidity::faulty` (payload is
@@ -268,6 +330,15 @@ Focus: **interrupt-triggered registers with `selectedBy`**, plus polled regressi
   - **PD2** a channel whose own selector is not met → that channel marked
     `DataValidity::faulty` (payload unspecified) while the selected channels of the same
     read remain valid (per-channel gate).
+  - **PD3** register-level `selectedBy` on a 2D register (`MQ.FD_GATED`, register-level
+    `MQ.MUX==2`) gates the *whole* block: the full-2D accessor is `ok` while `MUX==2` and
+    `faulty` (with an unchanged version number, i.e. not-new) while the register-level
+    selector differs (`testSelectedByRegisterLevelGatesFull2DRead` in
+    `testMultiplexedDataAccesor.cpp`).
+  - **PD4** independence of the whole-block gate from per-channel gating on the same 2D
+    register: a slice with its own per-channel `selectedBy` (`MQ.FD_GATED/B`, `MUX==3`)
+    stays `ok` even while the register-level gate closes the whole block (`MUX!=2`), and
+    the full-2D accessor stays `faulty` even while such a slice is selected.
 - Interrupt-driven gating (**primary focus**, `testAsyncRead.cpp`):
   - **I1** `wait_for_new_data` on `DAQ.DATA` (sel=1): with `MUX_SEL==1`, each interrupt
     returns the freshly filled buffer — same as CR-001, but now genuinely
@@ -305,8 +376,9 @@ Focus: **interrupt-triggered registers with `selectedBy`**, plus polled regressi
   (`getSelectorRegisterPath(qualifiedAsyncDomainId)`): rejected. It is ambiguous exactly
   in the main use case, where the domain *is* a single muxed 2D register (`DAQ.FD`) with
   per-channel `selectedBy` values — there is no single domain selector value. Replaced by
-  the per-register `getSelectedBy(path)`, with a full 2D register returning `nullopt` and
-  per-channel validity governing.
+  the per-register `getSelectedBy(path)`; a full 2D register returns its register-level
+  `registerSelectedBy` (the whole-block gate) when one is declared, otherwise `nullopt`
+  with per-channel validity governing.
 - **Gating only the interrupt path**, leaving polled accessors ungated: rejected. Polled
   consumers of a shared muxed address need the same validity, so the gate lives in the
   synchronous accessors (§2D/scalar/1D/double-buffer above) and the async path adds only
