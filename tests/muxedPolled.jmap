@@ -44,6 +44,49 @@
             }
           }
         },
+        "FD_GATED": {
+          "address": {
+            "type": "DMA",
+            "offset": "0x2000"
+          },
+          "access": "RO",
+          "numberOfElements": 100,
+          "pitch": 4,
+          "selectedBy": {
+            "register": "MQ.MUX",
+            "value": 2
+          },
+          "channels": {
+            "A": {
+              "selectedBy": {
+                "register": "MQ.MUX",
+                "value": 2
+              },
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "isSigned": true
+              }
+            },
+            "B": {
+              "selectedBy": {
+                "register": "MQ.MUX",
+                "value": 3
+              },
+              "bytesPerElement": 2,
+              "offset": 2,
+              "representation": {
+                "type": "fixedPoint",
+                "width": 16,
+                "fractionalBits": 0,
+                "isSigned": true
+              }
+            }
+          }
+        },
         "MUX": {
           "numberOfElements": 1,
           "address": {

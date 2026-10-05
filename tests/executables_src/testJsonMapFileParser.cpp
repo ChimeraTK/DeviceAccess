@@ -1256,6 +1256,24 @@ BOOST_AUTO_TEST_CASE(TestSelectedByInheritance) {
   // Register-level selectedBy directly on a 2D register (no module) is valid and becomes the default for all channels.
   check2DChannelsSelectedBy(regs.getBackendRegister("/REG2D_TOP"), {{"/APP/TOP_SEL", 11}, {"/APP/TOP_SEL", 11}});
 
+  // The same register-level selectedBy is also recorded as the whole-block gate (registerSelectedBy): it gates the
+  // full-2D accessor on a single selector, independent of the per-channel selections the channels carry.
+  {
+    auto reg = regs.getBackendRegister("/REG2D_TOP");
+    BOOST_REQUIRE(reg.registerSelectedBy.has_value());
+    BOOST_TEST(reg.registerSelectedBy->regPath == "/APP/TOP_SEL");
+    BOOST_TEST(reg.registerSelectedBy->val == 11);
+  }
+  // A 2D register without its own register-level selectedBy still records the inherited (module-level) selector as the
+  // whole-block gate; per-channel overrides do not affect this. CHANB inherits INHERIT's APP.OUTPUT_SELECT==3, even
+  // though one channel (D1) overrides its own per-channel selection with CTRL.CHAN_SEL==7.
+  {
+    auto reg = regs.getBackendRegister("/INHERIT/CHANB");
+    BOOST_REQUIRE(reg.registerSelectedBy.has_value());
+    BOOST_TEST(reg.registerSelectedBy->regPath == "/APP/OUTPUT_SELECT");
+    BOOST_TEST(reg.registerSelectedBy->val == 3);
+  }
+
   // A leaf with no ancestor carrying selectedBy stays unconditional (no inheritance).
   checkRegSelectedBy(regs.getBackendRegister("/LEAF_TOP"), "", std::nullopt);
 

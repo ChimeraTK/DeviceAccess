@@ -133,6 +133,14 @@ namespace ChimeraTK {
     /** Define per-channel information (bit interpretation etc.), 1D/scalars have exactly one entry. */
     std::vector<ChannelInfo> channels;
 
+    /**
+     * Register-level 'selectedBy' for a 2D register: gates the WHOLE 2D block (the full-2D accessor) on a single
+     * selector. This is distinct from the per-channel 'selectedBy' each ChannelInfo may carry (which gates the
+     * named channel slices individually). Scalar/1D registers store their selection in the single channel and leave
+     * this nullopt.
+     */
+    std::optional<SelectedBy> registerSelectedBy{std::nullopt};
+
     DataDescriptor dataDescriptor;
 
     bool hidden{false};

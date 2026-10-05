@@ -314,6 +314,9 @@ namespace ChimeraTK::detail {
               (void)channelName; // the channel name is the map key; the channel data carries its own offset
               channel->fill(info, inheritedSelectedBy);
             }
+            // A register-level 'selectedBy' on a 2D register gates the whole block (stored separately from the
+            // per-channel selections just applied).
+            applyRegisterSelectedBy2D(info, inheritedSelectedBy);
           }
         }
         else if(addressSetByParent) {
@@ -387,6 +390,20 @@ namespace ChimeraTK::detail {
         RegisterPath selReg(selected.regPath);
         selReg.setAltSeparator(".");
         info.channels.back().selectedBy.emplace(selReg, selected.value);
+      }
+    }
+
+    // Record a register-level 'selectedBy' for a 2D (channels-bearing) register. This gates the WHOLE 2D block (the
+    // full-2D accessor) on a single selector, independent of the per-channel 'selectedBy' each channel carries. It is
+    // stored separately (NumericAddressedRegisterInfo::registerSelectedBy) rather than folded into a channel. A local
+    // 'selectedBy' overrides an inherited one.
+    void applyRegisterSelectedBy2D(
+        NumericAddressedRegisterInfo& info, const std::optional<SelectedBy>& inheritedSelectedBy) const {
+      if(selectedBy || inheritedSelectedBy) {
+        const auto& selected = selectedBy ? *selectedBy : *inheritedSelectedBy;
+        RegisterPath selReg(selected.regPath);
+        selReg.setAltSeparator(".");
+        info.registerSelectedBy.emplace(selReg, selected.value);
       }
     }
 

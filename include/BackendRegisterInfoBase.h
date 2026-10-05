@@ -19,6 +19,8 @@ namespace ChimeraTK {
   struct SelectedBy {
     RegisterPath regPath; /**< Path of register that determines if a Channel/Register is considered active */
     int64_t val;          /**< Value of that register that determines if that Channel/Register is active */
+
+    bool operator==(const SelectedBy&) const = default;
   };
 
   /********************************************************************************************************************/

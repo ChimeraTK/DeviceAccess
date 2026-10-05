@@ -228,6 +228,13 @@ namespace ChimeraTK {
         accessor =
             boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendMuxedRegisterAccessor<UserType>(
                 registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+        // A register-level 'selectedBy' gates the whole 2D block (the full-2D accessor) on a single selector. This is
+        // independent of the per-channel 'selectedBy' carried by the channels (which gate the named channel slices).
+        if(registerInfo.registerSelectedBy) {
+          accessor = boost::make_shared<SelectedByDecorator<UserType>>(accessor,
+              boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
+              *registerInfo.registerSelectedBy);
+        }
       }
     }
     // double buffer register
