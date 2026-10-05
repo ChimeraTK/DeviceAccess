@@ -150,6 +150,3 @@ temporary file which is parsed in the test and deleted afterwards.
 - Catalogue test: cloning a catalogue preserves the channel entries (via
 `clone()).`
 
-## Deferred issue
-
-- doc/jmapFormat.dox deviates from the change request specification: the spec (Specifications, documentation aspect) explicitly requires 'No example and no reference to a specific backend or to later extensions are given yet', but the implemented section contains both a specific-backend reference (line 315: 'the first consumer is the XdmaBackend ring-buffer feature') and an example verbatim block (lines 318-323 with 'Xdma' entries). The documentation must be brought in line with the specification (drop the example and the specific-backend reference).
