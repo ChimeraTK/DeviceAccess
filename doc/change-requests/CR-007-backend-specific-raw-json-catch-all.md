@@ -101,12 +101,13 @@ Aspect: register catalogue.
 
 Aspect: documentation.
 
-- `doc/jmapFormat.dox` documents `dmaChannels` in a new section: the envelope
-  rules, the mandatory `type` field, and that the rest is backend-specific. The
-  section explains that channel indices are non-negative integers and the
-  content of each entry is interpreted solely by the consuming backend. The
-  top-level key list in the "Fundamental concepts" overview gains
-  `dmaChannels`.
+- `doc/jmapFormat.dox` documents `dmaChannels` in a new section: a minimal
+  explanation that the generic parser validates only the shallow envelope
+  (object, non-negative integer keys, object entries with a string `type`) and
+  preserves each entry verbatim, and that the entry content is interpreted
+  solely by the consuming backend. No example and no reference to a specific
+  backend or to later extensions are given yet. The top-level key list in the
+  "Fundamental concepts" overview gains `dmaChannels`.
 - `schemas/jmap.schema.json` gains a `dmaChannels` top-level property so the
   strict schema (top-level `additionalProperties: false`) stays consistent with
   the documented format, mirroring `interruptHandler`: the value is an object
@@ -148,3 +149,20 @@ added.
   temporary file which is parsed in the test and deleted afterwards.
 - Catalogue test: cloning a catalogue preserves the channel entries (via
   `clone()).`
+
+## Deferred issue
+
+- `tests/executables_src/testJsonMapFileParser.cpp:33-37`: replace the
+  `TemporaryJmapFileGuard` class with `cppext::finally` (available via
+  `<ChimeraTK/cppext/finally.hpp>`, used e.g. in
+  `src/DataConsistencyGroupHistorizedMatcher.cc:71`).
+- `tests/executables_src/testJsonMapFileParser.cpp:88-98`: restructure
+  `parseWithDmaChannels`, which mixes test preparation with the call of the
+  code under test. Move the actual `parse()` call out of the helper (it
+  should only write the modified temporary jmap file and return its path),
+  rename the function accordingly, and shorten its comment.
+- `tests/simpleJsonFile.jmap:806-820`: replace the `"type": "Xdma"` values in
+  the `dmaChannels` section with an abstract, test-only type name (e.g.
+  "MyDmaEngine") to avoid a confusing reference to the real XDMA backend, and
+  update the tests that assert `type == "Xdma"`
+  (TestDmaChannelsPresent:1315-1316, TestDmaChannelsClone:1418-1419).
