@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "DoubleBufferAccessor.h"
+
+#include <utility>
 namespace ChimeraTK {
 
   template<typename UserType>
@@ -9,8 +11,8 @@ namespace ChimeraTK {
       NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-  : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(doubleBufferConfig), _backend(backend),
-    _mutex(std::move(mutex)), _transferLock(*_mutex, std::defer_lock) {
+  : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(std::move(doubleBufferConfig)),
+    _backend(backend), _mutex(std::move(mutex)), _transferLock(*_mutex, std::defer_lock) {
     _enableDoubleBufferReg =
         backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
@@ -92,9 +94,6 @@ namespace ChimeraTK {
     else {
       this->_dataValidity = _buffer1->dataValidity();
     }
-
-    // Runtime 'selectedBy' gating (faulty + not-new while unselected) is applied by the wrapping
-    // SelectedByDecorator, which forwards with updateDataBuffer=false when the selection is not met.
 
     // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this
     // check.

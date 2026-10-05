@@ -240,9 +240,7 @@ namespace ChimeraTK {
       if(!controlState) {
         controlState = std::make_shared<detail::CountedRecursiveMutex>();
       }
-      // Double-buffered registers declared 'selectedBy' are wrapped in a SelectedByDecorator: the gate
-      // decides whether the buffer just read is the active one; if not, the read is treated as not-new
-      // and faulty.
+
       accessor = boost::make_shared<DoubleBufferAccessor<UserType>>(*registerInfo.doubleBuffer, shared_from_this(),
           controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags);
       if(registerInfo.channels.front().selectedBy) {
