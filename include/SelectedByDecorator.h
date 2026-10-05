@@ -5,7 +5,6 @@
 #include "BackendRegisterInfoBase.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "ScalarRegisterAccessor.h"
-#include "TransferElementGateHandler.h"
 
 #include <cstdint>
 #include <memory>
@@ -31,7 +30,7 @@ namespace ChimeraTK {
    * (see isGateOpen()/check()/doPostRead()) whenever the gate must be evaluated.
    */
   template<typename UserType>
-  class SelectedByDecorator : public NDRegisterAccessorDecorator<UserType>, public TransferElementGateHandler {
+  class SelectedByDecorator : public NDRegisterAccessorDecorator<UserType> {
    public:
     /**
      * Wrap 'target' with a self-owned selector read: the decorator creates and owns the scalar accessor
@@ -42,9 +41,6 @@ namespace ChimeraTK {
 
     /** Reset the gate cache and forward the pre-read to the wrapped accessor. */
     void doPreRead(TransferType type) override;
-
-    /** Skip the physical transfer of the wrapped accessor while the gate is closed (polled semantics). */
-    void doReadTransferSynchronously() override;
 
     /** Forward the read to the wrapped accessor and apply the gating validity. */
     void doPostRead(TransferType type, bool hasNewData) override;
@@ -58,12 +54,6 @@ namespace ChimeraTK {
 
     /** Whether a selector register has been attached to this gate. */
     [[nodiscard]] bool hasSelection() const { return _selectorAccessor.get() != nullptr; }
-
-    // Implementation of the TransferElementGateHandler interface: exposes the gated data elements to a
-    // TransferGroup so their transfer can be suppressed while unselected. isGateOpen() reads the owned
-    // selector itself.
-    std::vector<boost::shared_ptr<TransferElement>> getGatedElements() override;
-    bool isGateOpen() override;
 
    protected:
     using NDRegisterAccessorDecorator<UserType>::_target;

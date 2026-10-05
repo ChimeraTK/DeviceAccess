@@ -59,36 +59,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void SelectedByDecorator<UserType>::doReadTransferSynchronously() {
-    if(!_selectorAccessor) {
-      NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
-      return;
-    }
-    // Polled semantics: only perform the physical read of the wrapped accessor when the gate is open.
-    // Reuse an earlier gate decision from this cycle (isGateOpen()/check()) if present, otherwise read the
-    // selector ourselves; cache the result so doPostRead() does not read the selector again.
-    if(!_cacheValid) {
-      _selectorAccessor->read();
-      _cachedGateOpen = evaluate();
-      _cacheValid = true;
-    }
-    if(_cachedGateOpen) {
-      NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
   void SelectedByDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
     if(!_selectorAccessor) {
       NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
       return;
     }
-    // Reuse the gate decision made earlier in this same transfer cycle (by the TransferGroup's
-    // isGateOpen() or a check()), which already read the selector and decided whether the data element
-    // was transferred. This avoids reading the selector register a second time in the group path. In a
-    // standalone read (no group, no check()) no cache is present, so read the selector here.
+    // Reuse the gate decision made earlier in this same transfer cycle by check() (the async wake path),
+    // which already read the selector and decided whether the data element is selected. This avoids
+    // reading the selector register a second time. In a polled standalone read / group read (no check()) no
+    // cache is present, so read the selector here, after the physical transfer has been performed.
     if(!_cacheValid) {
       _selectorAccessor->read();
       _cachedGateOpen = evaluate();
@@ -104,28 +83,6 @@ namespace ChimeraTK {
       return;
     }
     NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  std::vector<boost::shared_ptr<TransferElement>> SelectedByDecorator<UserType>::getGatedElements() {
-    return _target->getHardwareAccessingElements();
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  bool SelectedByDecorator<UserType>::isGateOpen() {
-    if(!_selectorAccessor) {
-      return true;
-    }
-    // Read the selector register to reflect the current selector value before evaluating the gate, and
-    // cache the decision so the group's doPostRead() for this cycle does not read the selector again.
-    _selectorAccessor->read();
-    _cachedGateOpen = evaluate();
-    _cacheValid = true;
-    return _cachedGateOpen;
   }
 
   /********************************************************************************************************************/

@@ -37,9 +37,8 @@ namespace ChimeraTK {
     enum class Type { VOID = 0, FIXED_POINT = 1, IEEE754 = 2, ASCII = 3 };
 
     /**
-     *  Per-channel information that contains a pair of register and value determining a condition
-     *  under which this register is considered active. For scalar and 1D registers exactly one ChannelInfo is
-     *  present; for 2D registers one ChannelInfo per channel is present.
+     *  Per-channel information. For scalar and 1D registers, exactly one ChannelInfo is present. For 2D register, one
+     *  ChannelInfo per channel is present.
      */
     struct ChannelInfo {
       uint32_t bitOffset;      /**< Offset in bits w.r.t. begining of the register. Often "big", i.e. byteOffset*8 */

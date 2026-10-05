@@ -32,10 +32,11 @@ Aspect: runtime enforcement of `selectedBy` on registers of the `NumericAddresse
   an error pointing to the parent declaration, so the constraint is checked at the source
   of the inheritance, not at individual children.
 - **Polled semantics** *(decided: `DataValidity::faulty`)*: a plain `read()` of a gated
-  register only performs the physical read (the address may be shared with an
-  alternative; reading is harmless) when the selctor matches. The returned data is marked
-  `DataValidity::faulty` when the selector register does not match. The payload is
-  **unspecified** when unselected (see *Payload when unselected* below).
+  register **always performs the physical read** (the address may be shared with an
+  alternative; reading is harmless), and the gate is evaluated **after** the read in
+  `doPostRead()`. The returned data is marked `DataValidity::faulty` when the selector
+  register does not match. The payload is **unspecified** when unselected (see *Payload
+  when unselected* below).
 - **2D per-channel gate**: each channel of a muxed 2D register is gated by its own
   effective `selectedBy` (its own, falling back to the register-level default / inherited
   value). An inactive channel is marked `DataValidity::faulty` while the selected
@@ -47,8 +48,10 @@ Aspect: runtime enforcement of `selectedBy` on registers of the `NumericAddresse
   currently-selected channel set is valid.
 - **2D register-level gate (whole block)**: a `selectedBy` declared on the 2D register
   itself (as opposed to on individual channels) gates the **whole 2D block**: the
-  full-2D accessor is only valid while the selector matches the register-level value, and
-  its physical read is skipped (treated as not-new) while the gate is closed. This gate is
+  full-2D accessor is only valid while the selector matches the register-level value — the
+  physical read is **always performed**, and the data is marked `DataValidity::faulty` and
+  treated as not-new when the gate is closed (evaluated after the read in `doPostRead()`).
+  This gate is
   **independent** of the per-channel `selectedBy` the channels may carry: a named channel
   slice gated by its own per-channel value remains valid even if the register-level gate
   is closed (the register-level declaration does **not** override or become the default
@@ -166,13 +169,13 @@ Scalar / 1D accessor (`NumericAddressedBackendRegisterAccessor`):
   (recorded in `NumericAddressedRegisterInfo::registerSelectedBy` by the parser, see
   *Parser* below), the full-2D accessor itself is wrapped in a
   `SelectedByDecorator` (`src/NumericAddressedBackend.cc`). This decorator gates the
-  *whole 2D block*: the full-2D read is only performed (and reported `DataValidity::ok`)
-  while the selector matches the register-level value; while the gate is closed the
-  physical transfer is skipped (not-new) and validity is `faulty`, per the polled
-  semantics. This is independent of the per-channel decorators on the channel slices: a
-  slice with its own per-channel `selectedBy` is gated solely by that value and is
-  unaffected by the register-level gate (see the *2D register-level gate (whole block)*
-  requirement).
+  *whole 2D block*: the full-2D physical read is **always performed**, and the gate is
+  evaluated afterwards in `doPostRead()` — the data is reported `DataValidity::ok` while
+  the selector matches the register-level value, and `DataValidity::faulty` (treating the
+  read as not-new) while the gate is closed, per the polled semantics. This is independent
+  of the per-channel decorators on the channel slices: a slice with its own per-channel
+  `selectedBy` is gated solely by that value and is unaffected by the register-level gate
+  (see the *2D register-level gate (whole block)* requirement).
 
 Double-buffered accessor (`DoubleBufferAccessor`):
 
