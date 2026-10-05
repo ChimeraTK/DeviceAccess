@@ -6,7 +6,7 @@ subclasses of `NumericAddressedBackend`. The generic parser validates only the
 shallow envelope; the content is interpreted by the specific backend (first
 consumer: the XdmaBackend ring-buffer feature, CR-008).
 
-Status: READY TO IMPLEMENT (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -150,19 +150,3 @@ added.
 - Catalogue test: cloning a catalogue preserves the channel entries (via
   `clone()).`
 
-## Deferred issue
-
-- `tests/executables_src/testJsonMapFileParser.cpp:33-37`: replace the
-  `TemporaryJmapFileGuard` class with `cppext::finally` (available via
-  `<ChimeraTK/cppext/finally.hpp>`, used e.g. in
-  `src/DataConsistencyGroupHistorizedMatcher.cc:71`).
-- `tests/executables_src/testJsonMapFileParser.cpp:88-98`: restructure
-  `parseWithDmaChannels`, which mixes test preparation with the call of the
-  code under test. Move the actual `parse()` call out of the helper (it
-  should only write the modified temporary jmap file and return its path),
-  rename the function accordingly, and shorten its comment.
-- `tests/simpleJsonFile.jmap:806-820`: replace the `"type": "Xdma"` values in
-  the `dmaChannels` section with an abstract, test-only type name (e.g.
-  "MyDmaEngine") to avoid a confusing reference to the real XDMA backend, and
-  update the tests that assert `type == "Xdma"`
-  (TestDmaChannelsPresent:1315-1316, TestDmaChannelsClone:1418-1419).

@@ -805,7 +805,7 @@
   },
   "dmaChannels": {
     "0": {
-      "type": "Xdma",
+      "type": "MyDmaEngine",
       "ringBufferSize": 4096,
       "nested": {
         "object": {
@@ -815,7 +815,7 @@
       }
     },
     "1": {
-      "type": "Xdma",
+      "type": "MyDmaEngine",
       "ringBufferSize": 8192
     }
   }
