@@ -312,15 +312,9 @@ This will create a push-type register (supporting ChimeraTK::AccessMode::wait_fo
 
 \subsection jmap_dma_channels DMA channels
 
-The optional \c dmaChannels top-level object describes backend-specific DMA channel configuration. It is preserved verbatim by the generic parser and interpreted solely by the specific backend that consumes the jmap file; the first consumer is the XdmaBackend ring-buffer feature. A jmap file without a \c dmaChannels section is valid and parses unchanged.
+The optional \c dmaChannels top-level object describes backend-specific DMA channel configuration. It is preserved verbatim by the generic parser and interpreted solely by the specific backend that consumes the jmap file. A jmap file without a \c dmaChannels section is valid and parses unchanged.
 
-Each key of \c dmaChannels is the channel index as a non-negative integer (given as a plain decimal digit string, e.g. \c "0", \c "3"), matching the \c channel field of \c address objects of type \c "DMA" in the \c addressSpace. Each entry is an object that must carry a \c type field holding a string, which names the backend that interprets the entry. All other keys of an entry are backend-specific and are not interpreted by the generic parser:
-\verbatim
-"dmaChannels": {
-  "0": { "type": "Xdma", "ringBufferSize": 4096 },
-  "1": { "type": "Xdma", "ringBufferSize": 8192 }
-}
-\endverbatim
+Each key of \c dmaChannels is the channel index as a non-negative integer (given as a plain decimal digit string, e.g. \c "0", \c "3"), matching the \c channel field of \c address objects of type \c "DMA" in the \c addressSpace. Each entry is an object that must carry a \c type field holding a string, which names the backend that interprets the entry. All other keys of an entry are backend-specific and are not interpreted by the generic parser.
 
 The generic parser validates only the shallow envelope: the section must be an object, each key must be a parseable non-negative integer, each entry must be an object with a string-valued \c type. It does not validate that the channel indices correspond to \c "DMA" \c address space entries, as backends may support standard DMA channels without any \c dmaChannels configuration. A backend that encounters an entry whose \c type it does not support reports a \c ChimeraTK::logic_error.
 
