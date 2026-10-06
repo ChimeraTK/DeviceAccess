@@ -222,7 +222,9 @@ struct ShortRaw_base {
 
   // This register shares the address space with all our test registers. It gives us direct access to the 4 byte
   // address range, so we can test the correct placement of the unaligned values.
-  DummyRegisterRawAccessor acc{exceptionDummy, "", "/Integers/unsigned32"};
+  // Class template argument deduction does not apply in a non-static data member initialiser, so the default raw type
+  // is named explicitly here (a variable declaration would deduce it via the deduction guide).
+  DummyRegisterRawAccessor<int32_t> acc{exceptionDummy, "", "/Integers/unsigned32"};
 
   rawUserType get() { return (acc & derived->bitmask) >> derived->bitshift; }
 
@@ -910,16 +912,13 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     std::vector<UserType> cookedValues(derived->nElementsPerChannel());
     std::vector<Traw> rawValues(derived->nElementsPerChannel());
 
-    // Keep the scope of the dummy buffer lock as limited as possible (see #12332).
-    // The rawToCooked conversion will acquire a lock via the math plugin decorator,
-    // which will cause lock order inversion if you hold the dummy buffer lock at that point.
+    // The backdoor accessors take the backend lock per element access themselves, so no explicit buffer lock is held
+    // across the rawToCooked conversion (which acquires a math plugin lock) any more.
     {
-      auto bufferLock = derived->acc.getBufferLock();
-
       for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
         rawValues[i] = derived->acc[i + derived->myOffset()];
       }
-    } // end of bufferLock scope
+    }
 
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       if(!getRaw) {
@@ -934,12 +933,9 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   void setRemoteValue() {
     auto v = generateValue<typename Derived::rawUserType>(true)[0];
-    { // scope for the buffer lock
-      auto bufferLock = derived->acc.getBufferLock();
-      for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-        derived->acc[i + derived->myOffset()] = v[i];
-      }
-    } // release the buffer lock before triggering another thread
+    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+      derived->acc[i + derived->myOffset()] = v[i];
+    }
     if(derived->isPush()) {
       dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(6);
     }

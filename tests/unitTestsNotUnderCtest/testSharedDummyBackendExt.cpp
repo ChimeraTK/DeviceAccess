@@ -5,6 +5,7 @@
 #define BOOST_TEST_MODULE SharedDummyBackendTest
 #include "Device.h"
 #include "ProcessManagement.h"
+#include "SharedDummyBackend.h"
 #include "sharedDummyHelpers.h"
 #include "Utilities.h"
 
@@ -34,7 +35,7 @@ namespace {
   //  Use hardcoded information from the shareddummyTest.dmap to only use public interface here.
   std::string mapFileName{"shareddummy.map"};
   std::size_t instanceIdHash = Utilities::shmDummyInstanceIdHash("1", {{"map", mapFileName}});
-  std::string shmName{Utilities::createShmName(instanceIdHash, mapFileName, getUserName())};
+  std::string shmName{SharedDummyBackend::getSharedMemoryName(instanceIdHash, mapFileName, getUserName())};
 
   bool terminationCaught = false;
 

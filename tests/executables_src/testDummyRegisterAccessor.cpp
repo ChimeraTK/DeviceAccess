@@ -3,6 +3,7 @@
 
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
+#include "BackendFactory.h"
 #include "boost_dynamic_init_test.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
@@ -16,6 +17,8 @@
 #include <math.h>
 
 #include <algorithm>
+#include <cstring>
+#include <map>
 
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
@@ -34,8 +37,27 @@ class TestableDummyBackend : public DummyBackend {
   DummyRegisterAccessor<int> someRegister;
   DummyMultiplexedRegisterAccessor<int> someMuxedRegister;
 
-  friend class DummyRegisterTest;
+  /// Backdoor accessor used to place the pre-packed 32-bit words into the memory; the internal bar contents are
+  /// chunked byte storage and are not written directly any more. It addresses the multiplexed area through its 1D raw
+  /// view ("APP0.DAQ0_ADCA.MULTIPLEXED_RAW"), so that consecutive indices map to consecutive transport words from the
+  /// area start, exactly like the pre-change word indexing into the bar contents. The raw accessor is created through
+  /// DummyBackend::getRawAccessor(), which supplies the shared pointer to the backend.
+  std::unique_ptr<DummyRegisterRawAccessor<std::int32_t>> muxedBackdoor;
+
+  // NOLINTNEXTLINE(performance-unnecessary-value-param)
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return boost::shared_ptr<DeviceBackend>(new TestableDummyBackend(parameters["map"]));
+  }
+  class BackendRegisterer {
+   public:
+    BackendRegisterer() {
+      ChimeraTK::BackendFactory::getInstance().registerBackendType(
+          "TestableDummy", &TestableDummyBackend::createInstance);
+    }
+  };
+  static BackendRegisterer backendRegisterer;
 };
+TestableDummyBackend::BackendRegisterer TestableDummyBackend::backendRegisterer;
 
 // Test implementation of the dummy backend for the invalid map file
 class InvalidDummyBackend : public DummyBackend {
@@ -51,7 +73,12 @@ class InvalidDummyBackend : public DummyBackend {
 /**********************************************************************************************************************/
 class DummyRegisterTest {
  public:
-  DummyRegisterTest() { device = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE)); }
+  DummyRegisterTest() {
+    device = boost::dynamic_pointer_cast<TestableDummyBackend>(
+        BackendFactory::getInstance().createBackend("(TestableDummy?map=" TEST_MAPPING_FILE ")"));
+    device->muxedBackdoor = std::make_unique<DummyRegisterRawAccessor<std::int32_t>>(
+        device->getRawAccessor("APP0", "DAQ0_ADCA.MULTIPLEXED_RAW"));
+  }
 
   /// test exceptions
   void testExceptions();
@@ -106,37 +133,37 @@ void DummyRegisterTest::testRegisterAccessor() {
 
   // test operator=
   device->someRegister = 3;
-  BOOST_CHECK(device->_barContents[1][0] == 3);
+  BOOST_CHECK(device->someRegister == 3);
 
   // test operator[] on r.h.s.
-  device->_barContents[1][0] = 5;
-  device->_barContents[1][3] = 77;
+  device->someRegister[0] = 5;
+  device->someRegister[3] = 77;
   BOOST_CHECK(device->someRegister[0] == 5);
   BOOST_CHECK(device->someRegister[3] == 77);
 
   // test operator[] on l.h.s.
   device->someRegister[0] = 666;
   device->someRegister[9] = 999;
-  BOOST_CHECK(device->_barContents[1][0] == 666);
-  BOOST_CHECK(device->_barContents[1][9] == 999);
+  BOOST_CHECK(device->someRegister[0] == 666);
+  BOOST_CHECK(device->someRegister[9] == 999);
   device->someRegister[1] = 111;
   device->someRegister[2] = 222;
   device->someRegister[3] = 333;
   device->someRegister[4] = 444;
-  BOOST_CHECK(device->_barContents[1][1] == 111);
-  BOOST_CHECK(device->_barContents[1][2] == 222);
-  BOOST_CHECK(device->_barContents[1][3] == 333);
-  BOOST_CHECK(device->_barContents[1][4] == 444);
+  BOOST_CHECK(device->someRegister[1] == 111);
+  BOOST_CHECK(device->someRegister[2] == 222);
+  BOOST_CHECK(device->someRegister[3] == 333);
+  BOOST_CHECK(device->someRegister[4] == 444);
 
   // test increment and decrement operators
   BOOST_CHECK(device->someRegister[1]++ == 111);
   BOOST_CHECK(device->someRegister[2]-- == 222);
   BOOST_CHECK(++device->someRegister[3] == 334);
   BOOST_CHECK(--device->someRegister[4] == 443);
-  BOOST_CHECK(device->_barContents[1][1] == 112);
-  BOOST_CHECK(device->_barContents[1][2] == 221);
-  BOOST_CHECK(device->_barContents[1][3] == 334);
-  BOOST_CHECK(device->_barContents[1][4] == 443);
+  BOOST_CHECK(device->someRegister[1] == 112);
+  BOOST_CHECK(device->someRegister[2] == 221);
+  BOOST_CHECK(device->someRegister[3] == 334);
+  BOOST_CHECK(device->someRegister[4] == 443);
 
   // close the device
   device->close();
@@ -153,9 +180,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(device->someMuxedRegister.getNumberOfElements() == 4096);
   BOOST_CHECK(device->someMuxedRegister.getNumberOfSequences() == 16);
 
-  // the area offset is 1000 bytes. When addressing the index of the 32 bit word
-  // in the bar, we have to divide by 4
-  static const int areaIndexOffset = 1000 / 4;
+  // the area offset is 1000 bytes into the bar; the accessor addresses it by byte offset directly
 
   // since our register does not have a fixed type, we use this union/struct to
   // fill the bar content directly the packed attribute prevents the compiler
@@ -201,16 +226,17 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 13;
   mixedReg.cooked.r14 = 14;
   mixedReg.cooked.r15 = 15;
-  for(int i = 0; i < 13; i++) device->_barContents[0xD][areaIndexOffset + i] = mixedReg.raw[i];
+  for(int i = 0; i < 13; i++) {
+    int32_t word;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+    std::memcpy(&word, &mixedReg.raw[i], sizeof(word));
+    (*device->muxedBackdoor)[i] = word;
+  }
 
   // test the test, to be sure the union is not going wrong
   BOOST_CHECK((int)((char*)&(mixedReg.cooked.r5) - (char*)&(mixedReg.cooked.r0)) == 10);
   BOOST_CHECK((int)((char*)&(mixedReg.cooked.r10) - (char*)&(mixedReg.cooked.r0)) == 28);
   BOOST_CHECK((int)((char*)&(mixedReg.cooked.r15) - (char*)&(mixedReg.cooked.r0)) == pitch - 4);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 0] == 42);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 1] == 120 + 0x10000 * 222);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 9] == 12);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 12] == 15);
 
   mixedReg.cooked.r0 = 1;
   mixedReg.cooked.r1 = 11;
@@ -228,15 +254,13 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 333;
   mixedReg.cooked.r14 = 444;
   mixedReg.cooked.r15 = 555;
-  for(int i = 0; i < 13; i++) device->_barContents[0xD][areaIndexOffset + pitch / 4 + i] = mixedReg.raw[i];
+  for(int i = 0; i < 13; i++) {
+    int32_t word;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+    std::memcpy(&word, &mixedReg.raw[i], sizeof(word));
+    (*device->muxedBackdoor)[13 + i] = word;
+  }
 
-  // test the test, to be sure the union is not going wrong
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 0] == 1);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 1] == 11 + 0x10000 * 22);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 9] == 222);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 12] == 555);
-
-  // fill the rest of the register (has 4096 samples per channel)
   for(int i = 2; i < 4096; i++) {
     mixedReg.cooked.r0 = i + 0;
     mixedReg.cooked.r1 = i + 1;
@@ -254,7 +278,12 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     mixedReg.cooked.r13 = i + 13;
     mixedReg.cooked.r14 = i + 14;
     mixedReg.cooked.r15 = i + 15;
-    for(int k = 0; k < 13; k++) device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k] = mixedReg.raw[k];
+    for(int k = 0; k < 13; k++) {
+      int32_t word;
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+      std::memcpy(&word, &mixedReg.raw[k], sizeof(word));
+      (*device->muxedBackdoor)[i * 13 + k] = word;
+    }
   }
 
   // test reading by [][] operator
@@ -339,7 +368,11 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     }
   }
 
-  for(int k = 0; k < 13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset + k];
+  for(int k = 0; k < 13; k++) {
+    int32_t word = (*device->muxedBackdoor)[k];
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+    std::memcpy(&mixedReg.raw[k], &word, sizeof(word));
+  }
   BOOST_CHECK(mixedReg.cooked.r0 == 666);
   BOOST_CHECK(mixedReg.cooked.r1 == 999);
   BOOST_CHECK(mixedReg.cooked.r2 == 222);
@@ -358,7 +391,11 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(mixedReg.cooked.r15 == 6666);
 
   for(int i = 1; i < 65536 / 16; i++) {
-    for(int k = 0; k < 13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k];
+    for(int k = 0; k < 13; k++) {
+      int32_t word = (*device->muxedBackdoor)[i * 13 + k];
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+      std::memcpy(&mixedReg.raw[k], &word, sizeof(word));
+    }
     BOOST_CHECK(mixedReg.cooked.r0 == 10 * 0 + i);
     BOOST_CHECK(mixedReg.cooked.r1 == std::min(10 * 1 + i, 32767));
     BOOST_CHECK(mixedReg.cooked.r2 == std::min(10 * 2 + i, 32767));
