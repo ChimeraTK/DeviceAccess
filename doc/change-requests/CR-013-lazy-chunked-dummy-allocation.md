@@ -41,11 +41,12 @@ Status: PLANNED
 
 ## Specifications
 
-- `_barContents` becomes chunked and byte-based:
-   - DummyBackend: `std::map<uint64_t, std::map<uint64_t, std::vector<std::byte>>>`
-     (bar -> chunk index -> chunk data).
-   - SharedDummyBackend: `std::map<uint64_t, std::map<uint64_t, SharedMemoryByteVector*>>`
-     with `SharedMemoryByteVector = boost::interprocess::vector<std::byte, ShmemByteAllocator>`.
+- `_barContents` becomes a flat, chunked and byte-based map keyed by
+  `(bar, chunkIndex)`; for the DummyBackend the value is
+  `std::map<std::pair<uint64_t,uint64_t>, std::vector<std::byte>>` and for the
+  SharedDummyBackend it is
+  `std::map<std::pair<uint64_t,uint64_t>, SharedMemoryByteVector*>` with
+  `SharedMemoryByteVector = boost::interprocess::vector<std::byte, ShmemByteAllocator>`.
 - A new `constexpr size_t CHUNK_SIZE` (1 MiB) is defined in `DummyBackendBase`
   and used for all chunk-index arithmetic.
 - Chunks are created zero-initialised on first access. Reads allocate missing
