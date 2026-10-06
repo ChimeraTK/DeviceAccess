@@ -61,7 +61,8 @@ Status: PLANNED
   independent of the map file; if a chunk allocation does not fit the free
   memory, the segment is grown via `managed_shared_memory::grow` by a multiple
   of `CHUNK_SIZE` under the already-held interprocess mutex, then the
-  allocation is retried. `getRequiredMemoryWithOverhead()` and
+  allocation is retried. If `managed_shared_memory::grow` fails or chunk allocation throws `std::bad_alloc`, 
+  the operation throws `ChimeraTK::runtime_error` with a descriptive message. `getRequiredMemoryWithOverhead()` and
   `getTotalRegisterSizeInBytes()` (map-derived segment sizing) are removed.
 - The map file does not limit the valid range of any bar; chunk vectors are
   always `CHUNK_SIZE` big, so a process joining a segment created by a process
@@ -79,7 +80,7 @@ Status: PLANNED
   keeping the `std::byte*` interface of `RawConverterCapsule`.
 - `DummyRegisterRawAccessor` returns value semantics instead of `int32_t&`; its
   proxy implements the compound-assignment operators (`+=`, `-=`, `*=`, `/=`,
-  `&=`, `|=`, `^=`, `<<=`, `>>=`) and pre/post-increment/decrement, so existing
+  `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`, `&&=`, `||=`) and pre/post-increment/decrement, so existing
   compound expressions and `++`/`--` keep compiling.
 - The 32-bit alignment restrictions in the accessors (address and
   `elementPitchBits` multiples of 4) are removed.
