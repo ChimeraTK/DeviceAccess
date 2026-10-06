@@ -102,7 +102,8 @@ copy the new member like the existing `_listOfInterrupts`,
 Aspect: documentation.
 
 - `doc/jmapFormat.dox` documents `dmaChannels` in a new section: a minimal
-explanation that the section is preserved verbatim by the generic parser and
+explanation that a jmap file without a `dmaChannels` section is valid, that
+the section is preserved verbatim by the generic parser and
 interpreted solely by the consuming backend, that each key is a non-negative
 integer channel index given as a plain decimal digit string and each entry is
 an object carrying a string `type` naming the backend-specific DMA channel
@@ -116,13 +117,19 @@ whose keys match a non-negative-decimal pattern, and each value is an object
 with a required string `type` and otherwise unrestricted backend-specific
 keys (`additionalProperties: true` inside the entry object, unlike the
 strict `interruptHandlerEntry`), because the entry content is opaque to the
-generic schema.
+generic schema. The entry's `type` description names the backend-specific
+DMA channel type (not the backend that interprets the entry), matching the
+corrected requirement.
 
 ## Test plan
 
 All new parser tests go into the existing source file
 `tests/executables_src/testJsonMapFileParser.cpp`; no additional jmap files are
 added.
+
+- Test organisation: the helper that writes the modified jmap file for the
+fault tests is defined directly above the `dmaChannels` test cases that use
+it, next to `parseDmaChannelsFile`.
 
 - Parser test: the valid `dmaChannels` section is added to `simpleJsonFile.jmap`,
 the jmap file used in the existing parser tests. The entries reach the by-index
@@ -160,6 +167,10 @@ temporary file which is parsed in the test and deleted afterwards.
 - The `type` field is misdescribed in `doc/jmapFormat.dox` as naming the
   backend that interprets the entry ('which names the backend that interprets
   the entry'); it names the backend-specific DMA channel type.
+- The `type` entry description in `schemas/jmap.schema.json` still reads
+  'Name of the backend that interprets this DMA channel entry.', the same
+  misdescription corrected in `doc/jmapFormat.dox` and in the Requirements; it
+  must name the backend-specific DMA channel type.
 - The last paragraph of the `dmaChannels` section in `doc/jmapFormat.dox`
   ('The generic parser validates only the shallow envelope: ...') is
   redundant and must be removed entirely.
