@@ -75,11 +75,10 @@ Status: PLANNED
 ### SharedDummyBackend shared memory
 
 - The shared memory is organised as one small, fixed-size home segment plus one
-  separate shared-memory object per materialised chunk, named by deriving the
-  name from the instance home name
-  (`Utilities::createShmName(instanceIdHash, mapFileName, user)`) plus the bar
-  and the chunk index. Different map files, users and layout versions therefore
-  never collide, and objects are always removed by their full derived name.
+  separate shared-memory object per materialised chunk. Chunk objects are named
+  `<base>_BAR_<bar>_CHUNK_<index>`, so different map files, users and layout
+  versions never collide, and objects are always removed by their full derived
+  name.
 - The home segment holds the pid set, the unchanged interrupt storage
   (`ShmForSems`: `semEntries[SHARED_MEMORY_N_MAX_MEMBER]` and
   `interruptEntries[maxInterruptEntries]`) and the head of a singly linked list
@@ -87,7 +86,17 @@ Status: PLANNED
   replacing `getRequiredMemoryWithOverhead()` and
   `getTotalRegisterSizeInBytes()`, which are removed together with the now
   unused `SHARED_MEMORY_CONST_OVERHEAD` and `SHARED_MEMORY_OVERHEAD_PER_VECTOR`.
-- The layout version is part of the segment name (or the name hash); the
+- All object names derive from a common base name that carries the layout
+  version. The base is the value of
+  `Utilities::createShmName(instanceIdHash, mapFileName, user)` with the version
+  appended, i.e. `<createdName>_v<SHARED_MEMORY_LAYOUT_VERSION>`, where
+  `SHARED_MEMORY_LAYOUT_VERSION` is a `static constexpr` bumped whenever the
+  shared-memory layout changes. The home segment, the interprocess mutex (which
+  uses the same name, as today) and every chunk segment
+  (`<base>_BAR_<bar>_CHUNK_<index>`) are derived from this base, so two library
+  versions derive different names and can never attach to each other's objects,
+  in either direction. The name is computed in one place, shared by the
+  constructor and the stale-lock recovery path so the two cannot diverge. The
   previously unused `RequiredVersion` object in the home segment is removed.
 - Each chunk segment carries a small fixed header with its `(bar, chunkIndex)`
   key and the name of the next segment in the chain. The chain stores names, not
@@ -251,38 +260,3 @@ Status: PLANNED
   `testNumericAddressedBackendRegisterAccessor`,
   `testNumericAddressedBackendUnified`, `testDoubleBufferAccessor`,
   `testDummyBackendUnified`) are updated for the new accessor semantics.
-
-## Deferred issue
-
-- The per-chunk shared-memory lifetime was unimplementable as originally
-  specified: the existing pid-set refcount is one segment-global set and cannot
-  express per-chunk ownership, and chunk segments are invisible to
-  `reInitMemory()` and to teardown, which only operate on the home segment.
-  Resolved by the linked chain threaded through the chunk segments.
-- Chunk names as originally specified omitted the instance/map/user prefix and
-  could collide across instances and users; resolved by deriving every chunk
-  name from the home name.
-- The layout-version claim was one-directional, as an old binary has no version
-  check and would silently join the new segment; resolved by putting the version
-  in the segment name and removing the unused `RequiredVersion` object.
-- Removing `setReadOnly` breaks more than the two acknowledged test callers,
-  because `testReadOnly` leaves state that `testWriteCallbackFunctions` relies
-  on; resolved by adapting those tests. A direct backend write to a read-only
-  mapped address now succeeds, and out-of-range accesses no longer throw
-  `logic_error`; both are accepted consequences of accessor-layer enforcement
-  and the no-address-limit requirement.
-- The specification for `DummyRegisterRawAccessor` omitted the binary
-  `operator&`, `operator~` and the implicit conversion used by existing tests;
-  added to the required operator set.
-- The backdoor proxy mechanics were underspecified: the proxies held no
-  backend, bar or offset and could not call the transfer helper, and the
-  shared-memory mutex requirement did not apply to SharedDummyBackend, which has
-  no backdoor accessors. Both corrected.
-- The home-segment size was undefined after removing the sizing helpers; now
-  specified as pid set plus fixed interrupt storage plus the chain head.
-- `getBarSizesInBytesFromRegisterMapping()` is part of the installed header API
-  and `AddressRange` changes layout; recorded as accepted API/ABI breaks.
-- `DummyRegisterAccessor::setWriteCallback` truncated `bar` and `address`,
-  contradicting the no-limit requirement; included in the 64-bit sweep.
-- The test plan omitted the pid-management script, the `shm_exists` tests and
-  several backdoor and `AddressRange` consumers; added.
