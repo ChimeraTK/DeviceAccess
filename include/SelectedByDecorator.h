@@ -69,7 +69,7 @@ namespace ChimeraTK {
      * Whether the selector register currently selects this gate. Returns the most recent gate decision made
      * during the last transfer cycle (no selector re-read). true when no selector is attached.
      */
-    [[nodiscard]] bool isSelected() const { return !_selectorAccessor || _lastGateOpen; }
+    [[nodiscard]] bool isSelected() const override { return !_selectorAccessor || _lastGateOpen; }
 
     /** Whether a selector register has been attached to this gate. */
     [[nodiscard]] bool hasSelection() const { return _selectorAccessor.get() != nullptr; }

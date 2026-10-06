@@ -101,8 +101,10 @@ namespace ChimeraTK::async {
     // is a SelectedByDecorator wrapping the (possibly double-buffered) low-level element. Enable transfer-skipping so
     // that on an interrupt with the gate closed the physical read of the data register is skipped entirely. Enabled
     // after the initial read above so the buffer is always initialised (the initial value is delivered even while
-    // unselected). The low-level elements are reached through getHardwareAccessingElements() (the decorator forwards
-    // to them); each enables its own skip via the virtual setSkipOnUnselected().
+    // unselected). TransferGroup reaches the low-level element(s) directly, bypassing the decorator's
+    // doReadTransferSynchronously (spec E.4), so the skip is implemented by the low-level element itself (Option B:
+    // the DoubleBufferAccessor). We still enable skip on the decorator too, so a standalone (non-group) accessor also
+    // respects the gate via the decorator's own doReadTransferSynchronously().
     if(auto gated = boost::dynamic_pointer_cast<SelectedByDecorator<UserType>>(syncAccessor)) {
       gated->setSkipOnUnselected(true);
     }
@@ -120,13 +122,30 @@ namespace ChimeraTK::async {
   /********************************************************************************************************************/
   template<typename UserType>
   bool PolledAsyncVariable<UserType>::fillSendBuffer() {
-    // The gate is evaluated at the low-level transfer element (SelectedByDecorator): on an interrupt with the
-    // selection not met the data read is skipped and the accessor reports isSelected()==false. Suppress the
+    // The gate is evaluated at the low-level transfer element (for a double-buffer register, inside the
+    // DoubleBufferAccessor's doReadTransferSynchronously, Option B): on an interrupt with the selection not met the
+    // data read is skipped and the accessor reports isSelected()==false. Suppress the
     // delivery in that case after the initial value has been delivered, so wait_for_new_data consumers do not wake
     // with the inactive alternative. The initial value is always delivered (a consumer activated while the
     // selection is not met still receives its initial faulty value).
-    auto gated = boost::dynamic_pointer_cast<SelectedByDecorator<UserType>>(_syncAccessor);
-    if(gated && !gated->isSelected() && _initialDelivered) {
+    //
+    // The gate state is queried through the low-level transfer elements (as for setSkipOnUnselected above) rather
+    // than by requiring the subscription accessor to be directly a SelectedByDecorator: on the unified path the
+    // accessor may be wrapped in an outer TypeChangingDecorator, which would otherwise hide the gate decision.
+    // The gate is considered closed if the top-level accessor or any hardware-accessing element reports
+    // isSelected()==false; the default reports selected (no gate), so non-gated registers are unaffected.
+    bool gateClosed = !_syncAccessor->isSelected();
+    if(!gateClosed) {
+      for(auto& element : _syncAccessor->getHardwareAccessingElements()) {
+        if(auto accessor = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(element)) {
+          if(!accessor->isSelected()) {
+            gateClosed = true;
+            break;
+          }
+        }
+      }
+    }
+    if(gateClosed && _initialDelivered) {
       return false;
     }
     _initialDelivered = true;

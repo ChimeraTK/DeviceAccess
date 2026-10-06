@@ -112,9 +112,12 @@ Affected components:
 - New `include/SelectedByDecorator.h` / `src/SelectedByDecorator.cc`: a
   `NDRegisterAccessorDecorator<UserType>` template (the GoF decorator) that wraps the
   gated data accessor and applies the `selectedBy` `DataValidity` policy in
-  `doPostRead()`, and (when transfer-skipping is enabled by the interrupt path) skips the
-  physical read of the wrapped data accessor in `doReadTransferSynchronously()` when the
-  gate is closed.
+  `doPostRead()`. It also carries a `doReadTransferSynchronously()` skip (when
+  transfer-skipping is enabled by the interrupt path), but **that skip is dead code for
+  group reads** — TransferGroup always bypasses decorator implementations of
+  `doReadTransferSynchronously` (spec E.4, see *Async interrupt integration* below). The
+  actual physical-read skip on the interrupt path therefore lives in the wrapped
+  low-level transfer element itself, specifically in `DoubleBufferAccessor` (Option B).
   Replaces the former concrete `SelectorGate` helper.
 - `include/NumericAddressedBackendRegisterAccessor.h` / `src/...cc`: scalar/1D reads are
   wrapped in a `SelectedByDecorator` when the register is declared `selectedBy`.
@@ -131,11 +134,17 @@ Affected components:
   registers (see *Catalogue lookup* below).
 - `include/DoubleBufferAccessor.h` / `src/DoubleBufferAccessor.cc`: double-buffer reads
   are wrapped in a `SelectedByDecorator` (the gate also treats the read as not-new when
-  unselected).
+  unselected). **The DoubleBufferAccessor additionally carries the Option B skip**: it
+  holds its own selector accessor and, when transfer-skipping is enabled
+  (`setSkipOnUnselected(true)`), its `doReadTransferSynchronously()` evaluates the gate and
+  skips the physical buffer read while unselected (see *Double-buffered accessor* and *Async
+  interrupt integration* below). This is the actual location of the interrupt-path skip, since
+  the outer `SelectedByDecorator`'s skip is dead code for group reads (spec E.4).
 - `include/async/TriggeredPollDistributor.h` / `src/async/TriggeredPollDistributor.cc`:
-  no gating logic of its own — it enables transfer-skipping on each subscription's
-  `SelectedByDecorator` (the low-level transfer element), so on an interrupt with the
-  gate closed the physical data read is skipped.
+  no gating logic of its own — it enables transfer-skipping (`setSkipOnUnselected(true)`)
+  on each subscription's low-level transfer element (for a `selectedBy` register this is the
+  `DoubleBufferAccessor`), so on an interrupt with the gate closed the physical data read is
+  skipped.
 - `src/JsonMapFileParser.cc`: enforce the read-only constraint.
 - `doc/jmapFormat.dox`: document runtime gating + the read-only restriction.
 - `tests/...`: new tests and fixtures (see Test plan), plus an audit of existing jmap
@@ -149,10 +158,15 @@ Selector gate (`SelectedByDecorator<UserType>`):
   policy.
 - `doPostRead()` applies the polled semantics (mark `DataValidity::faulty` when
   unselected; also treat the read as not-new for the double-buffer case).
-- `doReadTransferSynchronously()` applies the interrupt (skip) semantics: when transfer
-  skipping is enabled (`setSkipOnUnselected(true)`, set by the async path) and the gate
-  is closed, the **physical read of the wrapped data accessor is skipped entirely** (the
-  selector is still read so a later selection change is picked up). In the polled path
+- `doReadTransferSynchronously()` contains the interrupt (skip) semantics described below
+  (skip the physical read of the wrapped data accessor when skipping is enabled and the
+  gate is closed; the selector is still read so a later selection change is picked up).
+  **However this skip is not reachable for group reads**: TransferGroup drives the
+  low-level transfer elements directly and never calls a decorator's
+  `doReadTransferSynchronously` (spec E.4). For a group read the interruption-path skip is
+  therefore carried out by the wrapped low-level element itself — the
+  `DoubleBufferAccessor` implements it (Option B). The decorator's own skip logic is kept
+  only so a *standalone* (non-group) accessor behaves correctly. In the polled path
   skipping is left disabled, so the physical read always happens.
 - `check()` / `isSelected()` evaluate the selector state; `isSelected()` reports the most
   recent gate decision without re-reading, used by the async delivery path to suppress the
@@ -162,7 +176,8 @@ Selector gate (`SelectedByDecorator<UserType>`):
 
 Scalar / 1D accessor (`NumericAddressedBackendRegisterAccessor`):
 
-- Hold an optional `SelectorGate` built from `registerInfo.channels[0].selectedBy`.
+- Wrapped in a `SelectedByDecorator` built from `registerInfo.channels[0].selectedBy` (per
+  *Backend accessor construction* below).
 - In `doReadTransferSynchronously()` still always perform the physical read, then in
   `doPostRead()` apply the gate to set `DataValidity` per the polled semantics above.
 - No write-path changes are needed (`selectedBy` is restricted to read-only registers).
@@ -194,20 +209,31 @@ Double-buffered accessor (`DoubleBufferAccessor`):
   `DoubleBufferAccessor` is wrapped in a `SelectedByDecorator`; the decorator decides
   whether the buffer just read is the active one, and if not the read is treated as
   not-new (see the async integration below).
+- **Option B skip (interrupt path)**: because TransferGroup bypasses the decorator's
+  `doReadTransferSynchronously` (spec E.4), the `DoubleBufferAccessor` itself carries the
+  interrupt-path skip. It takes the register's `SelectedBy` in its constructor and, when
+  `setSkipOnUnselected(true)` has been called (by the async path after the initial read),
+  `doReadTransferSynchronously()` reads its own selector accessor *before* the transfer
+  and skips the physical buffer read while the gate is closed (`doPreRead()` still
+  disabled the firmware buffer swapping, so `doPostRead()` re-enables it and reports
+  the read faulty and not-new rather than invoking the wrapped buffer's postRead). The
+  polled path leaves skipping disabled, so the physical read always happens.
 
 Async interrupt integration (per subscription — main focus):
 
-- The gate lives entirely in the low-level transfer element (the `SelectedByDecorator`),
-  not in `TransferGroup` or `TriggeredPollDistributor`. `createAsyncVariable()`
-  (`TriggeredPollDistributor.h`) retrieves the synchronous data accessor, which for a
-  register declared `selectedBy` already is a `SelectedByDecorator`, and enables
-  transfer-skipping on it (`setSkipOnUnselected(true)`). It performs no gate orchestration
-  itself.
-- On each interrupt, `_transferGroup.read()` calls the decorator's
-  `doReadTransferSynchronously()`, which reads the selector *before* the data transfer:
+- The gate lives entirely in the low-level transfer elements, not in `TransferGroup` or
+  `TriggeredPollDistributor`. `createAsyncVariable()` (`TriggeredPollDistributor.h`)
+  retrieves the synchronous data accessor and enables transfer-skipping on it
+  (`setSkipOnUnselected(true)`). It performs no gate orchestration itself. For a
+  `selectedBy` double-buffer register, the element that actually skips is the
+  `DoubleBufferAccessor` (Option B, spec E.4 — TransferGroup bypasses the outer decorator's
+  `doReadTransferSynchronously`).
+- On each interrupt, `_transferGroup.read()` calls the low-level element's
+  `doReadTransferSynchronously()` (for a `DoubleBufferAccessor`, its own
+  implementation), which reads the selector *before* the data transfer:
   - **selected** ⇒ the physical read of the data register is forwarded as usual;
   - **unselected** ⇒ the physical read of the data register is **skipped entirely** (the
-    expensive, possibly shared/muxed hardware block is not touched); the decorator marks
+    expensive, possibly shared/muxed hardware block is not touched); the element marks
     the read `DataValidity::faulty` and not-new in `doPostRead()`.
   The selector is read regardless (per-register; not deduplicated across subscriptions) so a
   later selection change is picked up on a subsequent interrupt.
@@ -270,7 +296,9 @@ Backend accessor construction (`getSyncRegisterAccessor`):
     muxed full-2D accessor, additionally wrapped in a `SelectedByDecorator` to gate the
     whole 2D block (see *2D muxed accessor* above). Per-channel decorators on the channel
     slices are unaffected;
-  - double-buffer → a `DoubleBufferAccessor` wrapped in a `SelectedByDecorator`.
+  - double-buffer → a `DoubleBufferAccessor` wrapped in a `SelectedByDecorator`; the
+    `SelectedByDecorator` is passed the register's `selectedBy` so the DBA itself can carry
+    the interrupt-path skip (Option B).
 - No structural change to the underlying accessors; the decorator is layered on top.
 
 Parser: register-level `selectedBy` on 2D registers (`JsonMapFileParser`):
@@ -379,9 +407,10 @@ Focus: **interrupt-triggered registers with `selectedBy`**, plus polled regressi
 
 - **Domain-level gate in `prepareIntermediateBuffers()`**, signalling "unselected" by
   returning `false`: rejected. A `false` return is documented
-  (`AsyncAccessorManager.h:149-156`) to mean the read failed and the implementation
+  (  `AsyncAccessorManager.h:149-156`) to mean the read failed and the implementation
   *must* call `setException()`; "unselected" is not an error. The per-variable skip in the
-  `SelectedByDecorator` instead leaves `prepareIntermediateBuffers()` untouched, and
+  low-level transfer element (the `DoubleBufferAccessor`) instead leaves
+  `prepareIntermediateBuffers()` untouched, and
   `fillSendBuffer()` (which per its contract may suppress delivery by returning `false`)
   drops the delivery when the gate is closed.
 - **Domain→"primary register" `selectedBy` lookup**
