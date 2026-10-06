@@ -89,7 +89,9 @@ Status: PLANNED
 - Keep `int32_t` as internal storage type: rejected, keeps the reinterpret_casts
   and blocks byte-aligned accessors.
 - Keep full per-bar allocation and only add chunking to SharedDummyBackend:
-  rejected, the plain DummyBackend suffers the same construction-time cost.
+  rejected, although the plain DummyBackend does not really suffer from the
+  construction cost, chunking both keeps them in sync and avoids supporting two
+  storage models in the shared transfer helper and the backdoor accessors.
 - Reserve the full map address space in the shared segment or key the segment
   name by a map content hash: rejected, the shared memory filesystem (e.g. 64
   MiB `/dev/shm` in containers) is often too small for a full reservation and
