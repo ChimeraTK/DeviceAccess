@@ -2,8 +2,9 @@
 
 Synopsis: The dummy backends allocate each bar's full address space up front,
 which is slow for map files with huge, mostly unused address spaces. This
-change allocates the address space lazily in fixed-size byte chunks and reworks
-the backdoor accessors accordingly.
+change allocates the address space lazily in fixed-size byte chunks, grows the
+shared-memory segment of the SharedDummyBackend dynamically, allows map-less
+dummies, and reworks the backdoor accessors accordingly.
 
 Status: PLANNED
 
@@ -16,6 +17,12 @@ Status: PLANNED
 - The `bar` and `address` parameters of `read`/`write` keep their current
   meaning; transfers are stitched transparently across chunk boundaries.
 - Reading a never-allocated chunk yields zeros.
+- The SharedDummyBackend shared segment no longer reserves the full address
+  space of the map file; it starts small and grows dynamically with the chunks.
+- A map file with changed content under the same name must not crash or raise
+  confusing errors, even when a bar size has grown.
+- Dummy backends (DummyBackend, SharedDummyBackend, ExceptionDummy) can be
+  created without a map file; such a dummy has an empty address space.
 - Accessing an address outside the bar size given by the register mapping still
   throws `logic_error` as today.
 - The internal storage type of the bar contents changes from `int32_t` to
@@ -46,9 +53,21 @@ Status: PLANNED
   current `TRY_REGISTER_ACCESS` behaviour.
 - SharedDummyBackend: chunk vectors are named `BAR_<bar>_CHUNK_<index>` and
   constructed via `findOrConstructVector`; `setupBarContents()` only resets the
-  chunk maps; `reInitMemory()` still destroys all named vectors;
-  `getRequiredMemoryWithOverhead()` reserves the worst case (all chunks) so the
-  segment size limits are unchanged.
+  chunk maps; `reInitMemory()` still destroys all named vectors.
+- SharedDummyBackend: the segment is created with a small fixed initial size
+  independent of the map file; if a chunk allocation does not fit the free
+  memory, the segment is grown via `managed_shared_memory::grow` by a multiple
+  of `CHUNK_SIZE` under the already-held interprocess mutex, then the
+  allocation is retried. `getRequiredMemoryWithOverhead()` and
+  `getTotalRegisterSizeInBytes()` (map-derived segment sizing) are removed.
+- The valid range of each bar is taken from the process's own register mapping
+  (bounds check above). Chunk vectors are always `CHUNK_SIZE` big, so a process
+  joining a segment created by a process with a different map content can
+  neither index out of range nor overrun; stale chunks of a formerly larger map
+  simply stay unused.
+- `createInstance` of DummyBackend, SharedDummyBackend and ExceptionDummy no
+  longer rejects an empty `map` parameter; `NumericAddressedBackend` already
+  handles an empty map file name (empty register catalogue).
 - `AddressRange`, `_readOnlyAddresses` and `_writeCallbackFunctions` remain
   address/range based and are unchanged.
 - The backdoor accessors (`DummyRegisterAccessor`,
@@ -66,6 +85,11 @@ Status: PLANNED
   and blocks byte-aligned accessors.
 - Keep full per-bar allocation and only add chunking to SharedDummyBackend:
   rejected, the plain DummyBackend suffers the same construction-time cost.
+- Reserve the full map address space in the shared segment or key the segment
+  name by a map content hash: rejected, the shared memory filesystem (e.g. 64
+  MiB `/dev/shm` in containers) is often too small for a full reservation and
+  creating the segment would be slow; dynamic growth under the existing
+  interprocess mutex avoids both.
 
 ## Test plan
 
@@ -78,6 +102,14 @@ Status: PLANNED
 - Out-of-range access still throws `logic_error`.
 - SharedDummyBackend: only used address ranges exist in shared memory;
   multi-process access still works (existing shared dummy tests).
+- SharedDummyBackend: a map file whose address space exceeds the available
+  shared memory still opens and works, because nothing is reserved up front;
+  the segment grows on demand.
+- SharedDummyBackend: a process using a map file with the same name but
+  increased bar sizes joins an existing segment without crash or confusing
+  errors.
+- Dummy backends can be created and opened without a map file; any address
+  access fails cleanly (no registers, out-of-range `logic_error`).
 - Backdoor accessors: byte-aligned registers (odd byte offsets, misaligned
   pitch) work; registers spanning a chunk boundary work; existing accessor
   behaviour in testDummyRegisterAccessor is preserved; the raw accessor works
