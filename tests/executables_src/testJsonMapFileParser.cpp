@@ -67,19 +67,6 @@ static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::Metada
   return ChimeraTK::MapFileParser::parse(outFile);
 }
 
-// Helper used by the dmaChannels fault tests below: load simpleJsonFile.jmap as the base map (which already carries a
-// valid dmaChannels section), replace the whole dmaChannels section with the supplied (possibly malformed) one, and
-// write the result to <outFile>.
-static std::string writeDmaChannelsFile(const std::string& outFile, const nlohmann::json& dmaChannels) {
-  std::ifstream base("simpleJsonFile.jmap");
-  nlohmann::json map = nlohmann::json::parse(base);
-
-  map["dmaChannels"] = dmaChannels;
-
-  std::ofstream(outFile) << map.dump(2);
-  return outFile;
-}
-
 BOOST_AUTO_TEST_SUITE(JsonMapFileParserTestSuite)
 
 /**********************************************************************************************************************/
@@ -1345,6 +1332,19 @@ BOOST_AUTO_TEST_CASE(TestDmaChannelsGetterThrows) {
 }
 
 /**********************************************************************************************************************/
+
+// Helper used by the dmaChannels fault tests below: load simpleJsonFile.jmap as the base map (which already carries a
+// valid dmaChannels section), replace the whole dmaChannels section with the supplied (possibly malformed) one, and
+// write the result to <outFile>.
+static std::string writeDmaChannelsFile(const std::string& outFile, const nlohmann::json& dmaChannels) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+
+  map["dmaChannels"] = dmaChannels;
+
+  std::ofstream(outFile) << map.dump(2);
+  return outFile;
+}
 
 // Parse the given written-out jmap file and throw away the temporary file on scope exit (the parse may throw a
 // ChimeraTK::logic_error for the fault tests, so the cleanup must survive stack unwinding).

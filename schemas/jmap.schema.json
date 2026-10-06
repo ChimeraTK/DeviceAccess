@@ -54,7 +54,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "Name of the backend that interprets this DMA channel entry."
+            "description": "Name of the backend-specific DMA channel type."
           }
         },
         "additionalProperties": true
