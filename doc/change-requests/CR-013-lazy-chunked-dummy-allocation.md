@@ -100,8 +100,7 @@ Status: PLANNED
 
 ## Test plan
 
-- Construction resp. first open is fast for a map file with a large, mostly
-  unused address space (no full-size zeroing).
+- Tests check functionality only, no timing or performance assertions.
 - Chunk boundaries: read/write of a register crossing a chunk boundary is
   correct; neighbouring chunks stay zero.
 - Reading untouched addresses returns zeros; a write materialises only the
@@ -110,9 +109,11 @@ Status: PLANNED
   writes materialise chunks on demand.
 - SharedDummyBackend: only used address ranges exist in shared memory;
   multi-process access still works (existing shared dummy tests).
-- SharedDummyBackend: a map file whose address space exceeds the available
-  shared memory still opens and works, because nothing is reserved up front;
-  the segment grows on demand.
+- SharedDummyBackend: a map file with an unreasonably huge address space (e.g.
+  a 1000 TB register) opens and works while accessing only the first and the
+  last few bytes; full reservation would exhaust any shared memory, so
+  succeeding proves nothing is reserved up front and the segment grows on
+  demand.
 - SharedDummyBackend: a process using a map file with the same name but
   increased bar sizes joins an existing segment without crash or confusing
   errors.
