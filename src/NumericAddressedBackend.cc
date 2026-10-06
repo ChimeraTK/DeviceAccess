@@ -249,7 +249,10 @@ namespace ChimeraTK {
       }
 
       accessor = boost::make_shared<DoubleBufferAccessor<UserType>>(*registerInfo.doubleBuffer, shared_from_this(),
-          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags);
+          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags,
+          registerInfo.channels.front().selectedBy
+              ? &(*registerInfo.channels.front().selectedBy)
+              : nullptr);
       if(registerInfo.channels.front().selectedBy) {
         accessor = boost::make_shared<SelectedByDecorator<UserType>>(accessor,
             boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),

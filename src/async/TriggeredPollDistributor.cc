@@ -59,30 +59,4 @@ namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
 
-  SelectorGateInfo TriggeredPollDistributor::buildSelectorGate(const AccessorInstanceDescriptor& descriptor) {
-    // Only numeric-addressed backends carry per-register selection metadata; other backends have no
-    // getSelectedBy and remain ungated.
-    auto numericAddressed = boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend);
-    if(!numericAddressed) {
-      return {};
-    }
-    auto selectedBy = _backend->getRegisterCatalogue().getImpl().getSelectedBy(descriptor.name);
-    if(!selectedBy) {
-      return {};
-    }
-    // Share one selector accessor per selector register path. The first subscription gating on a
-    // given selector creates the accessor and adds it to the transfer group; subsequent ones reuse
-    // it (TransferGroup deduplicates by TransferElement, so the register is read at most once per
-    // poll, shared by every variable choosing the same selector).
-    auto& accessor = _selectorAccessors[selectedBy->regPath];
-    if(!accessor) {
-      accessor = boost::make_shared<ScalarRegisterAccessor<int64_t>>(
-          numericAddressed->getSyncRegisterAccessor<int64_t>(selectedBy->regPath, 0, 0, {}));
-      _transferGroup.addAccessor(*accessor);
-    }
-    return SelectorGateInfo{accessor, selectedBy->val};
-  }
-
-  /********************************************************************************************************************/
-
 } // namespace ChimeraTK::async

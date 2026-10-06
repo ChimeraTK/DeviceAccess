@@ -42,6 +42,13 @@ namespace ChimeraTK {
     /** Reset the gate cache and forward the pre-read to the wrapped accessor. */
     void doPreRead(TransferType type) override;
 
+    /**
+     * Perform the physical read, unless the gate is closed and transfer-skipping is enabled (the
+     * interrupt path): then the wrapped data accessor is not read at all. In the polled path
+     * (skipping disabled) this always forwards the read, matching the base decorator.
+     */
+    void doReadTransferSynchronously() override;
+
     /** Forward the read to the wrapped accessor and apply the gating validity. */
     void doPostRead(TransferType type, bool hasNewData) override;
 
@@ -51,6 +58,18 @@ namespace ChimeraTK {
      * the returned value is current.
      */
     bool check();
+
+    /** Enable or disable transfer skipping: if enabled and the gate is closed, doReadTransferSynchronously()
+     *  skips the physical read of the wrapped data accessor (used by the interrupt path). In the polled path
+     *  this is left disabled so the physical read always happens.
+     */
+    void setSkipOnUnselected(bool enable) override { _skipWhenUnselected = enable; }
+
+    /**
+     * Whether the selector register currently selects this gate. Returns the most recent gate decision made
+     * during the last transfer cycle (no selector re-read). true when no selector is attached.
+     */
+    [[nodiscard]] bool isSelected() const { return !_selectorAccessor || _lastGateOpen; }
 
     /** Whether a selector register has been attached to this gate. */
     [[nodiscard]] bool hasSelection() const { return _selectorAccessor.get() != nullptr; }
@@ -68,6 +87,19 @@ namespace ChimeraTK {
     /// Whether _cachedGateOpen is fresh for the current transfer cycle (set by isGateOpen()/check(),
     /// consumed and cleared by doPostRead()).
     bool _cacheValid{false};
+
+    /// Whether doReadTransferSynchronously() shall skip the physical read of the wrapped data accessor
+    /// when the gate is closed. Enabled by the interrupt (async) path; disabled in the polled path so the
+    /// physical read always happens.
+    bool _skipWhenUnselected{false};
+
+    /// Set when doReadTransferSynchronously() skipped the transfer because the gate is closed. Consumed by
+    /// doPostRead() so it does not forward postRead to the (unread) wrapped accessor.
+    bool _transferSkipped{false};
+
+    /// Most recent gate decision (persistent across transfer cycles), queried by isSelected() e.g. from the
+    /// asynchronous delivery path to decide whether an unselected subscription must be suppressed.
+    bool _lastGateOpen{false};
 
     /// Evaluate the already-populated selector buffer against _expectedValue.
     bool evaluate();

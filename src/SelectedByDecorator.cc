@@ -52,8 +52,37 @@ namespace ChimeraTK {
     // Read the selector register so the returned value reflects the current selector state.
     _selectorAccessor->read();
     _cachedGateOpen = evaluate();
+    _lastGateOpen = _cachedGateOpen;
     _cacheValid = true;
     return _cachedGateOpen;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void SelectedByDecorator<UserType>::doReadTransferSynchronously() {
+    if(!_selectorAccessor || !_skipWhenUnselected) {
+      // Polled path (or no selection gate): always read the wrapped data accessor. The gate is applied
+      // afterwards in doPostRead() (validity level).
+      NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
+      return;
+    }
+    // Interrupt path with skipping enabled: evaluate the gate before the transfer. Reading the selector
+    // here (instead of after) lets us skip the (potentially expensive, shared/muxed) data accessor while
+    // unselected. The selector is still read so a selection change is picked up on a later interrupt.
+    _selectorAccessor->read();
+    _cachedGateOpen = evaluate();
+    _lastGateOpen = _cachedGateOpen;
+    _cacheValid = true;
+    if(_cachedGateOpen) {
+      _transferSkipped = false;
+      NDRegisterAccessorDecorator<UserType>::doReadTransferSynchronously();
+      return;
+    }
+    // Gate closed: skip the physical read of the wrapped data accessor entirely. doPostRead() will report
+    // faulty/not-new without touching the (stale) wrapped buffer.
+    _transferSkipped = true;
+    this->_dataValidity = DataValidity::faulty;
   }
 
   /********************************************************************************************************************/
@@ -64,13 +93,22 @@ namespace ChimeraTK {
       NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
       return;
     }
-    // Reuse the gate decision made earlier in this same transfer cycle by check() (the async wake path),
-    // which already read the selector and decided whether the data element is selected. This avoids
-    // reading the selector register a second time. In a polled standalone read / group read (no check()) no
-    // cache is present, so read the selector here, after the physical transfer has been performed.
+    if(_transferSkipped) {
+      // A skipped transfer: the wrapped data accessor was not read, so its postRead must not be invoked
+      // (its buffer is stale). doReadTransferSynchronously() already marked the data faulty; report it as
+      // not-new so the consumer does not treat it as fresh data.
+      _transferSkipped = false;
+      _cacheValid = false;
+      return;
+    }
+    // Reuse the gate decision made earlier in this same transfer cycle by check() (the async wake path) /
+    // whether the data element is selected. This avoids reading the selector register a second time. In a
+    // polled standalone read / group read (no check()) no cache is present, so read the selector here, after
+    // the physical transfer has been performed.
     if(!_cacheValid) {
       _selectorAccessor->read();
       _cachedGateOpen = evaluate();
+      _lastGateOpen = _cachedGateOpen;
     }
     _cacheValid = false;
     if(!_cachedGateOpen) {

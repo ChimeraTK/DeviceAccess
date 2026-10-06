@@ -112,7 +112,9 @@ Affected components:
 - New `include/SelectedByDecorator.h` / `src/SelectedByDecorator.cc`: a
   `NDRegisterAccessorDecorator<UserType>` template (the GoF decorator) that wraps the
   gated data accessor and applies the `selectedBy` `DataValidity` policy in
-  `doPostRead()` (plus a `check()` for the async wake/version level).
+  `doPostRead()`, and (when transfer-skipping is enabled by the interrupt path) skips the
+  physical read of the wrapped data accessor in `doReadTransferSynchronously()` when the
+  gate is closed.
   Replaces the former concrete `SelectorGate` helper.
 - `include/NumericAddressedBackendRegisterAccessor.h` / `src/...cc`: scalar/1D reads are
   wrapped in a `SelectedByDecorator` when the register is declared `selectedBy`.
@@ -131,8 +133,9 @@ Affected components:
   are wrapped in a `SelectedByDecorator` (the gate also treats the read as not-new when
   unselected).
 - `include/async/TriggeredPollDistributor.h` / `src/async/TriggeredPollDistributor.cc`:
-  per-subscription wake/version gating for the interrupt path (shares the selector
-  accessor across subscriptions reading the same selector register).
+  no gating logic of its own — it enables transfer-skipping on each subscription's
+  `SelectedByDecorator` (the low-level transfer element), so on an interrupt with the
+  gate closed the physical data read is skipped.
 - `src/JsonMapFileParser.cc`: enforce the read-only constraint.
 - `doc/jmapFormat.dox`: document runtime gating + the read-only restriction.
 - `tests/...`: new tests and fixtures (see Test plan), plus an audit of existing jmap
@@ -142,11 +145,18 @@ Selector gate (`SelectedByDecorator<UserType>`):
 
 - A `NDRegisterAccessorDecorator<UserType>` template (the GoF decorator) wrapping the
   gated data accessor. It holds a `ScalarRegisterAccessor<int64_t>` for the selector
-  register (owned, self-read on check/doPostRead, or shared with an external
-  TransferGroup), the expected value, and the validity policy.
+  register (owned, self-read on check/doPostRead), the expected value, and the validity
+  policy.
 - `doPostRead()` applies the polled semantics (mark `DataValidity::faulty` when
-  unselected; also treat the read as not-new for the double-buffer case); `check()`
-  evaluates the selector state for the async wake/version level.
+  unselected; also treat the read as not-new for the double-buffer case).
+- `doReadTransferSynchronously()` applies the interrupt (skip) semantics: when transfer
+  skipping is enabled (`setSkipOnUnselected(true)`, set by the async path) and the gate
+  is closed, the **physical read of the wrapped data accessor is skipped entirely** (the
+  selector is still read so a later selection change is picked up). In the polled path
+  skipping is left disabled, so the physical read always happens.
+- `check()` / `isSelected()` evaluate the selector state; `isSelected()` reports the most
+  recent gate decision without re-reading, used by the async delivery path to suppress the
+  wake of an unselected subscription.
 - Reuses the existing `ScalarRegisterAccessor` /
   `getSyncRegisterAccessor<int64_t>` so no new I/O primitive is needed.
 
@@ -187,32 +197,30 @@ Double-buffered accessor (`DoubleBufferAccessor`):
 
 Async interrupt integration (per subscription — main focus):
 
-- The gate is evaluated **per `AsyncVariable`**, which is the granularity at which the
-  interrupt data is delivered: `createAsyncVariable()` (`TriggeredPollDistributor.h`)
-  builds a per-variable `SelectedByDecorator` from the catalogue lookup `getSelectedBy(...)`
-  (§Catalogue below) and adds the shared selector register accessor to `_transferGroup`.
-  TransferGroup deduplicates by TransferElement, so one selector register is read at most
-  once per poll, shared by all variables choosing the same selector.
-- Two levels:
-  1. **Validity level** — the variable's synchronous accessor applies its selector gate
-     in `doPostRead` and marks the inactive channel(s) `DataValidity::faulty`;
-     `PolledAsyncVariable::fillSendBuffer()` (`TriggeredPollDistributor.h:94`) already
-     forwards `_syncAccessor->dataValidity()`, so inactive data is delivered as faulty
-     with no further async code. This level is shared by the polled and the interrupt
-     read paths.
-  2. **Wake/version level** — after `_transferGroup.read()`, each `PolledAsyncVariable`
-     evaluates its own gate: unselected ⇒ deliver with the *previously published* version
-     number and force `DataValidity::faulty` (unchanged version ⇒ `wait_for_new_data`
-     consumers do not wake with the inactive alternative); selected ⇒ deliver with the
-     domain version from the DataConsistencyRealm and the accessor's (already gated)
-     validity.
-- Implement the per-variable state in `PolledAsyncVariable::fillSendBuffer()`; **do not**
-  signal "unselected" by returning `false` from `prepareIntermediateBuffers()`. Per the
-  contract (`AsyncAccessorManager.h:149-156`) a `false` return means the read failed and
+- The gate lives entirely in the low-level transfer element (the `SelectedByDecorator`),
+  not in `TransferGroup` or `TriggeredPollDistributor`. `createAsyncVariable()`
+  (`TriggeredPollDistributor.h`) retrieves the synchronous data accessor, which for a
+  register declared `selectedBy` already is a `SelectedByDecorator`, and enables
+  transfer-skipping on it (`setSkipOnUnselected(true)`). It performs no gate orchestration
+  itself.
+- On each interrupt, `_transferGroup.read()` calls the decorator's
+  `doReadTransferSynchronously()`, which reads the selector *before* the data transfer:
+  - **selected** ⇒ the physical read of the data register is forwarded as usual;
+  - **unselected** ⇒ the physical read of the data register is **skipped entirely** (the
+    expensive, possibly shared/muxed hardware block is not touched); the decorator marks
+    the read `DataValidity::faulty` and not-new in `doPostRead()`.
+  The selector is read regardless (per-register; not deduplicated across subscriptions) so a
+  later selection change is picked up on a subsequent interrupt.
+- Delivery: `PolledAsyncVariable::fillSendBuffer()` (`TriggeredPollDistributor.h`) asks the
+  decorator `isSelected()`: if the selection is not met (and the initial value has already
+  been delivered) it returns `false`, so the consumer does **not wake** with the inactive
+  alternative. The initial value is always delivered even while unselected (marked faulty).
+- Do **not** signal "unselected" by returning `false` from `prepareIntermediateBuffers()`. Per
+  the contract (`AsyncAccessorManager.h:149-156`) a `false` return means the read failed and
   *must* call `setException()`; "unselected" is not an error. `prepareIntermediateBuffers()`
   keeps returning `true`, and its domain-global `_forceFaulty`/version machinery stays
   reserved for genuine DataConsistencyRealm staleness only.
-- Note: a **full-register** subscription to a muxed 2D register becomes wake/version-gated
+- Note: a **full-register** subscription to a muxed 2D register becomes transfer-skipped/gated
   exactly when the register declares a *register-level* `selectedBy`: `getSelectedBy()`
   then returns `registerSelectedBy` and the whole-2D gate suppresses waking while the
   register-level selector is not met (the register-level value is delivered as
@@ -372,9 +380,10 @@ Focus: **interrupt-triggered registers with `selectedBy`**, plus polled regressi
 - **Domain-level gate in `prepareIntermediateBuffers()`**, signalling "unselected" by
   returning `false`: rejected. A `false` return is documented
   (`AsyncAccessorManager.h:149-156`) to mean the read failed and the implementation
-  *must* call `setException()`; "unselected" is not an error. The per-variable gate in
-  `fillSendBuffer()` reuses the existing stale-version machinery instead (unchanged
-  version + faulty) and leaves `prepareIntermediateBuffers()` untouched.
+  *must* call `setException()`; "unselected" is not an error. The per-variable skip in the
+  `SelectedByDecorator` instead leaves `prepareIntermediateBuffers()` untouched, and
+  `fillSendBuffer()` (which per its contract may suppress delivery by returning `false`)
+  drops the delivery when the gate is closed.
 - **Domain→"primary register" `selectedBy` lookup**
   (`getSelectorRegisterPath(qualifiedAsyncDomainId)`): rejected. It is ambiguous exactly
   in the main use case, where the domain *is* a single muxed 2D register (`DAQ.FD`) with

@@ -10,13 +10,24 @@ namespace ChimeraTK {
   DoubleBufferAccessor<UserType>::DoubleBufferAccessor(
       NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
+      const SelectedBy* selectedBy)
   : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(std::move(doubleBufferConfig)),
     _backend(backend), _mutex(std::move(mutex)), _transferLock(*_mutex, std::defer_lock) {
     _enableDoubleBufferReg =
         backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
         _doubleBufferInfo.inactiveBufferRegisterPath, 1, _doubleBufferInfo.index, {});
+
+    // A register-level 'selectedBy' gates the whole 2D double buffer on a single selector. Mirror the selector
+    // accessor creation of SelectedByDecorator so this low-level element can skip its own physical data read on the
+    // interrupt path when unselected.
+    if(selectedBy) {
+      auto numericBackend = boost::static_pointer_cast<NumericAddressedBackend>(_backend);
+      _selectorAccessor = boost::make_shared<ScalarRegisterAccessor<int64_t>>(
+          numericBackend->template getSyncRegisterAccessor<int64_t>(selectedBy->regPath, 0, 0, {}));
+      _expectedValue = selectedBy->val;
+    }
 
     auto buf0Name = registerPathName + ".BUF0";
     auto buf1Name = registerPathName + ".BUF1";
@@ -63,6 +74,22 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void DoubleBufferAccessor<UserType>::doReadTransferSynchronously() {
+    // On the interrupt path with skipping enabled, evaluate the selection gate before the transfer so the
+    // (expensive, muxed) physical data read can be skipped entirely while unselected. The selector is still read so
+    // a selection change is picked up on a later interrupt. The polled path (skipping disabled) always performs the
+    // read; the gating validity is applied by the wrapping SelectedByDecorator's doPostRead().
+    _transferSkipped = false;
+    if(_selectorAccessor && _skipWhenUnselected) {
+      _selectorAccessor->read();
+      _lastGateOpen = (static_cast<int64_t>(*_selectorAccessor) == _expectedValue);
+      if(!_lastGateOpen) {
+        // Gate closed: skip the physical buffer read. E.6.1 requires the data validity to be set before the final
+        // (not-new) check; mark the data faulty. doPostRead() reports it as not-new and does not swap the buffer.
+        this->_dataValidity = DataValidity::faulty;
+        _transferSkipped = true;
+        return;
+      }
+    }
     if(_currentBuffer == 1) {
       _buffer0->readTransfer();
     }
@@ -74,6 +101,19 @@ namespace ChimeraTK {
   template<typename UserType>
   void DoubleBufferAccessor<UserType>::doPostRead(TransferType type, bool hasNewData) {
     auto unlocker = cppext::finally([&] { _transferLock.unlock(); });
+    if(_transferSkipped) {
+      // doReadTransferSynchronously() skipped the physical buffer read because the gate is closed, so the wrapped
+      // buffer accessor was never read and its postRead must not be invoked (its buffer is stale). Re-enable the
+      // firmware buffer swapping that doPreRead() disabled, to keep the double-buffer handshake balanced, and report
+      // the read as faulty and not-new (the validity was already set by doReadTransferSynchronously()).
+      _transferSkipped = false;
+      if(_mutex->useCount() == 1) {
+        _enableDoubleBufferReg->accessData(0) = 1;
+        _enableDoubleBufferReg->write();
+      }
+      this->_versionNumber = {};
+      return;
+    }
     if(_currentBuffer == 1) {
       _buffer0->postRead(type, hasNewData);
     }

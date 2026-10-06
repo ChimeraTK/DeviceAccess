@@ -175,6 +175,8 @@ namespace ChimeraTK {
     friend async::TriggeredPollDistributor;
     template<typename UserType>
     friend class SelectedByDecorator;
+    template<typename UserType>
+    friend class DoubleBufferAccessor;
 
     template<class UserType>
     friend class NumericAddressedBackendMuxedRegisterAccessor;

@@ -99,6 +99,14 @@ namespace ChimeraTK {
     }
 
     /**
+     * Enable or disable the skip-on-unselected behaviour for interrupt/async reads of gated ('selectedBy') low-level
+     * elements. Implemented by the low-level transfer elements that perform their own physical read (e.g.
+     * DoubleBufferAccessor); the default is a no-op. Enabled by the async distributor after the initial read so an
+     * unselected gated register does not read its data from hardware on an interrupt.
+     */
+    virtual void setSkipOnUnselected(bool /*skip*/ = true) {}
+
+    /**
      * Data type to create individual buffers. They are mainly used in asynchronous
      * implementation. Each buffer stores a vector, the version
      * number and the time stamp. The type is swappable by the default
