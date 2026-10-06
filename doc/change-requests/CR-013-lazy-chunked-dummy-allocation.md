@@ -33,8 +33,9 @@ Status: PLANNED
   internal buffers; they return value-semantic proxies which handle the chunk
   discontinuities and support arbitrary byte-aligned registers (multi-byte
   access via `memcpy`).
-- Read-only ranges and write-callback ranges keep their current per-address
-  semantics.
+- Write-callback ranges keep their current per-address semantics; read-only
+  registers from the map file keep being rejected on write, but this
+  enforcement stays entirely in the accessor layer.
 
 ## Specifications
 
@@ -76,9 +77,20 @@ Status: PLANNED
   always `CHUNK_SIZE` big, so a process joining a segment created by a process
   with a different map content can neither index out of range nor overrun;
   stale chunks of a formerly larger map simply stay unused.
-- `_readOnlyAddresses` and `_writeCallbackFunctions` remain address/range
-  based and keep their per-address semantics; `AddressRange::sizeInBytes`
-  becomes 64-bit so a span of arbitrary size is never truncated.
+- `_writeCallbackFunctions` stays address/range based and keeps its per-address
+  semantics; `AddressRange::sizeInBytes` becomes 64-bit so a span of arbitrary
+  size is never truncated.
+- `DummyBackend::setReadOnly`, its `_readOnlyAddresses` set, `isReadOnly()` and
+  both of their consumers (the per-word read-only skip in `DummyBackend::write`
+  and the read-only overlap test in `findCallbackFunctionsForAddressRange`) are
+  removed entirely. This breaks the two test callers of `setReadOnly`
+  (testDummyBackend), which are dropped with the API; it is safe because
+  read-only registers from the map file are enforced at the accessor layer
+  (`NumericAddressedBackendRegisterAccessor` throws `logic_error` on a write to
+  a non-writeable register), so a read-only write never reaches the backend and
+  the backend-level skip is dead in practice. `writeRegisterWithoutCallback`
+  continues to bypass any read-only protection, as it must for resync inside
+  write callbacks, and therefore performs no read-only filtering.
 - The backdoor accessors (`DummyRegisterAccessor`,
   `DummyMultiplexedRegisterAccessor`, `DummyRegisterRawAccessor`) and their
   proxies store `(backend, bar, byteOffset)` instead of a raw pointer; each
