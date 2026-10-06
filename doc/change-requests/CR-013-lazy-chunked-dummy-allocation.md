@@ -77,7 +77,10 @@ Status: PLANNED
   proxies store `(backend, bar, byteOffset)` instead of a raw pointer; each
   element access copies the element bytes via the transfer helper (`memcpy`),
   keeping the `std::byte*` interface of `RawConverterCapsule`.
-- `DummyRegisterRawAccessor` returns value semantics instead of `int32_t&`.
+- `DummyRegisterRawAccessor` returns value semantics instead of `int32_t&`; its
+  proxy implements the compound-assignment operators (`+=`, `-=`, `*=`, `/=`,
+  `&=`, `|=`, `^=`, `<<=`, `>>=`) and pre/post-increment/decrement, so existing
+  compound expressions and `++`/`--` keep compiling.
 - The 32-bit alignment restrictions in the accessors (address and
   `elementPitchBits` multiples of 4) are removed.
 
@@ -117,6 +120,7 @@ Status: PLANNED
 - Backdoor accessors: byte-aligned registers (odd byte offsets, misaligned
   pitch) work; registers spanning a chunk boundary work; existing accessor
   behaviour in testDummyRegisterAccessor is preserved; the raw accessor works
-  with value semantics.
+  with value semantics and its compound-assignment/inc-dec operators (e.g.
+  `raw += 5`, `raw++`) still compile and update the memory.
 - Adapt the tests that access `_barContents` directly (testDummyBackend,
   testDummyRegisterAccessor, testSharedDummyBackend).
