@@ -3,6 +3,7 @@
 
 #include "DummyBackendBase.h"
 
+#include <algorithm>
 #include <regex>
 
 using namespace std::string_literals;
@@ -69,16 +70,20 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::map<uint64_t, size_t> DummyBackendBase::getBarSizesInBytesFromRegisterMapping() const {
-    std::map<uint64_t, size_t> barSizesInBytes;
-    for(auto const& info : _registerMap) {
-      if(info.elementPitchBits % 8 != 0) {
-        throw ChimeraTK::logic_error("DummyBackendBase: Elements have to be byte aligned.");
-      }
-      barSizesInBytes[info.bar] = std::max(
-          barSizesInBytes[info.bar], static_cast<size_t>(info.address + info.nElements * info.elementPitchBits / 8));
+  void DummyBackendBase::transferChunked(uint64_t bar, uint64_t byteOffset, size_t sizeInBytes,
+      const std::function<std::byte*(uint64_t, uint64_t)>& getChunk, const TransferCallback& transfer) {
+    uint64_t remaining = sizeInBytes;
+    uint64_t offset = byteOffset;
+    uint64_t bytesDone = 0;
+    while(remaining > 0) {
+      const uint64_t chunkIndex = offset / CHUNK_SIZE;
+      const uint64_t offsetInChunk = offset % CHUNK_SIZE;
+      const size_t bytesInChunk = static_cast<size_t>(std::min<uint64_t>(remaining, CHUNK_SIZE - offsetInChunk));
+      transfer(bytesInChunk, getChunk(bar, chunkIndex) + offsetInChunk, static_cast<size_t>(bytesDone));
+      offset += bytesInChunk;
+      bytesDone += bytesInChunk;
+      remaining -= bytesInChunk;
     }
-    return barSizesInBytes;
   }
 
   /********************************************************************************************************************/

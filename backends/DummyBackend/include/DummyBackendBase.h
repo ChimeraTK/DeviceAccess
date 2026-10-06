@@ -8,6 +8,8 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 
+#include <cstddef>
+#include <functional>
 #include <sstream>
 
 // macro to avoid code duplication
@@ -67,8 +69,19 @@ namespace ChimeraTK {
     /// All bars are valid in dummies.
     bool barIndexValid([[maybe_unused]] uint64_t bar) override;
 
-    /// Determines the size of each bar because the DummyBackends allocate memory per bar
-    std::map<uint64_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
+    /// Size of the lazily materialised storage chunks. The bar address space is allocated in these fixed-size
+    /// chunks on demand. Every chunk is always exactly this big, independently of the map file content.
+    static constexpr size_t CHUNK_SIZE = size_t{1024} * 1024;
+
+    /// Signature of the callback which copies a single chunk. The first argument is the number of bytes to transfer in
+    /// this chunk, the second a pointer to the chunk's bytes at the correct position (already offset into the chunk)
+    /// and the third the cumulative number of bytes already transferred, i.e. the position in the caller's buffer.
+    using TransferCallback = std::function<void(size_t, std::byte*, size_t)>;
+
+    /// Stitches a transfer of the given size at the given byte offset across chunk boundaries. For every touched chunk
+    /// it calls getChunk() to obtain the chunk's bytes (materialising it on demand) and then invokes transfer().
+    static void transferChunked(uint64_t bar, uint64_t byteOffset, size_t sizeInBytes,
+        const std::function<std::byte*(uint64_t, uint64_t)>& getChunk, const TransferCallback& transfer);
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 

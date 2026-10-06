@@ -31,3 +31,7 @@ compile_commands.json
 # If they are generally useful consider adding them to the 
 # project-template and the merge them in.
 ######################
+# CTest run directory created when tests are run from the source tree
+Testing/
+# core dumps produced by crashing tests
+core
