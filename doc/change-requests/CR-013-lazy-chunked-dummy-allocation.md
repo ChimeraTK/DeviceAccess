@@ -21,10 +21,11 @@ Status: PLANNED
   space of the map file; it starts small and grows dynamically with the chunks.
 - A map file with changed content under the same name must not crash or raise
   confusing errors, even when a bar size has grown.
+- There is no restriction on the address range a bar may cover; any address is
+  valid and materialises chunks on demand.
 - Dummy backends (DummyBackend, SharedDummyBackend, ExceptionDummy) can be
-  created without a map file; such a dummy has an empty address space.
-- Accessing an address outside the bar size given by the register mapping still
-  throws `logic_error` as today.
+  created without a map file; such a dummy has no registers but raw address
+  access still works.
 - The internal storage type of the bar contents changes from `int32_t` to
   `std::byte`.
 - The backdoor accessors no longer expose references or pointers into the
@@ -48,9 +49,11 @@ Status: PLANNED
 - A transfer helper maps `(bar, byteOffset, size)` onto the chunk map for reads
   and writes and is used by `DummyBackend::read`/`write`,
   `SharedDummyBackend::read`/`write` and `writeRegisterWithoutCallback`.
-- Bounds: a transfer fully beyond the bar size from
-  `getBarSizesInBytesFromRegisterMapping()` throws `logic_error`, preserving the
-  current `TRY_REGISTER_ACCESS` behaviour.
+- No address range restriction: every `(bar, address)` access is valid and
+  materialises chunks on demand; reads outside any map-defined range yield
+  zeros.
+- `getBarSizesInBytesFromRegisterMapping()` and the per-bar sizes derived from
+  it become unused (removed with the sizing they served).
 - SharedDummyBackend: chunk vectors are named `BAR_<bar>_CHUNK_<index>` and
   constructed via `findOrConstructVector`; `setupBarContents()` only resets the
   chunk maps; `reInitMemory()` still destroys all named vectors.
@@ -60,11 +63,10 @@ Status: PLANNED
   of `CHUNK_SIZE` under the already-held interprocess mutex, then the
   allocation is retried. `getRequiredMemoryWithOverhead()` and
   `getTotalRegisterSizeInBytes()` (map-derived segment sizing) are removed.
-- The valid range of each bar is taken from the process's own register mapping
-  (bounds check above). Chunk vectors are always `CHUNK_SIZE` big, so a process
-  joining a segment created by a process with a different map content can
-  neither index out of range nor overrun; stale chunks of a formerly larger map
-  simply stay unused.
+- The map file does not limit the valid range of any bar; chunk vectors are
+  always `CHUNK_SIZE` big, so a process joining a segment created by a process
+  with a different map content can neither index out of range nor overrun;
+  stale chunks of a formerly larger map simply stay unused.
 - `createInstance` of DummyBackend, SharedDummyBackend and ExceptionDummy no
   longer rejects an empty `map` parameter; `NumericAddressedBackend` already
   handles an empty map file name (empty register catalogue).
@@ -99,7 +101,8 @@ Status: PLANNED
   correct; neighbouring chunks stay zero.
 - Reading untouched addresses returns zeros; a write materialises only the
   touched chunk.
-- Out-of-range access still throws `logic_error`.
+- Address access beyond any map-defined range works; reads yield zeros and
+  writes materialise chunks on demand.
 - SharedDummyBackend: only used address ranges exist in shared memory;
   multi-process access still works (existing shared dummy tests).
 - SharedDummyBackend: a map file whose address space exceeds the available
@@ -108,8 +111,9 @@ Status: PLANNED
 - SharedDummyBackend: a process using a map file with the same name but
   increased bar sizes joins an existing segment without crash or confusing
   errors.
-- Dummy backends can be created and opened without a map file; any address
-  access fails cleanly (no registers, out-of-range `logic_error`).
+- Dummy backends can be created and opened without a map file; raw address
+  access works (materialises chunks on demand), register access fails because
+  the catalogue is empty.
 - Backdoor accessors: byte-aligned registers (odd byte offsets, misaligned
   pitch) work; registers spanning a chunk boundary work; existing accessor
   behaviour in testDummyRegisterAccessor is preserved; the raw accessor works
