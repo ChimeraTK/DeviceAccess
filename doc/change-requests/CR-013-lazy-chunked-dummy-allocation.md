@@ -109,18 +109,24 @@ Status: PLANNED
   chain is only walked to reset or remove the chunks, never to look one up,
   which always goes by the derived name. The chain stores names, not mapped
   pointers, because mapped addresses differ between processes.
-- A materialised `(bar, chunkIndex)` is linked before its segment is created,
-  both in the same critical section of the already-held interprocess mutex: the
-  current tail's successor and the home segment's tail are set to the derived
-  chunk name, and only then is the segment opened or created and its vector
-  constructed. Appending at the tail is what makes this safe: a walker that
-  reaches a name whose segment does not yet exist - possible only while another
-  process is midway through this sequence - treats it as the end of the chain,
-  so it never misses a chunk, whereas prepending before creation would hide the
-  whole existing chain behind the missing segment. Linking before creating means
-  a segment that has been created is always reachable from the head. If creating
-  the segment fails, the appended link is rolled back under the mutex before the
-  error is thrown.
+- A materialised `(bar, chunkIndex)` is appended at the tail in the same
+  critical section of the already-held interprocess mutex, in three steps: the
+  current tail's successor (or, for an empty chain, the head) is first set to
+  the derived chunk name, then the segment is opened or created and its vector
+  constructed, and only then is the home segment's tail advanced to the derived
+  name. Writing the link before the segment exists means a created segment is
+  always reachable from the head, and advancing the tail only after the segment
+  exists means the tail never names a segment that does not exist, so recovery
+  never has to walk the chain to re-derive the tail. Appending at the tail is
+  what makes the early link safe: a walker that reaches a name whose segment does
+  not yet exist - possible only while another process is midway through this
+  sequence - treats it as the end of the chain, so it never misses a chunk,
+  whereas prepending before creation would hide the whole existing chain behind
+  the missing segment. A crash after the segment exists but before the tail is
+  advanced leaves the tail at the previous segment; the new segment is already
+  reachable from the head, so recovery removes it and never follows the stale
+  tail. If creating the segment fails, the early link is rolled back under the
+  mutex before the error is thrown.
 - Chunks are never relocated or remapped once created, so the cached
   `SharedMemoryByteVector*` pointers in a process stay valid.
 - There is no per-chunk refcount and no upper bound on the number of chunks; the
