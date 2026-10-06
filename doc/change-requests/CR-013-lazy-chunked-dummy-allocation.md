@@ -82,8 +82,9 @@ Status: PLANNED
 - The home segment holds the pid set, the unchanged interrupt storage
   (`ShmForSems`: `semEntries[SHARED_MEMORY_N_MAX_MEMBER]` and
   `interruptEntries[maxInterruptEntries]`) and the head of a singly linked list
-  of the materialised chunk segments. Its fixed size is computed from these,
-  replacing `getRequiredMemoryWithOverhead()` and
+  of the materialised chunk segments. The head is the single reference from
+  which every materialised chunk is reached. Its fixed size is computed from
+  these, replacing `getRequiredMemoryWithOverhead()` and
   `getTotalRegisterSizeInBytes()`, which are removed together with the now
   unused `SHARED_MEMORY_CONST_OVERHEAD` and `SHARED_MEMORY_OVERHEAD_PER_VECTOR`.
 - All object names derive from a common base name that carries the layout
@@ -99,8 +100,13 @@ Status: PLANNED
   constructor and the stale-lock recovery path so the two cannot diverge. The
   previously unused `RequiredVersion` object in the home segment is removed.
 - Each chunk segment carries a small fixed header with its `(bar, chunkIndex)`
-  key and the name of the next segment in the chain. The chain stores names, not
-  mapped pointers, because mapped addresses differ between processes.
+  key and the name of the next segment in the chain. The chain is in creation
+  order, each new chunk being pushed onto the head, and is not sorted by
+  address or bar: a chunk's successor may belong to any bar or any address
+  range. This is sufficient because the chain is only walked to reset or remove
+  the chunks, never to look one up, which always goes by the derived name. The
+  chain stores names, not mapped pointers, because mapped addresses differ
+  between processes.
 - A materialised `(bar, chunkIndex)` is created by opening or creating its
   segment and constructing its vector, and is linked to the head of the chain
   in the same critical section of the already-held interprocess mutex, so a
