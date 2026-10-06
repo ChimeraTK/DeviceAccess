@@ -81,9 +81,11 @@ Status: PLANNED
   name.
 - The home segment holds the pid set, the unchanged interrupt storage
   (`ShmForSems`: `semEntries[SHARED_MEMORY_N_MAX_MEMBER]` and
-  `interruptEntries[maxInterruptEntries]`) and the head of a singly linked list
-  of the materialised chunk segments. The head is the single reference from
-  which every materialised chunk is reached. Its fixed size is computed from
+  `interruptEntries[maxInterruptEntries]`) and the head and tail of a singly
+  linked list of the materialised chunk segments. Together they reach every
+  materialised chunk; the list is grown at its tail, so the tail reference makes
+  appending O(1) and is what lets a chunk be linked before it is created (see
+  below). Its fixed size is computed from
   these, replacing `getRequiredMemoryWithOverhead()` and
   `getTotalRegisterSizeInBytes()`, which are removed together with the now
   unused `SHARED_MEMORY_CONST_OVERHEAD` and `SHARED_MEMORY_OVERHEAD_PER_VECTOR`.
@@ -100,17 +102,25 @@ Status: PLANNED
   constructor and the stale-lock recovery path so the two cannot diverge. The
   previously unused `RequiredVersion` object in the home segment is removed.
 - Each chunk segment carries a small fixed header with its `(bar, chunkIndex)`
-  key and the name of the next segment in the chain. The chain is in creation
-  order, each new chunk being pushed onto the head, and is not sorted by
-  address or bar: a chunk's successor may belong to any bar or any address
-  range. This is sufficient because the chain is only walked to reset or remove
-  the chunks, never to look one up, which always goes by the derived name. The
-  chain stores names, not mapped pointers, because mapped addresses differ
-  between processes.
-- A materialised `(bar, chunkIndex)` is created by opening or creating its
-  segment and constructing its vector, and is linked to the head of the chain
-  in the same critical section of the already-held interprocess mutex, so a
-  segment that was created is always reachable from the head.
+  key and the name of the next segment in the chain; the last segment's
+  successor is empty. The chain is in creation order, each new chunk being
+  appended at the tail, and is not sorted by address or bar: a chunk's successor
+  may belong to any bar or any address range. This is sufficient because the
+  chain is only walked to reset or remove the chunks, never to look one up,
+  which always goes by the derived name. The chain stores names, not mapped
+  pointers, because mapped addresses differ between processes.
+- A materialised `(bar, chunkIndex)` is linked before its segment is created,
+  both in the same critical section of the already-held interprocess mutex: the
+  current tail's successor and the home segment's tail are set to the derived
+  chunk name, and only then is the segment opened or created and its vector
+  constructed. Appending at the tail is what makes this safe: a walker that
+  reaches a name whose segment does not yet exist - possible only while another
+  process is midway through this sequence - treats it as the end of the chain,
+  so it never misses a chunk, whereas prepending before creation would hide the
+  whole existing chain behind the missing segment. Linking before creating means
+  a segment that has been created is always reachable from the head. If creating
+  the segment fails, the appended link is rolled back under the mutex before the
+  error is thrown.
 - Chunks are never relocated or remapped once created, so the cached
   `SharedMemoryByteVector*` pointers in a process stay valid.
 - There is no per-chunk refcount and no upper bound on the number of chunks; the
@@ -120,12 +130,15 @@ Status: PLANNED
   `reInitMemory()` walks the chain and removes or resets the chunk segments,
   instead of using `listNamedElements()`, which only ever saw the home segment.
   `setupBarContents()` only resets the per-process chunk maps.
-- On teardown (the last process leaving), the head is cleared under the mutex
-  first, then the chunk segments are removed by walking the saved chain, and
-  finally the home segment is removed. A process racing in sees an empty head
-  and rebuilds, instead of following a chain whose segments are being removed.
-- A crash inside the materialisation critical section, between creating a chunk
-  segment and linking it, can leak that one segment; this is accepted.
+- On teardown (the last process leaving), the head and tail are cleared under
+  the mutex first, then the chunk segments are removed by walking the saved
+  chain, and finally the home segment is removed. A process racing in sees an
+  empty head and rebuilds, instead of following a chain whose segments are
+  being removed.
+- A crash inside the materialisation critical section cannot leak a segment:
+  because the link is written before the segment is created, a created segment
+  is always reachable and removed by teardown, while a linked name whose segment
+  never came into existence is walked as the end of the chain.
 - If creating a chunk fails (`std::bad_alloc` or a boost
   `interprocess_exception`, e.g. no space or no free inode in the shared-memory
   filesystem), the operation throws `ChimeraTK::runtime_error` with a
@@ -219,6 +232,9 @@ Status: PLANNED
 - Discover the chunk segments by scanning `/dev/shm` for the name prefix:
   rejected, Boost.Interprocess has no cross-segment enumeration and it would add
   a Linux-only filesystem dependency.
+- Create the chunk segment first and link it afterwards: rejected, a crash in
+  between leaks the segment, which is not yet reachable from the chain and whose
+  name no process knows.
 - Chunk the interrupt storage as well: rejected, it is already bounded
   (`maxInterruptEntries`, `SHARED_MEMORY_N_MAX_MEMBER`) and fails loudly when
   full, and the dispatcher caches pointers into the array; a larger limit is a
