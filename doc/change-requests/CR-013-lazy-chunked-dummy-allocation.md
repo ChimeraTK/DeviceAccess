@@ -3,8 +3,8 @@
 Synopsis: The dummy backends allocate each bar's full address space up front,
 which is slow for map files with huge, mostly unused address spaces. This
 change allocates the address space lazily in fixed-size byte chunks, materialises
-each chunk of the SharedDummyBackend as its own shared-memory object, allows
-map-less dummies, and reworks the backdoor accessors accordingly.
+each chunk of the SharedDummyBackend as its own shared-memory object, and
+reworks the backdoor accessors accordingly.
 
 Status: PLANNED
 
@@ -27,9 +27,6 @@ Status: PLANNED
   confusing errors, even when a bar size has grown.
 - There is no restriction on the address range a bar may cover; any address is
   valid and materialises chunks on demand.
-- Dummy backends (DummyBackend, SharedDummyBackend, ExceptionDummy) can be
-  created without a map file; such a dummy has no registers but raw address
-  access still works.
 - The internal storage type of the bar contents changes from `int32_t` to
   `std::byte`.
 - The backdoor accessors no longer expose references or pointers into the
@@ -79,9 +76,6 @@ Status: PLANNED
   always `CHUNK_SIZE` big, so a process joining a segment created by a process
   with a different map content can neither index out of range nor overrun;
   stale chunks of a formerly larger map simply stay unused.
-- `createInstance` of DummyBackend, SharedDummyBackend and ExceptionDummy no
-  longer rejects an empty `map` parameter; `NumericAddressedBackend` already
-  handles an empty map file name (empty register catalogue).
 - `_readOnlyAddresses` and `_writeCallbackFunctions` remain address/range
   based and keep their per-address semantics; `AddressRange::sizeInBytes`
   becomes 64-bit so a span of arbitrary size is never truncated.
@@ -146,9 +140,6 @@ Status: PLANNED
 - SharedDummyBackend: a process using a map file with the same name but
   increased bar sizes joins an existing segment without crash or confusing
   errors.
-- Dummy backends can be created and opened without a map file; raw address
-  access works (materialises chunks on demand), register access fails because
-  the catalogue is empty.
 - Backdoor accessors: byte-aligned registers (odd byte offsets, misaligned
   pitch) work; registers spanning a chunk boundary work; existing accessor
   behaviour in testDummyRegisterAccessor is preserved; the raw accessor works
