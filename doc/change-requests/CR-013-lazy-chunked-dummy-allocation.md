@@ -199,10 +199,10 @@ Status: PLANNED
    - `DummyRegisterAccessor`;
    - `DummyMultiplexedRegisterAccessor`;
    - `DummyRegisterRawAccessor`.
-- An element access copies the element bytes via the transfer helper
-  (`memcpy`), keeping the `std::byte*` interface of `RawConverterCapsule`. It is
-  a read-modify-write of the whole element, so neighbouring bytes in a partial
-  word are preserved.
+- An element access copies exactly the element's bytes (its `RawType` size,
+  which equals the element width) via the transfer helper (`memcpy`), keeping
+  the `std::byte*` interface of `RawConverterCapsule`. The storage access is
+  byte-granular, so neighbouring bytes are never modified.
 - `DummyRegisterRawAccessor` returns value semantics instead of `int32_t&`. Its
   proxy implements, so that existing expressions (`raw += 5`, `raw++`,
   `raw & mask`, `~raw`) keep compiling and update the memory:
