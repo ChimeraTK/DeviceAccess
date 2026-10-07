@@ -56,12 +56,27 @@ Status: PLANNED
   chunk-index arithmetic.
 - Chunks are created zero-initialised on first access; reads materialise missing
   chunks too. Only the touched chunk is materialised.
-- A transfer helper maps `(bar, byteOffset, size)` onto the chunk map and is the
-  only place that materialises chunks. It is used by:
+- `_barContents` stays in the derived classes. Their value types differ, and
+  `DummyBackendBase` is in the core library and cannot use the
+  boost-interprocess types.
+- Each backend implements one virtual storage method returning a `std::byte*` to
+  a chunk, creating it zero-initialised on first access in its own map and
+  allocator. It is the only method that touches the map.
+- A transfer helper in `DummyBackendBase` maps `(bar, byteOffset, size)` onto
+  chunk indices, stitches the transfer across chunk boundaries and calls the
+  virtual storage method for each touched chunk. It only ever handles
+  `std::byte*`, so the two storage types stay hidden in the derived classes. It
+  is used by:
    - `DummyBackend::read`/`write`;
    - `SharedDummyBackend::read`/`write`;
-   - `writeRegisterWithoutCallback`;
+   - `writeRegisterWithoutCallback` (DummyBackend only);
    - the backdoor accessors.
+- The transfer helper takes no lock; the caller holds the backend's storage
+  lock:
+   - `DummyBackend::read`/`write`/`writeRegisterWithoutCallback` hold
+     `DummyBackend::mutex`, as today;
+   - `SharedDummyBackend::read`/`write` hold the interprocess mutex;
+   - each backdoor element access takes `DummyBackend::mutex` itself.
 - Every `(bar, address)` access is valid, even outside any map-defined range.
 - `getBarSizesInBytesFromRegisterMapping()` and the per-bar sizes derived from
   it are removed, together with the sizing they served.
@@ -100,8 +115,9 @@ Status: PLANNED
       - the home segment;
       - the interprocess mutex (base name, as today);
       - every chunk segment (`<base>_BAR_<bar>_CHUNK_<index>`).
-   - The name is computed in one place, shared by the constructor and the
-     stale-lock recovery path so the two cannot diverge.
+   - The versioned name is computed by one public static helper
+     (`SharedDummyBackend::getSharedMemoryName`), used by the constructor, the
+     stale-lock recovery path and the tests, so they cannot diverge.
    - The previously unused `RequiredVersion` object is removed.
 - Chunk chain:
    - Each chunk segment carries a small fixed header with its `(bar, chunkIndex)`
@@ -191,6 +207,9 @@ Status: PLANNED
    - Reads or writes beyond the map-defined bar size no longer throw
      `logic_error` (any address is valid).
    - The `out_of_range` handling in `TRY_REGISTER_ACCESS` becomes unused.
+   - A map file with a non-byte-aligned top-level register no longer throws when
+     the backend is constructed or opened; the `elementPitchBits % 8` check now
+     runs only when an accessor is built.
 
 ### Backdoor accessors
 
@@ -236,9 +255,16 @@ Status: PLANNED
   `uint8_t` or `address` to `uint32_t`, so slabs above 4 GiB are not truncated.
 - The backdoor accessors exist only on `DummyBackend` and take a `DummyBackend&`
   argument; `SharedDummyBackend` derives from `DummyBackendBase` and has none.
-  They materialise chunks under the `DummyBackend` mutex; all SharedDummyBackend
-  materialisation goes through `read`/`write`/`writeRegisterWithoutCallback`
-  under the interprocess mutex.
+  Each element access takes `DummyBackend::mutex`, materialises the chunk
+  through the transfer helper and copies the element bytes. All
+  SharedDummyBackend materialisation goes through its own `read`/`write` under
+  the interprocess mutex.
+- The backdoor accessors no longer expose pointers into the buffers, so the
+  buffer lock has lost its purpose: `getBufferLock()` is removed from
+  `DummyRegisterAccessor` and `DummyRegisterRawAccessor`. This is an accepted
+  API break. Tests that held it drop the explicit locking, and the short
+  per-element lock scope also removes the lock-order inversion with the math
+  plugin conversion.
 
 ### Alternatives considered
 
@@ -295,10 +321,6 @@ Status: PLANNED
    - the chunk chain is walked correctly, and after the last process leaves
      (also after a killed process is detected) no chunk segment of the instance
      is left in shared memory;
-   - the pid-management and `shm_exists` based tests still pass:
-      - `testSharedDummyBackendExt`;
-      - `testSharedDummyBackendUnified` and its Ext variant;
-      - `tests/scripts/testSharedDummyBackendPidManagement.sh`;
    - processes built with different layout versions use different segment names
      and never attach to each other's segment.
 - Backdoor accessors:
@@ -319,6 +341,13 @@ Status: PLANNED
      materialised content only and no longer rely on the removed `setReadOnly`;
    - the out-of-range `logic_error` expectations follow the new "any address is
      valid" behaviour.
+   - the `shm_exists` based tests obtain the versioned name through
+     `SharedDummyBackend::getSharedMemoryName(...)` instead of
+     `Utilities::createShmName(...)`:
+      - `testSharedDummyBackendExt`;
+      - `testSharedDummyBackendUnified` and its Ext variant;
+      - `tests/scripts/testSharedDummyBackendPidManagement.sh` runs
+        `testSharedDummyBackendExt` and needs no change of its own.
 - Adapt the other backdoor and `AddressRange` consumers for the new accessor
   semantics:
    - `testGenericMuxedInterruptDistributor`;
@@ -326,3 +355,11 @@ Status: PLANNED
    - `testNumericAddressedBackendUnified`;
    - `testDoubleBufferAccessor`;
    - `testDummyBackendUnified`.
+
+## Deferred issue
+
+- DI-1 [NEW] Test-plan contradiction with the versioned shared-memory name: the spec appends `_v<SHARED_MEMORY_LAYOUT_VERSION>` to `Utilities::createShmName(...)` (CR-013 lines 92-105), but the test plan claims `testSharedDummyBackendExt`, `testSharedDummyBackendUnified`/Ext and the pid-management script "still pass" (lines 298-303). Those tests build `shmName` from the unversioned `Utilities::createShmName(...)` (tests/unitTestsNotUnderCtest/testSharedDummyBackendExt.cpp:37, testSharedDummyBackendUnifiedExt.cpp:28, tests/executables_src/testSharedDummyBackendUnified.cpp:29) and assert `shm_exists(shmName)` (testSharedDummyBackendExt.cpp:152, testSharedDummyBackendUnifiedExt.cpp:67) or `!shm_exists(shmName)` (testSharedDummyBackendExt.cpp:254, testSharedDummyBackendUnified.cpp:274). With the suffix the positive checks fail and the negative ones become vacuous. The plan must add these to the adapt list and state how the tests obtain the versioned name (the layout-version constant is currently internal).
+- DI-2 [NEW] Undefined locking contract for chunk materialisation, with a deadlock risk against `getBufferLock()`: the spec says the backdoor accessors materialise chunks "under the DummyBackend mutex" and the shared helper is used by `DummyBackend::read`/`write`, which already hold `DummyBackend::mutex` (backends/DummyBackend/src/DummyBackend.cc:51,63). `getBufferLock()` returns a lock on that same non-recursive mutex (backends/DummyBackend/include/DummyRegisterAccessor.h:200, :396) and existing tests hold it while accessing the backdoor accessors (tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp:299-300, 312-313, 352-359; testNumericAddressedBackendUnified.cpp:917). If element access locks the mutex it deadlocks; if the transfer helper locks it, `read`/`write` double-lock. The plan must specify who takes the lock and reconcile `getBufferLock`.
+- DI-3 [NEW] The single shared transfer helper cannot reach the two differently-typed chunk maps: after the change `_barContents` stays in the derived classes with different value types (`std::vector<std::byte>` in DummyBackend.h:103 vs `SharedMemoryByteVector*` in SharedDummyBackend.h:70), and `DummyBackendBase` (core lib) cannot know the boost-interprocess types. The spec (lines 59-64) has one helper in the base that "is the only place that materialises chunks" and is used by both backends, but does not specify the virtual/templated storage interface that makes this possible. This mechanism must be stated in the plan.
+- DI-4 [NEW] Minor wording: the spec (line 240) lists `writeRegisterWithoutCallback` as a SharedDummyBackend materialisation path, but it is a `DummyBackend`-only method (backends/DummyBackend/include/DummyBackend.h:124); `SharedDummyBackend` has none and only materialises through its own `read`/`write`. Correct the wording.
+- DI-5 [NEW] Minor: removing `getBarSizesInBytesFromRegisterMapping()` (src/DummyBackendBase.cc:72-82) also removes the only construction-time `elementPitchBits % 8` check, so a map file with a non-byte-aligned top-level register no longer throws when opened (it only fails when an accessor is built). The requirement says the constraint "remains" and the "Accepted consequences" list (lines 188-193) does not record this behaviour change; confirm it is intended and add it there.
