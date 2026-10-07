@@ -57,9 +57,11 @@ Status: PLANNED
 - Chunks are created zero-initialised on first access; reads materialise missing
   chunks too. Only the touched chunk is materialised.
 - A transfer helper maps `(bar, byteOffset, size)` onto the chunk map and is the
-  only place that materialises chunks. It is used by
-  `DummyBackend::read`/`write`, `SharedDummyBackend::read`/`write`,
-  `writeRegisterWithoutCallback` and the backdoor accessors.
+  only place that materialises chunks. It is used by:
+   - `DummyBackend::read`/`write`;
+   - `SharedDummyBackend::read`/`write`;
+   - `writeRegisterWithoutCallback`;
+   - the backdoor accessors.
 - Every `(bar, address)` access is valid, even outside any map-defined range.
 - `getBarSizesInBytesFromRegisterMapping()` and the per-bar sizes derived from
   it are removed, together with the sizing they served.
@@ -75,25 +77,29 @@ Status: PLANNED
   materialised chunk.
    - Chunk objects are named `<base>_BAR_<bar>_CHUNK_<index>` and are always
      removed by their full derived name.
-- Home segment contents: the pid set; the unchanged interrupt storage
-  (`ShmForSems`: `semEntries[SHARED_MEMORY_N_MAX_MEMBER]` and
-  `interruptEntries[maxInterruptEntries]`); and the head and tail of a singly
-  linked list of the chunk segments, which together reference every materialised
-  chunk.
-- The home segment size is computed from these, replacing
-  `getRequiredMemoryWithOverhead()` and `getTotalRegisterSizeInBytes()`; the now
-  unused `SHARED_MEMORY_CONST_OVERHEAD` and `SHARED_MEMORY_OVERHEAD_PER_VECTOR`
-  are removed too.
+- Home segment contents:
+   - the pid set;
+   - the unchanged interrupt storage (`ShmForSems`:
+     `semEntries[SHARED_MEMORY_N_MAX_MEMBER]` and
+     `interruptEntries[maxInterruptEntries]`);
+   - the head and tail of a singly linked list of the chunk segments, which
+     together reference every materialised chunk.
+- The home segment size is computed from these. The following are removed:
+   - `getRequiredMemoryWithOverhead()`;
+   - `getTotalRegisterSizeInBytes()`;
+   - the now unused `SHARED_MEMORY_CONST_OVERHEAD`;
+   - the now unused `SHARED_MEMORY_OVERHEAD_PER_VECTOR`.
 - Names and versioning:
    - Base name: `Utilities::createShmName(instanceIdHash, mapFileName, user)`
      with the layout version appended,
      `<createdName>_v<SHARED_MEMORY_LAYOUT_VERSION>`.
    - `SHARED_MEMORY_LAYOUT_VERSION` is a `static constexpr`, bumped on every
      shared-memory layout change.
-   - The home segment, the interprocess mutex (base name, as today) and every
-     chunk segment (`<base>_BAR_<bar>_CHUNK_<index>`) derive from this base, so
-     two library versions never attach to each other's objects, in either
-     direction.
+   - Everything derives from this base, so two library versions never attach to
+     each other's objects, in either direction:
+      - the home segment;
+      - the interprocess mutex (base name, as today);
+      - every chunk segment (`<base>_BAR_<bar>_CHUNK_<index>`).
    - The name is computed in one place, shared by the constructor and the
      stale-lock recovery path so the two cannot diverge.
    - The previously unused `RequiredVersion` object is removed.
@@ -158,8 +164,11 @@ Status: PLANNED
   semantics. `AddressRange::sizeInBytes` becomes 64-bit so a span of arbitrary
   size is never truncated. The `AddressRange` layout change is an accepted ABI
   break; the header is installed.
-- `DummyBackend::setReadOnly`, its `_readOnlyAddresses` set and `isReadOnly()`
-  are removed. `isWriteRangeOverlap()` then collapses to a pure overlap test.
+- The `DummyBackend` read-only members are removed:
+   - `setReadOnly`;
+   - the `_readOnlyAddresses` set;
+   - `isReadOnly()`.
+- `isWriteRangeOverlap()` then collapses to a pure overlap test.
 - Read-only registers from the map file are enforced at the accessor layer
   (`NumericAddressedBackendRegisterAccessor` throws `logic_error` on a write to
   a non-writeable register). A read-only write through the normal Device
@@ -177,29 +186,39 @@ Status: PLANNED
 
 ### Backdoor accessors
 
-- The backdoor accessors (`DummyRegisterAccessor`,
-  `DummyMultiplexedRegisterAccessor`, `DummyRegisterRawAccessor`) and their
-  proxies store `(backend, bar, byteOffset)` instead of a raw pointer.
-   - Each element access copies the element bytes via the transfer helper
-     (`memcpy`), keeping the `std::byte*` interface of `RawConverterCapsule`.
-   - An element access is a read-modify-write of the whole element, so
-     neighbouring bytes in a partial word are preserved.
+- The backdoor accessors and their proxies store `(backend, bar, byteOffset)`
+  instead of a raw pointer. The affected accessors are:
+   - `DummyRegisterAccessor`;
+   - `DummyMultiplexedRegisterAccessor`;
+   - `DummyRegisterRawAccessor`.
+- An element access copies the element bytes via the transfer helper
+  (`memcpy`), keeping the `std::byte*` interface of `RawConverterCapsule`. It is
+  a read-modify-write of the whole element, so neighbouring bytes in a partial
+  word are preserved.
 - `DummyRegisterRawAccessor` returns value semantics instead of `int32_t&`. Its
-  proxy implements the compound-assignment operators (`+=`, `-=`, `*=`, `/=`,
-  `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`), pre/post-increment/decrement, binary
-  `operator&`, `operator~` and an implicit conversion to the underlying type, so
-  existing expressions (`raw += 5`, `raw++`, `raw & mask`, `~raw`) keep
-  compiling and update the memory.
-- The 32-bit alignment restrictions are removed: the
-  `address % sizeof(int32_t)` and `elementPitchBits % (8 * sizeof(int32_t))`
-  checks in `DummyRegisterAccessor::getElement`, and the word-strided indexing
-  in `DummyMultiplexedRegisterAccessor::operator[]` and
-  `proxies::DummyRegisterSequence`, are replaced by byte offsets. The
-  `elementPitchBits % 8 == 0` constraint remains, as sub-byte pitches are not
-  supported.
-- Byte offsets and sizes are 64-bit throughout (`_offsets`, `_nbytes`, `_pitch`
-  and `DummyRegisterElement::_nbytes`), and
-  `DummyRegisterAccessor::setWriteCallback` no longer truncates `bar` to
+  proxy implements, so that existing expressions (`raw += 5`, `raw++`,
+  `raw & mask`, `~raw`) keep compiling and update the memory:
+   - the compound-assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`,
+     `^=`, `<<=`, `>>=`);
+   - pre/post-increment/decrement;
+   - the binary operators `operator&` and `operator~`;
+   - an implicit conversion to the underlying type.
+- The 32-bit alignment restrictions are replaced by byte offsets. The affected
+  code is:
+   - the `address % sizeof(int32_t)` check in
+     `DummyRegisterAccessor::getElement`;
+   - the `elementPitchBits % (8 * sizeof(int32_t))` check in the same method;
+   - the word-strided indexing in
+     `DummyMultiplexedRegisterAccessor::operator[]`;
+   - the word-strided indexing in `proxies::DummyRegisterSequence`.
+- The `elementPitchBits % 8 == 0` constraint remains, as sub-byte pitches are
+  not supported.
+- Byte offsets and sizes are 64-bit throughout:
+   - `_offsets`;
+   - `_nbytes`;
+   - `_pitch`;
+   - `DummyRegisterElement::_nbytes`.
+- `DummyRegisterAccessor::setWriteCallback` no longer truncates `bar` to
   `uint8_t` or `address` to `uint32_t`, so slabs above 4 GiB are not truncated.
 - The backdoor accessors exist only on `DummyBackend` and take a `DummyBackend&`
   argument; `SharedDummyBackend` derives from `DummyBackendBase` and has none.
@@ -258,25 +277,33 @@ Status: PLANNED
      an existing segment without crash or confusing errors;
    - the chunk chain is walked correctly, and after the last process leaves
      (also after a killed process is detected) no chunk segment of the instance
-     is left in shared memory; the pid-management and `shm_exists` based tests
-     (`testSharedDummyBackendExt`, `testSharedDummyBackendUnified` and its Ext
-     variant, `tests/scripts/testSharedDummyBackendPidManagement.sh`) still pass;
+     is left in shared memory;
+   - the pid-management and `shm_exists` based tests still pass:
+      - `testSharedDummyBackendExt`;
+      - `testSharedDummyBackendUnified` and its Ext variant;
+      - `tests/scripts/testSharedDummyBackendPidManagement.sh`;
    - processes built with different layout versions use different segment names
      and never attach to each other's segment.
 - Backdoor accessors:
    - byte-aligned registers (odd byte offsets, misaligned pitch) work; registers
      spanning a chunk boundary work;
    - existing accessor behaviour in `testDummyRegisterAccessor` is preserved;
-   - the raw accessor works with value semantics and its compound-assignment,
-     inc-dec, binary `&`, `~` and conversion operators (e.g. `raw += 5`,
-     `raw++`, `raw & mask`) still compile and update the memory.
-- Adapt the tests that assert sizes, full reservation or backend read-only state
-  (`testDummyBackend`, `testDummyRegisterAccessor`) so they only assert lazily
-  materialised content and no longer rely on the removed `setReadOnly`, and
-  adapt the out-of-range `logic_error` expectations to the new "any address is
-  valid" behaviour.
-- Adapt the other backdoor and `AddressRange` consumers
-  (`testGenericMuxedInterruptDistributor`,
-  `testNumericAddressedBackendRegisterAccessor`,
-  `testNumericAddressedBackendUnified`, `testDoubleBufferAccessor`,
-  `testDummyBackendUnified`) for the new accessor semantics.
+   - the raw accessor works with value semantics and still compiles and updates
+     the memory for:
+      - the compound-assignment operators;
+      - inc-dec;
+      - the binary operators `&` and `~`;
+      - conversion to the underlying type.
+- Adapt the tests to the new behaviour:
+   - tests that assert sizes, full reservation or backend read-only state
+     (`testDummyBackend`, `testDummyRegisterAccessor`) assert lazily
+     materialised content only and no longer rely on the removed `setReadOnly`;
+   - the out-of-range `logic_error` expectations follow the new "any address is
+     valid" behaviour.
+- Adapt the other backdoor and `AddressRange` consumers for the new accessor
+  semantics:
+   - `testGenericMuxedInterruptDistributor`;
+   - `testNumericAddressedBackendRegisterAccessor`;
+   - `testNumericAddressedBackendUnified`;
+   - `testDoubleBufferAccessor`;
+   - `testDummyBackendUnified`.
