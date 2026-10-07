@@ -108,28 +108,36 @@ Status: PLANNED
      key and the name of the next segment, empty for the last one.
    - The chain is in creation order, appended at the tail. It is not sorted by
      bar or address, so a successor may belong to any bar or range.
+   - The home segment's tail is a hint for O(1) appends. Appending first walks
+     to the true tail, so a tail left behind by a crash is harmless.
    - It is only walked to reset or remove chunks, never to look one up, which
      always goes by the derived name; the order therefore does not matter.
    - It stores names, not mapped pointers, because mapped addresses differ
      between processes.
 - Appending a materialised `(bar, chunkIndex)`, under the already-held
   interprocess mutex:
-   1. Set the current tail's successor (for an empty chain, the head) to the
-      derived chunk name.
+   1. Find the true tail: start at the home segment's tail if it names an
+      existing segment, otherwise at the head, and follow the successor links
+      through existing segments to the last one. A successor whose segment does
+      not exist ends the walk; the chain is empty when neither the tail nor the
+      head names an existing segment.
+   1. Set that tail's successor (for an empty chain, the head) to the derived
+      chunk name.
    1. Open or create the segment and construct its vector.
    1. Advance the home segment's tail to the derived chunk name.
    This order makes the append crash-safe:
+   - Walking to the true tail first recovers from a previous crash that happened
+     before the tail was advanced: the walk reaches the segment that was created
+     but not yet made the tail, so the append cannot overwrite the link to it.
+     Normally the tail is already the true tail and the walk is a single step.
    - The link is written before the segment exists, so a created segment is
      always reachable from the head and cannot leak; the tail is advanced only
-     after the segment exists, so it never names a missing segment and recovery
-     never walks the chain to re-derive it.
+     after the segment exists, so it never names a missing segment.
    - A walker reaching a name whose segment does not yet exist (only while
-     another process is between steps 1 and 2) treats it as the end of the chain
-     and so misses nothing; prepending would hide the existing chain behind the
-     missing segment.
-   - A crash after step 2 but before step 3 leaves the tail at the previous
-     segment (the new segment is already reachable from the head), and a step 2
-     failure rolls the early link back before the error is thrown.
+     another process is between steps 2 and 3) treats it as the end of the
+     chain and so misses nothing; prepending would hide the existing chain
+     behind the missing segment.
+   - If step 3 fails, the early link is rolled back before the error is thrown.
 - Chunks are never relocated or remapped once created, so cached
   `SharedMemoryByteVector*` pointers stay valid.
 - There is no per-chunk refcount and no upper bound on the number of chunks;
