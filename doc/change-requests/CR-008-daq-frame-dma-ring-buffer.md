@@ -27,8 +27,22 @@ Aspect: JMAP format.
     CURDESC register.
   - `tailDescriptorRegister` (string, mandatory): path of the S2MM TAILDESC
     register.
-  - `bufferAllocator` (object, mandatory): `type`, either `"u-dma-buf"` or
-    `"fpga"`; for `"u-dma-buf"` additionally the udmabuf `device` path.
+  - `dataBuffer` (object, mandatory): where the S2MM target buffers live.
+    - `location` (string, mandatory): `"host"` (host memory) or `"fpgaDdr"`
+      (memory owned by the FPGA).
+    - `device` (string, mandatory for `"host"`): the udmabuf `device` path used
+      to allocate and pin the buffers.
+    - `dmaChannel` (integer, optional for `"fpgaDdr"`, default 0): the classic
+      DMA channel (device bar 13 plus the index) through which the FPGA memory
+      is read.
+    - `baseAddress` (integer, mandatory for `"fpgaDdr"`): byte address of the
+      buffer area in the FPGA memory.
+    - `size` (integer, mandatory for `"fpgaDdr"`): size of the buffer area in
+      bytes.
+  - `descriptorBuffer` (object, mandatory): where the descriptor ring lives.
+    Because the S2MM Scatter Gather engine reads the ring over `M_AXI_SG`, the
+    ring is always host-pinned; the object has the shape of a `"host"`
+    `dataBuffer` (a udmabuf `device` path).
   - `ringDepth` (integer, mandatory): number of blocks in the descriptor
     ring.
   - `blockSize` (integer, optional): block-size override in bytes; default
@@ -36,6 +50,12 @@ Aspect: JMAP format.
   - `ownership` (string, optional): `"software"` (default) or `"firmware"`.
   - `overrunRegister` (string, mandatory): path of the read-only overrun
     companion register.
+  - `metadataRegister` (string, mandatory): path of the read-only register
+    exposing the per-frame metadata.
+  - `metadataOffset` (integer, mandatory): byte offset of the metadata register
+    in the virtual metadata bar.
+  - `overrunOffset` (integer, mandatory): byte offset of the overrun register in
+    the virtual metadata bar.
 - The DMA-engine registers are hidden user registers: they are named by
   their `addressSpace` path in the `dmaChannels` section only, and the
   frame-channel register description never replicates them.
@@ -47,6 +67,39 @@ Aspect: JMAP format.
 - The frame size is constant in the first implementation, but the format must
   not make variable frame lengths impossible (e.g. a per-frame size or
   header-driven length is expressible).
+
+Aspect: frame metadata.
+
+- The S2MM metadata is the AXI Status Stream content, which the engine stores in
+  the five User Application fields (APP0 to APP4) of the descriptor that carries
+  RXEOF (Peripheral Guide PG021, "S2MM Descriptor Settings and AXI Status
+  Stream"). The metadata is therefore per frame (packet), not per block:
+  descriptors with EOF=0 have their APP fields zeroed by the Scatter Gather
+  engine, so a frame spanning several blocks carries its metadata once, on its
+  last block.
+- If the IP option "Use RxLength In Status Stream" is enabled, APP4 carries the
+  received byte length instead of status data, so the metadata word layout is
+  defined by the IP configuration; the format exposes five 32 bit words and does
+  not hard-code their meaning.
+- The metadata of a frame is delivered with the frame: the metadata register
+  returns the APP0 to APP4 words of the frame most recently delivered by a push
+  or poll read on that channel.
+
+Aspect: virtual metadata registers.
+
+- Metadata and overrun reporting are not S2MM register-space registers; they are
+  projected from the shared ring state. They are published as read-only virtual
+  registers in a backend-reserved virtual bar (bar 12, which is outside the
+  current register space and unused), so they are described, documented and
+  accessed like any other register without a new register type or accessor path.
+- The channel entry names the registers (`metadataRegister`, `overrunRegister`)
+  and configures their byte offsets in the virtual bar (`metadataOffset`,
+  `overrunOffset`). The JMAP `addressSpace` adds ordinary register entries whose
+  `address` points at those virtual addresses (bar 12 plus the offset). The
+  channel entry is authoritative for the backend's read dispatch, so no physical
+  register is behind these addresses.
+- A virtual register is read-only: a write is rejected with
+  `ChimeraTK::logic_error`, and `wait_for_new_data` is not supported.
 
 Aspect: virtual DMA channel as an addressable resource.
 
@@ -152,6 +205,11 @@ Aspect: register-to-channel mapping.
   interrupt-driven push read. Both bars address the same virtual DMA channel
   and frame offset; the bar values are reserved by the backend for its channel
   and are not bar numbers of the engine's register space.
+- The metadata and overrun registers are ordinary catalogue registers placed at
+  the virtual addresses given by `metadataOffset`/`overrunOffset` in virtual
+  bar 12. The backend overrides `barIndexValid` to admit it and routes its reads
+  to the shared class instead of the register space; the virtual bar number must
+  not collide with the per-channel peek/pop bars.
 - A single 2D multiplexed register at offset 0 represents the whole frame; its
   channel slices give structured access to the frame content. Several
   registers at frame-relative offsets give sub-region access. All slices of
@@ -190,6 +248,15 @@ Aspect: shared ring-buffer class.
   interrupt wait and trigger stay in the backend. A poll read never
   acknowledges the frame-arrival interrupt.
 
+Aspect: frame metadata.
+
+- During the ring walk (`rxsof` to `rxeof`) the shared class reads the descriptor
+  that carries RXEOF and copies its APP0 to APP4 words (`XAXIDMA_BD_USR0_OFFSET`
+  to `XAXIDMA_BD_USR4_OFFSET`, `0x20` to `0x30`) as the frame metadata; the APP
+  words of the non-EOF descriptors are ignored because the engine zeroes them.
+  A read of the channel's metadata register returns the metadata of the frame
+  most recently delivered.
+
 Aspect: hardware adapters.
 
 - The hardware-adapter interface abstracts what the shared class needs from a
@@ -198,6 +265,12 @@ Aspect: hardware adapters.
   status, S2MM controller start, and frame-arrival interrupt wait/ack. Each
   backend's `read()` selects the read flavour from the bar and delegates to the
   shared class.
+- The adapter exposes a buffer-read primitive for both `dataBuffer.location`
+  values: a mapped zero-copy read for `"host"` buffers and a copy through the
+  classic DMA channel (`pread` on `c2hN`) for `"fpgaDdr"` buffers. The
+  descriptor ring stays host-pinned in both cases. The S2MM target address is
+  the buffer address, so `dataBuffer.location` selects the physical memory the
+  engine writes into.
 - `XdmaBackend` implements the adapter on the existing `DmaIntf`/`CtrlIntf`/
   event infrastructure. The S2MM engine is configured for per-frame
   notification (IRQ threshold 1) and routed to an interrupt vector which the
@@ -211,11 +284,12 @@ Aspect: hardware adapters.
 Aspect: overrun reporting.
 
 - Each channel declares a companion read-only overrun register in the JMAP
-  (a flag or counter). An overrun occurs when the engine needs a free buffer
-  but none is available (the consumers cannot keep up, or no push consumer
-  runs). Complete and served frames are never overwritten, so the only loss is
-  of whole frames; the backend updates the register whenever such a loss is
-  detected, so the application can poll it after a frame read.
+  (a flag or counter); it is a virtual register in virtual bar 12 (see above).
+  An overrun occurs when the engine needs a free buffer but none is available
+  (the consumers cannot keep up, or no push consumer runs). Complete and served
+  frames are never overwritten, so the only loss is of whole frames; the backend
+  updates the register whenever such a loss is detected, so the application can
+  poll it after a frame read.
 
 Aspect: ring geometry derivation.
 
@@ -264,6 +338,13 @@ Aspect: Dummy backend backdoor.
   shared ring logic is covered once through the Dummy backend.
 - Overrun tests: a lagging consumer is reported through the companion
   register.
+- Metadata tests: the Dummy backdoor attaches known APP0 to APP4 words to a
+  filled frame; a read of the metadata register returns them; a multi-block
+  frame (frame spanning several blocks) returns the metadata of its last block
+  only; a write to a virtual register raises `ChimeraTK::logic_error`.
+- `fpgaDdr` buffer location: the adapter's buffer-read primitive is exercised
+  through the Dummy backend (classic DMA channel copy) without hardware; on
+  hardware it requires the FPGA memory area.
 - Regression: the double-buffer tests keep passing (feature stays separate).
 - Documentation: the `dmaChannels` section and the frame-channel register
   reference documented in `doc/jmapFormat.dox`.
