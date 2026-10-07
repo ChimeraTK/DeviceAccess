@@ -203,14 +203,20 @@ Status: PLANNED
   which equals the element width) via the transfer helper (`memcpy`), keeping
   the `std::byte*` interface of `RawConverterCapsule`. The storage access is
   byte-granular, so neighbouring bytes are never modified.
-- `DummyRegisterRawAccessor` returns value semantics instead of `int32_t&`. Its
-  proxy implements, so that existing expressions (`raw += 5`, `raw++`,
-  `raw & mask`, `~raw`) keep compiling and update the memory:
+- `DummyRegisterRawAccessor` becomes a class template over the raw type,
+  `DummyRegisterRawAccessor<RawType = int32_t>`. A deduction guide keeps
+  existing `DummyRegisterRawAccessor acc{...}` declarations compiling, and
+  `DummyBackend::getRawAccessor` returns `DummyRegisterRawAccessor<>`.
+- It returns value semantics instead of `int32_t&`; its proxy converts to and
+  from `RawType` and implements, so that existing expressions (`raw += 5`,
+  `raw++`, `raw & mask`, `~raw`) keep compiling and update the memory:
    - the compound-assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`,
      `^=`, `<<=`, `>>=`);
    - pre/post-increment/decrement;
    - the binary operators `operator&` and `operator~`;
-   - an implicit conversion to the underlying type.
+   - an implicit conversion to `RawType`.
+- `sizeof(RawType)` must equal the element width (`elementPitchBits / 8`); an
+  assert catches a wrong instantiation.
 - The 32-bit alignment restrictions are replaced by byte offsets. The affected
   code is:
    - the `address % sizeof(int32_t)` check in
@@ -301,7 +307,9 @@ Status: PLANNED
       - the compound-assignment operators;
       - inc-dec;
       - the binary operators `&` and `~`;
-      - conversion to the underlying type.
+      - conversion to the underlying type;
+   - the raw accessor instantiated for a non-default `RawType` (e.g. `int16_t`)
+     accesses the memory correctly.
 - Adapt the tests to the new behaviour:
    - tests that assert sizes, full reservation or backend read-only state
      (`testDummyBackend`, `testDummyRegisterAccessor`) assert lazily
