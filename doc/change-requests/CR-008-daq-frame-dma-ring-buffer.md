@@ -1,12 +1,10 @@
 # CR-008: DAQ frame DMA ("ring buffer") support across backends
 
-Synopsis: Add support for reading DAQ frames from a Xilinx AXI DMA S2MM
-descriptor ring through virtual DMA channels. A register mapped to a virtual
-DMA channel delivers the oldest unread DAQ frame; the feature is configured
-entirely in the JMAP file and implemented once in a shared class used by the
-XdmaBackend, the UioBackend and the Dummy backend. The Dummy backend offers a
-backdoor to fill frames into the ring so the feature can be tested without
-hardware.
+Synopsis: Read DAQ frames from a Xilinx AXI DMA S2MM descriptor ring through
+virtual DMA channels. The feature is configured in the JMAP file and
+implemented once in a shared class used by the XdmaBackend, the UioBackend and
+the Dummy backend. The Dummy backend offers a backdoor to fill frames, so the
+feature can be tested without hardware.
 
 Depends on: CR-007
 
@@ -14,337 +12,220 @@ Status: IN PROGRESS
 
 ## Requirements
 
-Aspect: JMAP format.
-
-- The `dmaChannels` section (introduced by CR-007) defines virtual DMA
-  channels indexed by non-negative integers. Each entry carries the mandatory
-  `type` key (validated by CR-007). The Xilinx ringbuffer uses the `type`
-  value `"XilinxAxiS2MM"`.
+- The `dmaChannels` section (CR-007) defines virtual DMA channels keyed by
+  non-negative integer indices. The Xilinx ring buffer uses the `type` value
+  `"XilinxAxiS2MM"`.
 - An `"XilinxAxiS2MM"` entry has these keys:
-  - `controlRegister` (string, mandatory): path of the S2MM DMACR register.
-  - `statusRegister` (string, mandatory): path of the S2MM DMASR register.
-  - `currentDescriptorRegister` (string, mandatory): path of the S2MM
-    CURDESC register.
-  - `tailDescriptorRegister` (string, mandatory): path of the S2MM TAILDESC
-    register.
-  - `dataBuffer` (object, mandatory): where the S2MM target buffers live.
-    - `location` (string, mandatory): `"host"` (host memory) or `"fpgaDdr"`
-      (memory owned by the FPGA).
-    - `device` (string, mandatory for `"host"`): the udmabuf `device` path used
-      to allocate and pin the buffers.
-    - `dmaChannel` (integer, optional for `"fpgaDdr"`, default 0): the classic
-      DMA channel (device bar 13 plus the index) through which the FPGA memory
-      is read.
-    - `baseAddress` (integer, mandatory for `"fpgaDdr"`): byte address of the
-      buffer area in the FPGA memory.
-    - `size` (integer, mandatory for `"fpgaDdr"`): size of the buffer area in
-      bytes.
-  - `descriptorBuffer` (object, mandatory): where the descriptor ring lives.
-    Because the S2MM Scatter Gather engine reads the ring over `M_AXI_SG`, the
-    ring is always host-pinned; the object has the shape of a `"host"`
-    `dataBuffer` (a udmabuf `device` path).
-  - `ringDepth` (integer, mandatory): number of blocks in the descriptor
-    ring.
-  - `blockSize` (integer, optional): block-size override in bytes; default
-    derived from the frame size.
-  - `ownership` (string, optional): `"software"` (default) or `"firmware"`.
-  - `overrunRegister` (string, mandatory): path of the read-only overrun
-    companion register.
-  - `metadataRegister` (string, mandatory): path of the read-only register
-    exposing the per-frame metadata.
-  - `metadataOffset` (integer, mandatory): byte offset of the metadata register
-    in the virtual metadata bar.
-  - `overrunOffset` (integer, mandatory): byte offset of the overrun register in
-    the virtual metadata bar.
-- The DMA-engine registers are hidden user registers: they are named by
-  their `addressSpace` path in the `dmaChannels` section only, and the
-  frame-channel register description never replicates them.
-- A register references a channel with the existing `address` object of type
-  `"DMA"` whose `channel` is a channel *index* defined in `dmaChannels`; the
-  register's `offset` is relative to the beginning of the DAQ frame.
+- `controlRegister` (string): path of the S2MM DMACR register.
+- `statusRegister` (string): path of the S2MM DMASR register.
+- `currentDescriptorRegister` (string): path of the S2MM CURDESC register.
+- `tailDescriptorRegister` (string): path of the S2MM TAILDESC register.
+- `ringDepth` (integer): number of blocks in the descriptor ring.
+- `descriptorBuffer` (object): where the descriptor ring lives. It carries the
+  udmabuf `device` path. The ring is always host-pinned, because the S2MM engine
+  reads it over `M_AXI_SG`.
+- `dataBuffer` (object): where the S2MM target buffers live.
+- `dataBuffer.location` (string): `"host"` or `"fpgaDdr"`.
+- `dataBuffer.device` (string): udmabuf `device` path, required for `"host"`.
+- `dataBuffer.dmaChannel` (integer, default 0): classic DMA channel used to
+  read the FPGA memory, used for `"fpgaDdr"`.
+- `dataBuffer.baseAddress` (integer): byte address of the buffer area in the
+  FPGA memory, used for `"fpgaDdr"`.
+- `dataBuffer.size` (integer): buffer-area size in bytes, used for `"fpgaDdr"`.
+- `overrunRegister` (string): path of the read-only overrun register.
+- `overrunOffset` (integer): byte offset of the overrun register in the virtual
+  bar.
+- `blockSize` (integer, optional): block-size override in bytes. The default is
+  derived from the frame size.
+- `ownership` (string, optional): `"software"` (default) or `"firmware"`.
+- The DMA-engine registers are hidden. They are named in the `dmaChannels`
+  entry only. The frame-channel register description does not repeat them.
+- A frame-channel register uses the existing `address` object with `type`
+  `"DMA"`. Its `channel` is a `dmaChannels` index. Its `offset` is relative to
+  the start of the DAQ frame.
 - A frame-channel register names the S2MM frame-arrival interrupt through the
   existing `triggeredByInterrupt` field.
-- The frame size is constant in the first implementation, but the format must
-  not make variable frame lengths impossible (e.g. a per-frame size or
-  header-driven length is expressible).
-
-Aspect: frame metadata.
-
-- The S2MM metadata is the AXI Status Stream content, which the engine stores in
-  the five User Application fields (APP0 to APP4) of the descriptor that carries
-  RXEOF (Peripheral Guide PG021, "S2MM Descriptor Settings and AXI Status
-  Stream"). The metadata is therefore per frame (packet), not per block:
-  descriptors with EOF=0 have their APP fields zeroed by the Scatter Gather
-  engine, so a frame spanning several blocks carries its metadata once, on its
-  last block.
-- If the IP option "Use RxLength In Status Stream" is enabled, APP4 carries the
-  received byte length instead of status data, so the metadata word layout is
-  defined by the IP configuration; the format exposes five 32 bit words and does
-  not hard-code their meaning.
-- The metadata of a frame is delivered with the frame: the metadata register
-  returns the APP0 to APP4 words of the frame most recently delivered by a push
-  or poll read on that channel.
-
-Aspect: virtual metadata registers.
-
-- Metadata and overrun reporting are not S2MM register-space registers; they are
-  projected from the shared ring state. They are published as read-only virtual
-  registers in a backend-reserved virtual bar (bar 12, which is outside the
-  current register space and unused), so they are described, documented and
-  accessed like any other register without a new register type or accessor path.
-- The channel entry names the registers (`metadataRegister`, `overrunRegister`)
-  and configures their byte offsets in the virtual bar (`metadataOffset`,
-  `overrunOffset`). The JMAP `addressSpace` adds ordinary register entries whose
-  `address` points at those virtual addresses (bar 12 plus the offset). The
-  channel entry is authoritative for the backend's read dispatch, so no physical
-  register is behind these addresses.
-- A virtual register is read-only: a write is rejected with
-  `ChimeraTK::logic_error`, and `wait_for_new_data` is not supported.
-
-Aspect: virtual DMA channel as an addressable resource.
-
-- A register that maps to a configured virtual DMA channel supports two read
-  flavours, chosen through the standard API:
-  - Push (accessor with `wait_for_new_data`): the channel delivers its oldest
-    unread DAQ frame, one frame per delivered new-data event, oldest first.
-    This is the production data path.
-  - Poll (plain accessor read): the channel returns the newest fully written
-    frame at the time the read transfer is initiated, on a best-effort basis.
-    The read has no side effects: it neither advances the dequeue state, nor
-    returns the served buffer to the engine, nor acknowledges the
-    frame-arrival interrupt. For the duration of the read the served buffer is
-    held out of the descriptor ring, so the engine cannot overwrite it and a
-    torn frame can never be delivered; only whole frames are ever dropped
-    (overrun reporting). Because polling never returns buffers to the engine,
-    the ring is drained only by a running push consumer: a channel read only
-    by poll freezes once the ring is full. Polling serves debugging tools
-    (e.g. a register viewer) and never interferes with a concurrent push
-    consumer (the push stream has no gaps).
-- The generic `NumericAddressedBackend` needs no new structure: no new
-  register type, no new accessor path. The frame channel is an ordinary
-  addressable register.
-- The feature is implemented once, in a shared reusable class: ring and
-  dequeue state (which frame was last delivered), frame reassembly across ring
-  blocks, ring advancement, buffer handling and overrun detection live in that
-  class, and the XdmaBackend, the UioBackend and the Dummy backend all use the
-  same implementation with almost no duplicated ring logic between them.
-  Backend-specific hardware access is confined to a thin adapter per backend.
-  Buffers are handed back to the engine only when consumed by a push read; the
-  dequeue state advances only then, and a poll read never changes it.
-- A consumer that lags the producer (ring overrun) is reported to the caller
-  through a companion read-only register per channel declared in the JMAP.
-
-Aspect: push mode.
-
-- Frame channels support `wait_for_new_data` (the push read), driven by the
-  existing `triggeredByInterrupt` mechanism. The push read delivers one frame
-  per new-data notification, oldest first, and is the production data path.
-  Only the push read returns consumed buffers to the engine, so the push
-  stream is gap-free and the channel keeps producing new frames while a push
-  consumer runs.
-
-Aspect: slice coherence.
-
-- Several registers may slice one frame at frame-relative offsets (e.g. a
-  header register at offset 0 plus data registers after it). All slices of one
-  frame share a single read so a consumer reading header and data gets a
-  coherent snapshot of the same frame.
-
-Aspect: ring ownership.
-
-- The software owns the ring geometry by default: the ring is a fixed-size
-  block ring in which a frame occupies a contiguous run of one or more blocks;
-  for a known fixed frame size the block size is auto-derived so one block
-  holds one frame, and ring depth (number of blocks) is the single tunable.
-  An explicit block-size override covers firmware-fixed geometries. The
-  firmware-expected variant is expressible via an ownership marker in the
-  channel section.
-
-Aspect: double buffering.
-
-- Double buffering stays a separate, unchanged feature; it is not unified with
-  the ring, and the ring is not a special case of it.
-
-Aspect: backends.
-
-- Implemented in a single shared, reusable class used by the `XdmaBackend`,
-  the `UioBackend` and the Dummy backend, so all three backends support the
-  same feature with almost no duplicated code.
-- The Dummy backend offers a backdoor to fill DAQ frames into the ring, so the
-  ring implementation and applications using it can be tested without
-  hardware.
+- The frame size is constant in the first implementation. The format must keep
+  variable frame lengths expressible.
+- A frame-channel register supports two read flavours, selected by the
+  standard API:
+- push: an accessor with `wait_for_new_data`. It delivers the oldest unread
+  frame, one frame per new-data event, oldest first. This is the production data
+  path.
+- poll: a plain accessor read. It returns the newest complete frame at the
+  time of the read, best effort.
+- A poll read has no side effects:
+- it does not advance the dequeue state;
+- it does not return served buffers to the engine;
+- it does not acknowledge the interrupt.
+- A poll read holds the served buffer out of the ring for the read's duration,
+  so a torn frame is never delivered. Only whole frames can be lost.
+- Only a push read returns consumed buffers to the engine. A channel read only
+  by poll freezes once the ring is full.
+- A poll read never disturbs a concurrent push consumer.
+- Several registers may slice one frame at frame-relative offsets, for example
+  a header at offset 0 and data after it.
+- All slices of one frame share a single read. A consumer reading header and
+  data therefore gets one coherent snapshot of the same frame.
+- The software owns the ring geometry by default. The ring is a fixed-size
+  block ring in which a frame occupies a contiguous run of one or more blocks.
+- For a known fixed frame size the block size is auto-derived so one block
+  holds one frame. The ring depth is the single tunable.
+- An explicit `blockSize` covers firmware-fixed geometries.
+- `ownership` expresses a firmware-expected variant.
+- Double buffering stays a separate, unchanged feature. The ring is not a
+  special case of it.
+- One shared reusable class implements the ring logic. The `XdmaBackend`, the
+  `UioBackend` and the Dummy backend all use it.
+- The Dummy backend offers a backdoor to fill frames into the ring, so the
+  feature and its applications can be tested without hardware.
+- Each channel declares a companion read-only overrun register in the JMAP. It
+  is a flag or a counter.
+- An overrun occurs when the engine needs a free buffer but none is available.
+  Complete and served frames are never overwritten, so only whole frames can be
+  lost.
+- The backend updates the overrun register whenever such a loss is detected.
+  The application can poll it after a frame read.
+- The overrun register is a virtual register in a backend-reserved virtual bar
+  (bar 12). It is read-only. A write raises `ChimeraTK::logic_error`. It does
+  not support `wait_for_new_data`.
 
 ## Specifications
 
-Affected components: `src/DmaRingBuffer.{h,cc}` (new shared ring-buffer class)
-with a hardware-adapter interface, `backends/xdma/src/XdmaBackend.cc`,
+Affected components: the new shared class `src/DmaRingBuffer.{h,cc}` with a
+hardware-adapter interface, `backends/xdma/src/XdmaBackend.cc`,
 `backends/uio/src/UioBackend.cc`, `backends/DummyBackend/src/DummyBackend.cc`,
 `src/JsonMapFileParser.cc`, the `NumericAddressedRegisterCatalogue`,
-`doc/jmapFormat.dox`, and the jmap test fixtures and parser tests.
+`doc/jmapFormat.dox`, jmap fixtures and parser tests.
 
-Aspect: raw-json DMA channel configuration.
+### Raw-json DMA channel configuration
 
-- The `dmaChannels` section is consumed through the raw-json DMA channel
-  configuration introduced by CR-007: entries are reached via
-  `hasDmaChannel`/`getDmaChannel` on the register catalogue (held as the
-  protected `_registerMap`). The parser preserves the section opaquely;
-  each backend interprets it through the shared class; no
-  `dmaChannels`-specific structure enters the generic
+- The `dmaChannels` section is consumed through the CR-007 raw-json
+  configuration. Entries are reached through `hasDmaChannel` and `getDmaChannel`
+  on the register catalogue.
+- The parser preserves the section opaquely. Each backend interprets it
+  through the shared class. No `dmaChannels` structure enters the generic
   `NumericAddressedRegisterCatalogue`.
-- A frame-channel register's channel entry is interpreted only when its `type`
-  value is the supported `"XilinxAxiS2MM"`; any other value raises
-  `ChimeraTK::logic_error` (as required by CR-007).
+- A channel entry is interpreted only when its `type` is `"XilinxAxiS2MM"`.
+  Any other value raises `ChimeraTK::logic_error`.
 
-Aspect: register-to-channel mapping.
+### Register-to-channel mapping
 
 - A register whose `address` has `type` `"DMA"` and a `channel` matching a
-  channel index in `dmaChannels` is a frame-channel register. Its `offset` is
-  the byte offset into the frame, not into a bar.
-- Each frame-channel register is internally represented with two bar values,
-  one per read flavour: a peek bar for ordinary reads and a pop bar for the
-  interrupt-driven push read. Both bars address the same virtual DMA channel
-  and frame offset; the bar values are reserved by the backend for its channel
-  and are not bar numbers of the engine's register space.
-- The metadata and overrun registers are ordinary catalogue registers placed at
-  the virtual addresses given by `metadataOffset`/`overrunOffset` in virtual
-  bar 12. The backend overrides `barIndexValid` to admit it and routes its reads
-  to the shared class instead of the register space; the virtual bar number must
-  not collide with the per-channel peek/pop bars.
-- A single 2D multiplexed register at offset 0 represents the whole frame; its
-  channel slices give structured access to the frame content. Several
-  registers at frame-relative offsets give sub-region access. All slices of
-  one frame share one read (one frame read serves all offset-slices),
-  analogous to how a 2D register and its channel slices share one read today.
+  `dmaChannels` index is a frame-channel register. Its `offset` is a byte offset
+  into the frame, not into a bar.
+- Each frame-channel register has two internal bar values, one per read
+  flavour: a peek bar for plain reads and a pop bar for the interrupt-driven
+  push read. Both address the same virtual channel and frame offset. The bar
+  values are backend-reserved and are not engine register-space bars.
+- The overrun register is an ordinary catalogue register at the virtual
+  address `overrunOffset` in virtual bar 12. The backend overrides
+  `barIndexValid` to admit bar 12 and serves its reads from the shared class.
+- The virtual bar must not collide with the per-channel peek and pop bars.
+- A single 2D multiplexed register at offset 0 represents the whole frame. Its
+  channel slices give structured access. Several registers at frame-relative
+  offsets give sub-region access. All slices share one read.
 
-Aspect: shared ring-buffer class.
+### Shared ring-buffer class
 
-- A new reusable class holds all ring and frame logic and is used unchanged by
-  the `XdmaBackend`, the `UioBackend` and the Dummy backend. It is driven
-  through a small hardware-adapter interface, so the backends contain almost no
-  duplicated ring logic; per backend only the adapter and the read entry point
-  remain.
-- The class owns the ring state, the dequeue cursor, the free/complete/served
-  buffer sets and the per-channel overrun counter. `readFrame(peek|pop, frame
-  offset, target)` performs one frame read for the whole frame (all
-  offset-slices together), walks the descriptor run from `rxsof` to `rxeof` to
-  reassemble the frame (which may span several ring blocks) and copies the
-  concatenated bytes into the accessor buffer. A peek read returns the newest
-  fully written frame without side effects; a pop read returns the oldest
-  unread frame and advances the dequeue state.
-- For the whole read the served frame's buffers are held out of the descriptor
-  ring (they are not handed back to the engine), so the engine cannot overwrite
-  them and a torn frame can never be delivered. Afterwards the pop read
-  returns the consumed buffers to the engine; the peek read returns them to
-  the set of complete frames (DONE), without touching the engine.
+- The class holds all ring and frame logic. The three backends use it
+  unchanged. It is driven through a small hardware-adapter interface, so the
+  backends contain almost no duplicated ring logic.
+- It owns the ring state and the dequeue cursor.
+- It owns the buffer sets:
+- free;
+- complete;
+- served.
+- It owns the per-channel overrun counter.
+- `readFrame(peek|pop, frameOffset, target)` performs one read for the whole
+  frame and copies the concatenated bytes into the accessor buffer.
+- The read walks the descriptor run from `rxsof` to `rxeof`, so a frame may
+  span several blocks.
+- A peek read returns the newest complete frame without side effects. A pop
+  read returns the oldest unread frame and advances the dequeue state.
+- During the read the frame's buffers are held out of the ring, so a torn frame
+  is never delivered. Afterwards a pop read returns them to the engine. A peek
+  read returns them to the complete set without touching the engine.
 - A channel produces new frames only while a pop read returns buffers to the
-  engine. A channel read only by poll freezes: the ring fills with complete
-  frames, the engine stops (a backpressure-capable source pauses, a
-  free-running source drops new data), and each peek read keeps returning the
-  newest completed frame. This is intended and documented.
-- The class performs the interrupt-driven handshaking of the push read
-  (frame-arrival interrupt service/ack, S2MM status/control register
-  reactions, consumed-buffer acknowledgement and overrun/overflow reporting
-  when the consumer lags the producer) through the adapter; the actual
-  interrupt wait and trigger stay in the backend. A poll read never
-  acknowledges the frame-arrival interrupt.
+  engine. A poll-only channel freezes once the ring is full.
+- The class performs the push handshake through the adapter:
+- interrupt service and acknowledgement;
+- S2MM status and control register reactions;
+- handing consumed buffers back;
+- the overrun count.
+- The interrupt wait and trigger stay in the backend.
+- A poll read never acknowledges the interrupt.
+- Ring geometry: the block is the minimum contiguous unit handed to the engine.
+  A frame occupies a contiguous run of blocks. For a known fixed frame size the
+  block size is auto-derived so one block holds one frame. `blockSize` overrides
+  it. The number of blocks is `ringDepth` from the channel entry.
 
-Aspect: frame metadata.
+### Hardware adapters
 
-- During the ring walk (`rxsof` to `rxeof`) the shared class reads the descriptor
-  that carries RXEOF and copies its APP0 to APP4 words (`XAXIDMA_BD_USR0_OFFSET`
-  to `XAXIDMA_BD_USR4_OFFSET`, `0x20` to `0x30`) as the frame metadata; the APP
-  words of the non-EOF descriptors are ignored because the engine zeroes them.
-  A read of the channel's metadata register returns the metadata of the frame
-  most recently delivered.
-
-Aspect: hardware adapters.
-
-- The hardware-adapter interface abstracts what the shared class needs from a
-  backend: buffer allocation/pinning and physical-address exposure (buffer
-  allocator, e.g. `u-dma-buf` model), descriptor submission and completion
-  status, S2MM controller start, and frame-arrival interrupt wait/ack. Each
-  backend's `read()` selects the read flavour from the bar and delegates to the
-  shared class.
+- The adapter abstracts what the shared class needs:
+- buffer allocation and pinning, with physical-address exposure;
+- descriptor submission and completion status;
+- S2MM controller start;
+- interrupt wait and acknowledgement.
 - The adapter exposes a buffer-read primitive for both `dataBuffer.location`
-  values: a mapped zero-copy read for `"host"` buffers and a copy through the
-  classic DMA channel (`pread` on `c2hN`) for `"fpgaDdr"` buffers. The
-  descriptor ring stays host-pinned in both cases. The S2MM target address is
-  the buffer address, so `dataBuffer.location` selects the physical memory the
-  engine writes into.
-- `XdmaBackend` implements the adapter on the existing `DmaIntf`/`CtrlIntf`/
-  event infrastructure. The S2MM engine is configured for per-frame
-  notification (IRQ threshold 1) and routed to an interrupt vector which the
-  frame-channel register references (`triggeredByInterrupt`).
-- `UioBackend` implements the adapter on its `UioAccess` (bar reads/writes to
-  the S2MM registers) and its interrupt waiting (`activateSubscription`), so a
-  real S2MM mapped into a UIO device is driven with the same class.
-- The Dummy backend implements the adapter on an in-memory simulation of the
-  engine and the buffer store, fed through the backdoor described below.
+  values: a mapped zero-copy read for `"host"` and a classic-DMA copy (`pread`
+  on `c2hN`) for `"fpgaDdr"`.
+- The descriptor ring is host-pinned in both cases. The S2MM target address is
+  the descriptor buffer address, so `dataBuffer.location` selects the physical
+  memory the engine writes into.
+- Each backend's `read()` selects the read flavour from the bar and delegates
+  to the shared class.
+- `XdmaBackend`: the adapter uses the existing `DmaIntf`, `CtrlIntf` and event
+  infrastructure. The S2MM engine is configured for per-frame notification (IRQ
+  threshold 1) and routed to an interrupt vector referenced by the frame-channel
+  register.
+- `UioBackend`: the adapter uses `UioAccess` for the S2MM registers and
+  `activateSubscription` for the interrupt wait, so a real S2MM mapped into a
+  UIO device is driven with the same class.
+- Dummy backend: the adapter uses an in-memory simulation of the engine and the
+  buffer store, fed through the backdoor.
 
-Aspect: overrun reporting.
+### Dummy backend backdoor
 
-- Each channel declares a companion read-only overrun register in the JMAP
-  (a flag or counter); it is a virtual register in virtual bar 12 (see above).
-  An overrun occurs when the engine needs a free buffer but none is available
-  (the consumers cannot keep up, or no push consumer runs). Complete and served
-  frames are never overwritten, so the only loss is of whole frames; the backend
-  updates the register whenever such a loss is detected, so the application can
-  poll it after a frame read.
-
-Aspect: ring geometry derivation.
-
-- The block is the minimum contiguous unit handed to the engine; a frame
-  occupies a contiguous run of blocks (reassembly walks `rxsof`..`rxeof`). For
-  a known fixed frame size the block size is auto-derived from the frame
-  description (sum of the frame-relative regions, or the 2D register size), so
-  one block holds one frame. A variable-length frame (per-header length, which
-  the JMAP format keeps expressible) spans the corresponding number of blocks.
-  Ring depth is a scalar in the channel section. An explicit block-size
-  override applies when the channel declares firmware-owned geometry.
-
-Aspect: Dummy backend backdoor.
-
-- The Dummy backend offers a backdoor to fill DAQ frames into the ring, using
-  the same convention as the existing `DUMMY_WRITEABLE` and
+- The backdoor follows the convention of the existing `DUMMY_WRITEABLE` and
   `DUMMY_INTERRUPT_<N>` virtual registers.
-- For each register of a DAQ frame, a virtual `DUMMY_WRITEABLE` register lets a
-  test write that register's bytes; the written values are staged per channel.
-  A virtual write-only trigger register per channel assembles the DAQ frame
-  from the staged values, hands it to the shared ring-buffer class (the same
-  implementation the real backends use) and triggers the frame-arrival
-  interrupt, so `wait_for_new_data` fires and the regular push/poll read path
-  serves the frame.
-- This tests both the ring implementation itself and applications using a DAQ
-  frame channel without hardware.
+- For each frame register, a virtual `DUMMY_WRITEABLE` mirror lets a test write
+  that register's bytes. The values are staged per channel.
+- A virtual write-only trigger register per channel assembles a frame from the
+  staged values, hands it to the shared class and triggers the frame-arrival
+  interrupt.
+- The regular push and poll read path then serves the frame, so
+  `wait_for_new_data` fires.
+
+### Alternatives considered
+
+- S2MM metadata (APP0 to APP4) support: deferred. The engine stores the AXI
+  Status Stream only in the EOF descriptor, so the granularity is per frame, not
+  per buffer. A real use case is needed to fix the layout and the access model
+  before a format can be defined.
 
 ## Test plan
 
 - Parser tests: a `dmaChannels` section with a register referencing a channel
-  by index parses; register offsets are frame-relative.
-- Dummy backend frame channel tests: a push read delivers the oldest unread
-  frame one by one and advances the dequeue state; a poll read returns the
-  newest frame and leaves the dequeue state, the engine and a concurrent push
-  consumer untouched (no gaps in the push stream); with no push consumer the
-  channel freezes once the ring is full (no new frames, the newest completed
-  frame keeps being returned); several offset-slices of one frame return one
-  coherent snapshot; `wait_for_new_data` fires on a new frame.
-- Dummy backdoor tests: writing each frame register's `DUMMY_WRITEABLE` mirror
-  and then the channel's trigger register fills a frame into the ring; a
-  subsequent push read delivers it in order and `wait_for_new_data` fires; a
-  poll read returns the newest filled frame. As all three backends use the
-  same shared class, these tests exercise the ring implementation once for
-  all of them.
-- UioBackend: exercising its adapter requires the hardware UIO device; the
-  shared ring logic is covered once through the Dummy backend.
-- Overrun tests: a lagging consumer is reported through the companion
-  register.
-- Metadata tests: the Dummy backdoor attaches known APP0 to APP4 words to a
-  filled frame; a read of the metadata register returns them; a multi-block
-  frame (frame spanning several blocks) returns the metadata of its last block
-  only; a write to a virtual register raises `ChimeraTK::logic_error`.
-- `fpgaDdr` buffer location: the adapter's buffer-read primitive is exercised
-  through the Dummy backend (classic DMA channel copy) without hardware; on
-  hardware it requires the FPGA memory area.
-- Regression: the double-buffer tests keep passing (feature stays separate).
+  by index parses. Register offsets are frame-relative.
+- Dummy backend frame channel:
+- a push read delivers the oldest unread frame one by one and advances the
+  dequeue state;
+- a poll read returns the newest frame and leaves the dequeue state, the engine
+  and a concurrent push consumer untouched;
+- with no push consumer the channel freezes once the ring is full and the
+  newest complete frame keeps being returned;
+- several offset-slices of one frame return one coherent snapshot;
+- `wait_for_new_data` fires on a new frame.
+- Dummy backdoor: writing each frame register's `DUMMY_WRITEABLE` mirror and
+  then the channel trigger fills a frame. A push read delivers it in order. A
+  poll read returns the newest filled frame. As all three backends share the
+  class, this exercises the ring implementation once for all of them.
+- Overrun: a lagging consumer is reported through the companion register.
+- `fpgaDdr`: the classic-DMA buffer copy is exercised through the Dummy
+  backend. On hardware it needs the FPGA memory area.
+- UioBackend: its adapter needs the hardware UIO device. The shared ring logic
+  is covered through the Dummy backend.
+- Regression: the double-buffer tests keep passing.
 - Documentation: the `dmaChannels` section and the frame-channel register
-  reference documented in `doc/jmapFormat.dox`.
+  reference are documented in `doc/jmapFormat.dox`.
