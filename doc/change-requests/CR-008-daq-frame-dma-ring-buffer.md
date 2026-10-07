@@ -18,18 +18,35 @@ Aspect: JMAP format.
 
 - The `dmaChannels` section (introduced by CR-007) defines virtual DMA
   channels indexed by non-negative integers. Each entry carries the mandatory
-  `type` key (validated by CR-007) and the backend-specific keys: the names
-  of the DMA-engine control registers, the buffer allocator selection, the
-  ring depth and the block size. The Xilinx ringbuffer uses the `type` value
-  `"XilinxAxiS2MM"`.
+  `type` key (validated by CR-007). The Xilinx ringbuffer uses the `type`
+  value `"XilinxAxiS2MM"`.
+- An `"XilinxAxiS2MM"` entry has these keys:
+  - `controlRegister` (string, mandatory): path of the S2MM DMACR register.
+  - `statusRegister` (string, mandatory): path of the S2MM DMASR register.
+  - `currentDescriptorRegister` (string, mandatory): path of the S2MM
+    CURDESC register.
+  - `tailDescriptorRegister` (string, mandatory): path of the S2MM TAILDESC
+    register.
+  - `bufferAllocator` (object, mandatory): `type`, either `"u-dma-buf"` or
+    `"fpga"`; for `"u-dma-buf"` additionally the udmabuf `device` path.
+  - `ringDepth` (integer, mandatory): number of blocks in the descriptor
+    ring.
+  - `blockSize` (integer, optional): block-size override in bytes; default
+    derived from the frame size.
+  - `ownership` (string, optional): `"software"` (default) or `"firmware"`.
+  - `overrunRegister` (string, mandatory): path of the read-only overrun
+    companion register.
+- The DMA-engine registers are hidden user registers: they are named by
+  their `addressSpace` path in the `dmaChannels` section only, and the
+  frame-channel register description never replicates them.
 - A register references a channel with the existing `address` object of type
   `"DMA"` whose `channel` is a channel *index* defined in `dmaChannels`; the
   register's `offset` is relative to the beginning of the DAQ frame.
+- A frame-channel register names the S2MM frame-arrival interrupt through the
+  existing `triggeredByInterrupt` field.
 - The frame size is constant in the first implementation, but the format must
   not make variable frame lengths impossible (e.g. a per-frame size or
   header-driven length is expressible).
-- The hidden DMA-engine control registers are named in the `dmaChannels`
-  section only; the register description never replicates them.
 
 Aspect: virtual DMA channel as an addressable resource.
 
@@ -112,10 +129,10 @@ with a hardware-adapter interface, `backends/xdma/src/XdmaBackend.cc`,
 `src/JsonMapFileParser.cc`, the `NumericAddressedRegisterCatalogue`,
 `doc/jmapFormat.dox`, and the jmap test fixtures and parser tests.
 
-Aspect: raw-json catch-all.
+Aspect: raw-json DMA channel configuration.
 
-- The `dmaChannels` section is consumed through the generic backend-specific
-  raw-json mechanism introduced by CR-007: entries are reached via
+- The `dmaChannels` section is consumed through the raw-json DMA channel
+  configuration introduced by CR-007: entries are reached via
   `hasDmaChannel`/`getDmaChannel` on the register catalogue (held as the
   protected `_registerMap`). The parser preserves the section opaquely;
   each backend interprets it through the shared class; no
