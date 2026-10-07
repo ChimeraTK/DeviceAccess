@@ -22,7 +22,7 @@ Status: PLANNED
   created on demand.
 - The materialised chunks are tracked by a chain, so they can be reset and
   removed without bounding their number.
-- Processes running different library versions must never share a shared
+- Processes running incompatible library versions must never share a
   segment. The layout version is part of the segment name, so an incompatible
   version derives a different name and cannot attach, in either direction.
 - A map file with changed content under the same name must not crash or raise
