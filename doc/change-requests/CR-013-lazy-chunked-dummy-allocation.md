@@ -60,8 +60,7 @@ Status: PLANNED
   only place that materialises chunks. It is used by
   `DummyBackend::read`/`write`, `SharedDummyBackend::read`/`write`,
   `writeRegisterWithoutCallback` and the backdoor accessors.
-- Every `(bar, address)` access is valid; reads outside any map-defined range
-  yield zeros.
+- Every `(bar, address)` access is valid, even outside any map-defined range.
 - `getBarSizesInBytesFromRegisterMapping()` and the per-bar sizes derived from
   it are removed, together with the sizing they served.
    - The method is part of the installed `DummyBackendBase` API; its removal is
