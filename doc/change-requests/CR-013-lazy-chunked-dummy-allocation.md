@@ -273,6 +273,9 @@ Status: PLANNED
 ## Test plan
 
 - Tests check functionality only, no timing or performance assertions.
+- Tests that need a special map file write a minimal map file in jmap format to
+  a temporary file and load it from there, instead of adding another file to the
+  shared list of test map files.
 - Chunk boundaries: read/write of a register crossing a chunk boundary is
   correct; neighbouring chunks stay zero.
 - Reading untouched addresses returns zeros; a write materialises only the
@@ -282,11 +285,11 @@ Status: PLANNED
 - SharedDummyBackend:
    - only used address ranges exist in shared memory; multi-process access still
      works (existing shared dummy tests);
-   - a map file with an unreasonably huge address space (e.g. a 1000 TB
-     register) opens and works while accessing only the first and the last few
-     bytes; full reservation would exhaust any shared memory, so succeeding
-     proves that nothing is reserved up front and that only the touched chunks
-     materialise as shared objects;
+   - a minimal jmap file written to a temporary file with an unreasonably huge
+     address space (e.g. a 1000 TB register) opens and works while accessing only
+     the first and the last few bytes; full reservation would exhaust any shared
+     memory, so succeeding proves that nothing is reserved up front and that only
+     the touched chunks materialise as shared objects;
    - a process using a map file with the same name but increased bar sizes joins
      an existing segment without crash or confusing errors;
    - the chunk chain is walked correctly, and after the last process leaves
