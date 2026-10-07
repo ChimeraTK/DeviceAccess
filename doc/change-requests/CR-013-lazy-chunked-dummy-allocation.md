@@ -125,19 +125,19 @@ Status: PLANNED
       chunk name.
    1. Open or create the segment and construct its vector.
    1. Advance the home segment's tail to the derived chunk name.
-   This order makes the append crash-safe:
-   - Walking to the true tail first recovers from a previous crash that happened
-     before the tail was advanced: the walk reaches the segment that was created
-     but not yet made the tail, so the append cannot overwrite the link to it.
-     Normally the tail is already the true tail and the walk is a single step.
-   - The link is written before the segment exists, so a created segment is
-     always reachable from the head and cannot leak; the tail is advanced only
-     after the segment exists, so it never names a missing segment.
-   - A walker reaching a name whose segment does not yet exist (only while
-     another process is between steps 2 and 3) treats it as the end of the
-     chain and so misses nothing; prepending would hide the existing chain
-     behind the missing segment.
-   - If step 3 fails, the early link is rolled back before the error is thrown.
+   - This order makes the append crash-safe:
+      - Walking to the true tail first recovers from a previous crash that happened
+        before the tail was advanced: the walk reaches the segment that was created
+        but not yet made the tail, so the append cannot overwrite the link to it.
+        Normally the tail is already the true tail and the walk is a single step.
+      - The link is written before the segment exists, so a created segment is
+        always reachable from the head and cannot leak; the tail is advanced only
+        after the segment exists, so it never names a missing segment.
+      - A walker reaching a name whose segment does not yet exist (only while
+        another process is between steps 2 and 3) treats it as the end of the
+        chain and so misses nothing; prepending would hide the existing chain
+        behind the missing segment.
+      - If step 3 fails, the early link is rolled back before the error is thrown.
 - Chunks are never relocated or remapped once created, so cached
   `SharedMemoryByteVector*` pointers stay valid.
 - There is no per-chunk refcount and no upper bound on the number of chunks;
