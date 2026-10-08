@@ -136,6 +136,14 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  // NOLINTNEXTLINE(clang-diagnostic-dtor-name) - linter is wrong, this is standard-conforming
+  MuxedChannelDemultiplexer::Registration<UserType>::~Registration() {
+    reset();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
   MuxedChannelDemultiplexer::Registration<UserType>::Registration(Registration&& other) noexcept
   : _owner(other._owner), _groupIt(other._groupIt), _it(other._it), _staging(std::move(other._staging)) {
     other._owner = nullptr;

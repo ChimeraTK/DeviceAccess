@@ -223,14 +223,6 @@ namespace ChimeraTK::detail {
   }
 
   /********************************************************************************************************************/
-
-  template<typename UserType>
-  // NOLINTNEXTLINE(clang-diagnostic-dtor-name) - the out-of-line nested template destructor is standard-conforming
-  inline MuxedChannelDemultiplexer::Registration<UserType>::~Registration() {
-    reset();
-  }
-
-  /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   inline void MuxedChannelDemultiplexer::demultiplexingPending() {
