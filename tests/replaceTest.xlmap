@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<logicalNameMap>
+    <redirectedChannel name="Channel">
+        <targetDevice>INSTCH</targetDevice>
+        <targetRegister>TEST.DMA</targetRegister>
+        <targetChannel>0</targetChannel>
+    </redirectedChannel>
+
+    <redirectedBit name="Bit">
+        <targetDevice>INSTBIT</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <targetBit>3</targetBit>
+    </redirectedBit>
+</logicalNameMap>

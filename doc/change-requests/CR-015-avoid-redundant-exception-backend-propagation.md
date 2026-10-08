@@ -5,7 +5,7 @@ target after the replacement step even when nothing was replaced. Where the call
 is forwarded to the target, that target already propagates, so the second
 propagation is redundant.
 
-Status: IMPLEMENTED
+Status: READY TO TEST
 
 ## Requirements
 
@@ -106,7 +106,3 @@ not invoke `setExceptionBackend()` on the target.
 - Unit test: after a replacement, the accessor chain reports the same exception
 backend as before the change.
 - Regression: backend exceptions are still wrapped and propagated identically.
-
-## Deferred issue
-
-- Phase incomplete: no tests were written or compiled. The session ended during exploration of the code base and build/test infrastructure, before any test file was created or any build was run.

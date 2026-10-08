@@ -1,0 +1,5 @@
+# Target devices used by the CR-015 replaceTransferElement tests. The "instrumentingDummy" backend is a DummyBackend
+# whose accessors are wrapped so that setExceptionBackend() calls on the target can be counted.
+INSTCH    (instrumentingDummy?map=muxedDataAccessor.jmap)
+INSTBIT   (instrumentingDummy?map=mtcadummy.map)
+LMAP      (logicalNameMap?map=replaceTest.xlmap)
