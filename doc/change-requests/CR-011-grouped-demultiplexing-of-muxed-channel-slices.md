@@ -6,7 +6,7 @@ per channel. Demultiplex all channels with identical raw-conversion parameters
 and user type in a single pass, coordinated by a demultiplexer held inside the
 shared low-level transfer element.
 
-Status: READY TO IMPLEMENT (from DONE)
+Status: IMPLEMENTED (from DONE)
 
 ## Requirements
 

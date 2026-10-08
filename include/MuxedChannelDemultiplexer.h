@@ -60,7 +60,7 @@ namespace ChimeraTK::detail {
      * consumer list (all consumers of one group share the GroupKey user type).
      */
     struct GroupBase {
-      /** True when the group has no registered consumers (a freed slot or a group losing its last consumer). */
+      /** True when the group has lost all its consumers (it stays registered until teardown, see _groups). */
       [[nodiscard]] virtual bool consumersEmpty() const = 0;
 
       /** Strided raw copy of all consumers' samples into their staging buffers. Called for raw groups only. */
@@ -124,7 +124,7 @@ namespace ChimeraTK::detail {
       friend class MuxedChannelDemultiplexer;
 
       MuxedChannelDemultiplexer* _owner{nullptr};
-      std::map<GroupKey, size_t>::iterator _groupIt; // resolves this consumer's group key to its index in _groups
+      size_t _groupId{}; // the consumer's group, see _groups
       std::list<Consumer<UserType>>::iterator _it;
 
       // Heap-allocated so its address (which the registered Consumer references) stays stable when the registration is
@@ -154,7 +154,7 @@ namespace ChimeraTK::detail {
     void run(const std::vector<uint8_t>& rawBuffer);
 
     /**
-     * Callback for RawConverter::ConverterLoopHelper, see its documentation. groupId is the index of the group within
+     * Callback for RawConverter::ConverterLoopHelper, see its documentation. groupId identifies the group within
      * _groups. Performs the inlined typed conversion loop for the group's consumers, resolving each staging buffer once.
      */
     template<class UserType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
@@ -173,13 +173,14 @@ namespace ChimeraTK::detail {
     template<typename>
     friend class Registration;
 
-    // The groups are stored contiguously as type-erased bases; _groupIndex resolves each group key to its index within
-    // _groups. A group's index is stable: erasing a group frees its slot (tracked in _freeSlots and reused by a later
-    // registration) without shifting the index of any other live group, so a group's ConverterLoopHelper never goes
-    // stale (see reset() for the assert guarding this). A freed slot is a null unique_ptr.
-    std::vector<std::unique_ptr<GroupBase>> _groups;
+    // _groups stores the type-erased groups keyed by their stable, monotonically increasing groupId; _groupIndex maps
+    // each group key to that groupId. The groupId is a non-positional identity handed to the group's
+    // ConverterLoopHelper, so it can never go stale. A group is removed only at teardown (it is never erased while the
+    // element lives, it just loses its consumers), so the registry only ever grows or vanishes wholesale with the
+    // element and needs no freed-slot tracking.
+    std::map<size_t, std::unique_ptr<GroupBase>> _groups;
     std::map<GroupKey, size_t> _groupIndex;
-    std::vector<size_t> _freeSlots; // indices of erased (unused) group slots, reused by later registrations
+    size_t _nextGroupId{};
     bool _pendingDemultiplexing{false};
     // the current read's raw buffer, valid only between run() and the last group's demultiplexing; nullable between runs
     const std::vector<uint8_t>* _rawBuffer{nullptr};
