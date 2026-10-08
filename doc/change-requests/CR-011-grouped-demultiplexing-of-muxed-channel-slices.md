@@ -198,28 +198,28 @@ bullet.
 - Read all channel slices of a muxed 2D register in one TransferGroup, added in
   shuffled (non-contiguous, out-of-order) order, with several groups forming
   within the one shared element: `TestGroupedReadAllChannels`.
-  - The broad correctness check of a full-group pass; the members are neither
+   - The broad correctness check of a full-group pass; the members are neither
      contiguous nor in memory order. The shuffled registration also covers what
      the removed partial-subset test did.
-  - The only test that forces several conversion groups inside one element: the
+   - The only test that forces several conversion groups inside one element: the
      `MIXED` register carries channels 0 and 3 sharing one conversion key
      (signed, width 16), plus a same-element differently-keyed unsigned
      (channel 1) and a width-12 (channel 2) channel, with value assertions. It
      also asserts the shared version number and data validity across the slices,
      covering what the removed mixed-type and version/validity tests did.
 - Cover raw-mode slices: `TestRawModeSlices`.
-  - The only test that exercises the strided raw-copy path (raw user type, no
+   - The only test that exercises the strided raw-copy path (raw user type, no
      conversion), including the read-only property of non-interrupt 2D slices.
 - Read slices of two adjacent muxed 2D registers in one TransferGroup so their
   channels merge into one transfer element and are demultiplexed from their
   individual byte offsets within the merged raw buffer:
   `TestAdjacentRegistersShareMergedElement`.
-  - The only test that verifies transfer-element merging of slices from two
+   - The only test that verifies transfer-element merging of slices from two
      different registers and per-slice offsets within the larger merged buffer.
 - Interrupt-driven double-buffered single strided slice: existing
   `TestDataConsistencyKeyDoubleBuffer` in
   `tests/executables_src/testDataConsistencyRealm.cpp`.
-  - No dedicated test is added: that suite already reads the strided
+   - No dedicated test is added: that suite already reads the strided
      `/TEST/DBLASYNC.1` with `wait_for_new_data` through the demultiplexer and
      checks the demultiplexed data and version, so the redundant
      `TestInterruptDrivenDoubleBufferSlice` is dropped.
