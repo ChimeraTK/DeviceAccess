@@ -67,16 +67,20 @@ Design:
 - `setExceptionBackend()` is left unchanged; it stays a pointer assignment plus
   recursion.
 
-Excluded: the other `replaceTransferElement()` implementations have no
-forwarding path, so the redundancy above does not apply to them. The
-non-forwarding ones are `NumericAddressedBackendRegisterAccessor`
-(`src/NumericAddressedBackendRegisterAccessor.cc`, ending in an unconditional
-`_rawAccessor->setExceptionBackend(...)`, its cost tracked separately),
-`NumericAddressedBackendASCIIAccessor`, `SubdeviceRegisterAccessor` and
-`SubdeviceRegisterWindowAccessor`. The no-op ones are `DoubleBufferAccessor`,
+Excluded: the other `replaceTransferElement()` implementations do not have the
+forward-then-unconditional-`setExceptionBackend()` pattern, so the redundancy
+above does not apply to them. `NumericAddressedBackendRegisterAccessor`
+(`src/NumericAddressedBackendRegisterAccessor.cc`) and
+`NumericAddressedBackendASCIIAccessor` perform a replacement and end in an
+unconditional `setExceptionBackend(...)` but never forward; the cost of
+`NumericAddressedBackendRegisterAccessor` is tracked separately. The no-op
+implementations (empty `replaceTransferElement()`) are `SubdeviceRegisterAccessor`,
+`SubdeviceRegisterWindowAccessor`, `DoubleBufferAccessor`,
 `LNMDoubleBufferPlugin`, `NumericAddressedBackendMuxedRegisterAccessor`,
 `AsyncNDRegisterAccessor`, `LNMBackendVariableAccessor` and
-`NumericAddressedLowLevelTransferElement`.
+`NumericAddressedLowLevelTransferElement`. `TransferElementAbstractor`
+(`src/TransferElementAbstractor.cc`) forwards to its `_impl` but never
+propagates the exception backend, so it is unaffected.
 
 ### Alternatives considered
 
@@ -117,6 +121,14 @@ non-forwarding ones are `NumericAddressedBackendRegisterAccessor`
   `NDRegisterAccessorDecorator`; the other classes assign the incoming accessor
   directly, so the replacement path still needs propagation because the new
   target may carry a different backend.
-- The "Excluded" note named only `NumericAddressedBackendRegisterAccessor`, so
-  the affected/unaffected boundary was unclear; the other non-forwarding and the
-  no-op implementations are now listed.
+- The "Excluded" note named only `NumericAddressedBackendRegisterAccessor` and
+  misclassified `SubdeviceRegisterAccessor`/`SubdeviceRegisterWindowAccessor`
+  as non-forwarding though their `replaceTransferElement()` bodies are empty
+  no-ops, so the affected/unaffected boundary was unclear. The categories are
+  now: replacement-but-no-forward (`NumericAddressedBackendRegisterAccessor`,
+  `NumericAddressedBackendASCIIAccessor`), the no-op implementations
+  (`SubdeviceRegisterAccessor`, `SubdeviceRegisterWindowAccessor`,
+  `DoubleBufferAccessor`, `LNMDoubleBufferPlugin`,
+  `NumericAddressedBackendMuxedRegisterAccessor`, `AsyncNDRegisterAccessor`,
+  `LNMBackendVariableAccessor`, `NumericAddressedLowLevelTransferElement`), and
+  the forwarding-but-non-propagating `TransferElementAbstractor`.
