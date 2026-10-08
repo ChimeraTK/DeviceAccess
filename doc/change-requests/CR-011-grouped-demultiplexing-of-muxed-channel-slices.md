@@ -6,7 +6,7 @@ per channel. Demultiplex all channels with identical raw-conversion parameters
 and user type in a single pass, coordinated by a demultiplexer held inside the
 shared low-level transfer element.
 
-Status: READY TO IMPLEMENT (from DONE)
+Status: IMPLEMENTED (from DONE)
 
 ## Requirements
 
@@ -245,18 +245,3 @@ costs one indirect call per sample and duplicates the conversion dispatch
 already implemented in `RawConverter.h`. Reusing
 `RawConverter::ConverterLoopHelper` type-erases once per group per read and
 inlines the typed conversion loop.
-
-## Deferred issue
-
-- The stable-slot machinery of the demultiplexer registry (`_freeSlots`, the
-freed-slot reuse branch, the null-hole representation, the hole-skip guard in
-`run()` and the stale-index `assert` in `reset()`) guards against a scenario
-that cannot occur, and should be removed. A group is genuinely removed only
-at teardown; the registry only ever grows or vanishes wholesale, never loses
-one group while keeping others, so no `ConverterLoopHelper`'s index can go
-stale. Reopen this change request and simplify the registry: give each group
-a stable non-positional identity (monotonically increasing `groupId`) instead
-of the `_groups` vector index, drop the stable-slot parts listed above, and
-keep the per-read cost at one type-erased call per group.
-
-- doc/change-requests/CR-011-grouped-demultiplexing-of-muxed-channel-slices.md:71-74: the specification section still states that the member function bodies in `include/MuxedChannelDemultiplexer.h` (`Consumer<UserType>` constructor, `Group<UserType>::consumersEmpty()`, `Group<UserType>::rawCopy()`, `Registration<UserType>::~Registration`) are all defined at the end of the header; `~Registration()` is however defined in `src/MuxedChannelDemultiplexer.cc:125` (moved there from the header by commit 23b622fd, with a `// NOLINTNEXTLINE(clang-diagnostic-dtor-name)` comment). The code follows the cpp-style rule to put implementations in the .cc file, so the specification bullet is stale and must be updated (the trailing definition at include/MuxedChannelDemultiplexer.h:192-213 holds only the three template member bodies).
