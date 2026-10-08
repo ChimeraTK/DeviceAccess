@@ -5,7 +5,7 @@ target after the replacement step even when nothing was replaced. Where the call
 is forwarded to the target, that target already propagates, so the second
 propagation is redundant.
 
-Status: PLANNED
+Status: READY TO IMPLEMENT
 
 ## Requirements
 
