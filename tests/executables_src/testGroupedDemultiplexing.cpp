@@ -7,8 +7,6 @@
 using namespace boost::unit_test_framework;
 
 #include "Device.h"
-#include "DummyBackend.h"
-#include "Exception.h"
 #include "TransferGroup.h"
 
 #include <array>

@@ -6,7 +6,7 @@ per channel. Demultiplex all channels with identical raw-conversion parameters
 and user type in a single pass, coordinated by a demultiplexer held inside the
 shared low-level transfer element.
 
-Status: READY TO IMPLEMENT (from DONE)
+Status: IMPLEMENTED (from DONE)
 
 ## Requirements
 
@@ -245,9 +245,3 @@ costs one indirect call per sample and duplicates the conversion dispatch
 already implemented in `RawConverter.h`. Reusing
 `RawConverter::ConverterLoopHelper` type-erases once per group per read and
 inlines the typed conversion loop.
-
-## Deferred issue
-
-- src/MuxedChannelDemultiplexer.cc:180-183 has a stale/incorrect comment claiming Registration<UserType>::~Registration() 'is defined inline at the end of the header', but the destructor is defined in this .cc file (line 127) and only declared in the header (line 109); the comment contradicts the code and the specification and must be corrected.
-- include/MuxedChannelDemultiplexer.h:226-227 contains two consecutive chrome bars with nothing between them (a redundant leftover separator before the non-template inline demultiplexingPending() definition); it should be a single chrome bar.
-- tests/executables_src/testGroupedDemultiplexing.cpp:10-11 includes 'DummyBackend.h' and 'Exception.h', both unused and flagged by misc-include-cleaner (no-warnings policy); DummyBackend.h is also the wrong header for the ExceptionDummy backend used by the test (that class is declared in ExceptionDummyBackend.h), so the includes must be removed or replaced.

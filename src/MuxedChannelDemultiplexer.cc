@@ -179,8 +179,7 @@ namespace ChimeraTK::detail {
 
   // The Registration member functions are not performance critical (they only run when consumers are registered or
   // unregistered), so they are not inlined into the class definition but defined here and explicitly instantiated for
-  // all supported user types. The destructor only delegates to reset(), so it is defined inline at the end of the
-  // header.
+  // all supported user types.
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MuxedChannelDemultiplexer::Registration);
 
