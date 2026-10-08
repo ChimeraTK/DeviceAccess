@@ -24,13 +24,26 @@ Affected components (the `replaceTransferElement()` implementations of):
 
 - `NDRegisterAccessorDecorator` (`include/NDRegisterAccessorDecorator.h`).
 - `BitRangeAccessorDecorator` (`include/BitRangeAccessorDecorator.h`).
+- `SubArrayAccessorDecorator` (`include/SubArrayAccessorDecorator.h`).
+- `LNMBackendChannelAccessor`
+  (`backends/LogicalNameMapping/include/LNMBackendChannelAccessor.h`).
+- `LNMBackendBitAccessor`
+  (`backends/LogicalNameMapping/include/LNMBackendBitAccessor.h`).
 
-Current behaviour, both classes:
+All follow the same replace / consider-but-keep / forward path structure ending
+in an unconditional `setExceptionBackend()`, whose forwarding invocation is
+redundant.
+
+Current behaviour, all listed classes:
 
 - The implementation has three paths: replace the target; consider replacement
   but leave the target unchanged; or forward the call to the target.
 - All paths end with an unconditional
-  `_target->setExceptionBackend(this->_exceptionBackend)`.
+  `setExceptionBackend(this->_exceptionBackend)` on the target.
+- `LNMBackendChannelAccessor` targets its member `_accessor` and has no
+  `_target != newElement` guard (its replacement branch re-assigns the same
+  accessor); `LNMBackendBitAccessor` creates its new target via
+  `detail::createCopyDecorator()`.
 - `setExceptionBackend()` recurses into `_target`, descending the whole chain.
 - `TransferGroup::addAccessorImpl()` calls `replaceTransferElement()` for all
   combinations of high-level and internal elements, so the unconditional call
@@ -38,22 +51,32 @@ Current behaviour, both classes:
 
 Design:
 
-- Keep the propagation in the replacement path: a freshly created copy decorator
-  takes its exception backend from the new target via `initFromTarget()`, so
-  this decorator's backend must be re-applied.
+- Keep the propagation in the replacement path: the new target (a copy
+  decorator for `NDRegisterAccessorDecorator`/`LNMBackendBitAccessor`, or the
+  incoming accessor assigned directly for `BitRangeAccessorDecorator`,
+  `SubArrayAccessorDecorator` and `LNMBackendChannelAccessor`) may carry a
+  different backend, so this decorator's backend must be re-applied.
 - Keep it in the no-replacement path (`_target == newElement`): no recursion
   occurs there, so this is the only propagation.
 - Drop it from the forwarding path: the forwarded
   `_target->replaceTransferElement()` performs its own propagation.
-- Implemented as: propagate inside the `casted && mayReplaceOther` branch,
-  otherwise forward only.
+- Implemented as, per affected class: propagate inside the
+  `casted && mayReplaceOther` branch (covering both the replacement and the
+  `_target == newElement` no-replacement case), otherwise forward to
+  `_target->replaceTransferElement()` without propagating.
 - `setExceptionBackend()` is left unchanged; it stays a pointer assignment plus
   recursion.
 
-Excluded: `NumericAddressedBackendRegisterAccessor::replaceTransferElement()`
-(`src/NumericAddressedBackendRegisterAccessor.cc`) ends with an unconditional
-`_rawAccessor->setExceptionBackend(...)` but has no forwarding path, so the
-redundancy above does not apply. Its cost is tracked separately.
+Excluded: the other `replaceTransferElement()` implementations have no
+forwarding path, so the redundancy above does not apply to them. The
+non-forwarding ones are `NumericAddressedBackendRegisterAccessor`
+(`src/NumericAddressedBackendRegisterAccessor.cc`, ending in an unconditional
+`_rawAccessor->setExceptionBackend(...)`, its cost tracked separately),
+`NumericAddressedBackendASCIIAccessor`, `SubdeviceRegisterAccessor` and
+`SubdeviceRegisterWindowAccessor`. The no-op ones are `DoubleBufferAccessor`,
+`LNMDoubleBufferPlugin`, `NumericAddressedBackendMuxedRegisterAccessor`,
+`AsyncNDRegisterAccessor`, `LNMBackendVariableAccessor` and
+`NumericAddressedLowLevelTransferElement`.
 
 ### Alternatives considered
 
@@ -72,8 +95,28 @@ redundancy above does not apply. Its cost is tracked separately.
 ## Test plan
 
 - Existing TransferGroup and decorator unit tests pass unchanged.
-- Unit test: a decorator whose target is not replaced because the call is
-  forwarded does not propagate the exception backend itself.
+- Unit test: for every affected class (`NDRegisterAccessorDecorator`,
+  `BitRangeAccessorDecorator`, `SubArrayAccessorDecorator`,
+  `LNMBackendChannelAccessor`, `LNMBackendBitAccessor`), a forwarded call does
+  not invoke `setExceptionBackend()` on the target.
 - Unit test: after a replacement, the accessor chain reports the same exception
   backend as before the change.
 - Regression: backend exceptions are still wrapped and propagated identically.
+
+## Deferred issue
+
+- Specifications incompleteness: the affected components listed only
+  `NDRegisterAccessorDecorator` and `BitRangeAccessorDecorator`, but the same
+  forward-then-unconditional-`setExceptionBackend()` pattern also exists in
+  `SubArrayAccessorDecorator`, `LNMBackendChannelAccessor` and
+  `LNMBackendBitAccessor`; implementing only the two listed classes would not
+  satisfy the generally phrased requirement. Scope expanded to all forwarding
+  implementations.
+- Specifications rationale was inaccurate: the "copy decorator takes its
+  exception backend via `initFromTarget()`" reason applied only to
+  `NDRegisterAccessorDecorator`; the other classes assign the incoming accessor
+  directly, so the replacement path still needs propagation because the new
+  target may carry a different backend.
+- The "Excluded" note named only `NumericAddressedBackendRegisterAccessor`, so
+  the affected/unaffected boundary was unclear; the other non-forwarding and the
+  no-op implementations are now listed.
