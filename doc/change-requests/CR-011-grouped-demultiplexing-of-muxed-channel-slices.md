@@ -118,7 +118,7 @@ Affected components: `include/NumericAddressedLowLevelTransferElement.h`,
   group is formed through the fixed-raw factory. The demultiplexer itself plays
   the role of the accessor (implementing the templated
   `doPostReadImpl<UserType, RawType, SignificantBitsCase, FractionalCase,
-  isSigned>`), with the group's vector index as `implParameter`.
+  isSigned>`), with the group's stable `groupId` as `implParameter`.
 - The element's post-read therefore runs, per group, one virtual
   `converterLoopHelper->doPostRead()`. That single type-erased call per group
   per read dispatches into the demultiplexer's templated `doPostReadImpl`,
@@ -143,23 +143,18 @@ Affected components: `include/NumericAddressedLowLevelTransferElement.h`,
   `ConverterLoopHelperImpl` template instantiates both virtual members, but
   nothing ever invokes it.
 
-- The registry groups the consumers by the group key. The groups are stored in
-  a `std::vector<Group>`, with a `std::map<GroupKey, size_t>` resolving each
-  key to its vector index. The group's vector index is what the group's
-  `ConverterLoopHelper` receives as `implParameter`, so the group is identified
-  by a plain stable index (no pointer/address-based identity). The per-group
-  helper is owned by its group, so it lives exactly as long as the group. A
-  group is erased only when it loses its last consumer, which happens only as
-  its lone consumer's replacement re-registers (transfer-group merges are
-  one-way). Erasure removes the key from the map and frees the group's vector
-  slot, recording the index for reuse by a later registration, so it never
-  shifts the index of any other live group and no `ConverterLoopHelper`'s
-  `implParameter` index goes stale; an `assert` guards this no-erasure-while-
-  reused assumption by checking that no other key in the registry still
-  resolves to the freed slot. Each consumer's demultiplexing loop runs up to
-  that consumer's own sample count, so the group stores no shared iteration
-  bound; each slice is written from its own offset and stride, independent of
-  the other consumers in the group.
+- The registry groups the consumers by the group key in a
+`std::map<GroupKey, size_t>` that maps each key to its group's stable,
+monotonically increasing `groupId`. The `groupId` is a non-positional identity
+assigned once when the group is formed, and it is what the group's
+`ConverterLoopHelper` receives as `implParameter`, so no helper's
+`implParameter` can ever go stale. A group is removed only at teardown; the
+registry only ever grows or vanishes wholesale with its element, so it needs
+no freed-slot tracking, no slot-reuse branch, no null-hole representation, no
+hole-skip guard and no stale-index assert. Each consumer's demultiplexing loop
+runs up to that consumer's own sample count, so the group stores no shared
+iteration bound; each slice is written from its own offset and stride,
+independent of the other consumers in the group.
 - The element runs the demultiplexing in its `doPostRead`, guarded so it
   happens at most once per read. The demultiplexer exposes its state through
   two methods named to express 'the demultiplexing for the current read has not
