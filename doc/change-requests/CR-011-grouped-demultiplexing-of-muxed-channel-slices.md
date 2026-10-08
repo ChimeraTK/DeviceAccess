@@ -6,7 +6,7 @@ per channel. Demultiplex all channels with identical raw-conversion parameters
 and user type in a single pass, coordinated by a demultiplexer held inside the
 shared low-level transfer element.
 
-Status: DONE
+Status: PLANNED (from DONE)
 
 ## Requirements
 
@@ -247,3 +247,16 @@ bullet.
   already implemented in `RawConverter.h`. Reusing
   `RawConverter::ConverterLoopHelper` type-erases once per group per read and
   inlines the typed conversion loop.
+
+## Deferred issue
+
+- The stable-slot machinery of the demultiplexer registry (`_freeSlots`, the
+  freed-slot reuse branch, the null-hole representation, the hole-skip guard in
+  `run()` and the stale-index `assert` in `reset()`) guards against a scenario
+  that cannot occur, and should be removed. A group is genuinely removed only
+  at teardown; the registry only ever grows or vanishes wholesale, never loses
+  one group while keeping others, so no `ConverterLoopHelper`'s index can go
+  stale. Reopen this change request and simplify the registry: give each group
+  a stable non-positional identity (monotonically increasing `groupId`) instead
+  of the `_groups` vector index, drop the stable-slot parts listed above, and
+  keep the per-read cost at one type-erased call per group.
