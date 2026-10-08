@@ -201,12 +201,14 @@ namespace ChimeraTK {
       std::lock_guard<std::recursive_mutex> guard(*lock.mutex());
       auto casted = boost::dynamic_pointer_cast<NDRegisterAccessor<uint64_t>>(newElement);
       if(casted && _accessor->mayReplaceOther(newElement)) {
+        // The new copy decorator may carry a different backend, so re-apply ours.
         _accessor = detail::createCopyDecorator<uint64_t>(casted);
+        _accessor->setExceptionBackend(this->_exceptionBackend);
       }
       else {
+        // The forwarded call propagates our backend itself.
         _accessor->replaceTransferElement(newElement);
       }
-      _accessor->setExceptionBackend(this->_exceptionBackend);
     }
   };
 

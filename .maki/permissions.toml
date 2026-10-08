@@ -1,0 +1,76 @@
+[bash]
+allow = [
+    "git *",
+    "echo *",
+    "wc *",
+    "grep *",
+    "head *",
+    "ls *",
+    "cmake *",
+    "ninja *",
+    "tail *",
+    "./testJsonMapFileParser *",
+    "cp *",
+    "ctest *",
+    "clang-format-19 *",
+    "cd *",
+    "cat *",
+    "find *",
+    "sed *",
+    "sort *",
+    'for f in doc/change-requests/*.md; do echo "--- $f ---"; head -20 "$f"; done 2>/dev/null',
+    'for f in testJsonMapFileParser.cpp testMultiplexedDataAccesor.cpp testNumericAddressedBackendRegisterAccessor.cpp testAsyncRead.cpp testDoubleBufferAccessor.cc; do echo "--- $f ---"; grep -n "\.write()\|writeDestination\|write(" "$f"; done',
+    "stat *",
+    "./tests/testJsonMapFileParser *",
+    'for t in TestSelectedBySelectorNotFound TestSelectedBySelectorItselfGated; do echo "=== $t ==="; ./testJsonMapFileParser --run_test="JsonMapFileParserTestSuite/$t" 2>&1 | tail -4; done',
+    "nm *",
+    "tr *",
+    "xargs *",
+    "touch *",
+    "tee *",
+    'FILES="src/async/TriggeredPollDistributor.cc include/async/TriggeredPollDistributor.h tests/executables_src/testAsyncRead.cpp"',
+    """
+for f in $FILES; do
+  echo "=== clang-tidy-22: $f ==="
+  clang-tidy-22 -p build "$f" 2>&1 | grep -E "^/home.*ChimeraTK-DeviceAccess/(src/async/TriggeredPollDistributor|include/async/TriggeredPollDistributor|tests/executables_src/testAsyncRead)" | grep -E "warning:|error:"
+  echo "--- (end $f) ---"
+done""",
+    '''
+for f in include/NDRegisterAccessor.h src/NumericAddressedBackend.cc src/NumericAddressedBackendRegisterAccessor.cc src/NumericAddressedRegisterCatalogue.cc tests/executables_src/testJsonMapFileParser.cpp tests/executables_src/testMultiplexedDataAccesor.cpp; do
+  echo "--- $f ---"
+  git --no-pager diff -w -- "$f" | grep -E "^[+-]" | grep -vE "^(\+\+\+|---)" | head -5
+done''',
+    """
+for i in $(seq 1 8); do
+  sleep 90
+  if ! (pgrep -f "cmake --build" >/dev/null || pgrep -f "ninja" >/dev/null); then echo "BUILD FINISHED after iter $i"; break; fi
+  echo "iter $i: still building ($(tail -1 /tmp/lint/build.log | tr -s ' '))"
+done
+echo "=== build tail ==="; tail -20 /tmp/lint/build.log""",
+    "pgrep *",
+    "../build/tests/testJsonMapFileParser *",
+    """
+for t in testNumericAddressedBackendRegisterAccessor testMultiplexedDataAccesor testAsyncRead; do
+  echo "=== $t ==="
+  ../build/tests/$t 2>&1 | tail -4
+  echo "EXIT: ${PIPESTATUS[0]}"
+done""",
+    "./testAsyncRead *",
+    "../build/tests/testTransferGroup *",
+    "./testTransferGroup *",
+    "./testMultiplexedDataAccesor *",
+    "sleep *",
+    "ps *",
+    "nohup *",
+    "/home/jgeorg/Source/workflow-scripts/build/ChimeraTK-DeviceAccess-debug/tests/testAsyncRead *",
+    'for t in testSelectedByInterruptSelectedDelivers testSelectedByInterruptUnselectedDoesNotWake testSelectedByInterruptAlternatingSwaps testSelectedByInterruptSharedSelector testSelectedByInterruptInitialValueUnselected testSelectedByInterruptSwitchSelector testReadAny; do echo "=== $t ==="; timeout 60 ./testAsyncRead --run_test=$t 2>&1 | tail -4; done',
+    "gdb *",
+    'for f in src/DoubleBufferAccessor.cc src/SelectedByDecorator.cc include/DoubleBufferAccessor.h include/NDRegisterAccessor.h include/NumericAddressedBackend.h include/SelectedByDecorator.h include/async/TriggeredPollDistributor.h src/NumericAddressedBackend.cc src/async/TriggeredPollDistributor.cc tests/executables_src/testAsyncRead.cpp tests/include/ReadCountingBackend.h; do if clang-format-19 --output-replacements-xml "$f" 2>/dev/null | grep -q "<replacement "; then echo "NEEDS FORMAT: $f"; fi; done',
+    '''LC_ALL=C grep -nP '[^\x00-\x7F]' doc/change-requests/CR-014-selectedby-runtime-enforcement.md''',
+    "awk *",
+]
+
+[websearch]
+allow = [
+    "ChimeraTK DeviceAccess selectedBy NumericAddressedBackend register accessor interrupt read selector value implementation",
+]

@@ -5,7 +5,7 @@ target after the replacement step even when nothing was replaced. Where the call
 is forwarded to the target, that target already propagates, so the second
 propagation is redundant.
 
-Status: READY TO IMPLEMENT
+Status: IMPLEMENTED
 
 ## Requirements
 
@@ -106,29 +106,3 @@ propagates the exception backend, so it is unaffected.
 - Unit test: after a replacement, the accessor chain reports the same exception
   backend as before the change.
 - Regression: backend exceptions are still wrapped and propagated identically.
-
-## Deferred issue
-
-- Specifications incompleteness: the affected components listed only
-  `NDRegisterAccessorDecorator` and `BitRangeAccessorDecorator`, but the same
-  forward-then-unconditional-`setExceptionBackend()` pattern also exists in
-  `SubArrayAccessorDecorator`, `LNMBackendChannelAccessor` and
-  `LNMBackendBitAccessor`; implementing only the two listed classes would not
-  satisfy the generally phrased requirement. Scope expanded to all forwarding
-  implementations.
-- Specifications rationale was inaccurate: the "copy decorator takes its
-  exception backend via `initFromTarget()`" reason applied only to
-  `NDRegisterAccessorDecorator`; the other classes assign the incoming accessor
-  directly, so the replacement path still needs propagation because the new
-  target may carry a different backend.
-- The "Excluded" note named only `NumericAddressedBackendRegisterAccessor` and
-  misclassified `SubdeviceRegisterAccessor`/`SubdeviceRegisterWindowAccessor`
-  as non-forwarding though their `replaceTransferElement()` bodies are empty
-  no-ops, so the affected/unaffected boundary was unclear. The categories are
-  now: replacement-but-no-forward (`NumericAddressedBackendRegisterAccessor`,
-  `NumericAddressedBackendASCIIAccessor`), the no-op implementations
-  (`SubdeviceRegisterAccessor`, `SubdeviceRegisterWindowAccessor`,
-  `DoubleBufferAccessor`, `LNMDoubleBufferPlugin`,
-  `NumericAddressedBackendMuxedRegisterAccessor`, `AsyncNDRegisterAccessor`,
-  `LNMBackendVariableAccessor`, `NumericAddressedLowLevelTransferElement`), and
-  the forwarding-but-non-propagating `TransferElementAbstractor`.

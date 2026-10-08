@@ -137,12 +137,14 @@ namespace ChimeraTK {
     void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
       auto casted = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(newElement);
       if(casted && _accessor->mayReplaceOther(newElement)) {
+        // The incoming accessor may carry a different backend, so re-apply ours.
         _accessor = casted;
+        _accessor->setExceptionBackend(this->_exceptionBackend);
       }
       else {
+        // The forwarded call propagates our backend itself.
         _accessor->replaceTransferElement(newElement);
       }
-      _accessor->setExceptionBackend(this->_exceptionBackend);
     }
   };
 

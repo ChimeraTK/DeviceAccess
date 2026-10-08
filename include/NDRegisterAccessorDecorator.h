@@ -397,11 +397,14 @@ namespace ChimeraTK {
       if(_target != newElement) {
         _target = detail::createCopyDecorator<TargetUserType>(casted);
       }
+      // The new target may carry a different backend, so re-apply ours. In the no-replacement case no recursion
+      // happens, so this is the only propagation.
+      _target->setExceptionBackend(this->_exceptionBackend);
     }
     else {
+      // The forwarded call propagates our backend itself.
       _target->replaceTransferElement(newElement);
     }
-    _target->setExceptionBackend(this->_exceptionBackend);
   }
 
   /********************************************************************************************************************/

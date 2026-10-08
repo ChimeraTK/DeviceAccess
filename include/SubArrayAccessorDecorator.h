@@ -239,11 +239,14 @@ namespace ChimeraTK::detail {
         // Bookkeeping: combine the original target and the replaced target's use count
         _sharedAccessors->combineTransferSharedStates(oldTarget, _target->getId());
       }
+      // The new target may carry a different backend, so re-apply ours. In the no-replacement case no recursion
+      // happens, so this is the only propagation.
+      _target->setExceptionBackend(this->_exceptionBackend);
     }
     else {
+      // The forwarded call propagates our backend itself.
       _target->replaceTransferElement(newElement);
     }
-    _target->setExceptionBackend(this->_exceptionBackend);
   }
 
   /********************************************************************************************************************/
