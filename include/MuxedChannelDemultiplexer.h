@@ -21,11 +21,7 @@ namespace ChimeraTK::detail {
    * Demultiplexer for strided channel slices of a muxed 2D register.
    *
    * Iterates the multiplexed raw buffer once per group of consumers with identical conversion parameters and UserType,
-   * instead of once per consumer. With no consumers registered it is inert and adds no overhead.
-   *
-   * Carries no per-sample conversion dispatch: each non-raw group owns one RawConverter::ConverterLoopHelper which
-   * dispatches once per group per read into the demultiplexer's templated doPostReadImpl (an inlined typed loop). Raw
-   * groups (copied without conversion) are handled by a strided typed memcpy.
+   * instead of once per consumer. With no consumers registered it is inert and adds almost no overhead.
    */
   class MuxedChannelDemultiplexer {
    public:
@@ -34,31 +30,28 @@ namespace ChimeraTK::detail {
      * UserType; raw slices are grouped by their UserType and flagged isRaw, so they never mix with cooking consumers.
      */
     struct GroupKey {
-      NumericAddressedRegisterInfo::Type dataType;
-      uint32_t width;
-      int32_t nFractionalBits;
-      bool signedFlag;
+      NumericAddressedRegisterInfo::Type dataType{};
+      uint32_t width{};
+      int32_t nFractionalBits{};
+      bool signedFlag{};
       DataType rawType;
-      std::type_index userType;
-      bool isRaw;
+      std::type_index userType{typeid(std::nullptr_t)};
+      bool isRaw{};
 
       auto operator<=>(const GroupKey&) const = default;
     };
 
     /**
-     * One strided channel consumer. byteOffset is the channel's first sample within the raw buffer (already
-     * accounting for the sample offset), stride the distance between samples (elementPitchBits / 8). The staging
-     * buffer is a reference to the consumer's typed staging vector; its data pointer is resolved lazily, since a
-     * wrapping decorator swaps the vector's internal buffer on every read.
+     * One strided channel consumer.
      */
     template<typename UserType>
     struct Consumer {
-      size_t byteOffset{};
-      size_t stride{};
-      size_t nSamples{};
-      std::vector<UserType>& staging; // owns the buffer the demultiplexer writes into
-
       Consumer(size_t offset, size_t pitch, size_t count, std::vector<UserType>& stagingBuffer);
+
+      size_t byteOffset{}; // offset of first sample within raw buffer
+      size_t stride{};     // elementPitchBits / 8
+      size_t nSamples{};
+      std::vector<UserType>& staging;
     };
 
     /**
@@ -67,9 +60,6 @@ namespace ChimeraTK::detail {
      * consumer list (all consumers of one group share the GroupKey user type).
      */
     struct GroupBase {
-      bool isRaw{};
-      std::unique_ptr<RawConverter::ConverterLoopHelper> converterLoopHelper;
-
       /** True when the group has no registered consumers (a freed slot or a group losing its last consumer). */
       [[nodiscard]] virtual bool consumersEmpty() const = 0;
 
@@ -77,18 +67,23 @@ namespace ChimeraTK::detail {
       virtual void rawCopy(const std::vector<uint8_t>& rawBuffer) = 0;
 
       virtual ~GroupBase() = default;
+
+      bool isRaw{};
+      std::unique_ptr<RawConverter::ConverterLoopHelper> converterLoopHelper;
     };
 
-    /** One group of consumers sharing a single raw pass. Non-raw groups own a ConverterLoopHelper; raw groups are
-     *  copied without conversion. */
+    /**
+     * One group of consumers sharing a single raw pass. Non-raw groups own a ConverterLoopHelper; raw groups are
+     * copied without conversion.
+     */
     template<typename UserType>
     struct Group : GroupBase {
-      std::list<Consumer<UserType>> consumers;
-
       [[nodiscard]] bool consumersEmpty() const override;
 
       /** Strided typed memcpy of each consumer's samples (up to its own sample count) into its staging buffer. */
       void rawCopy(const std::vector<uint8_t>& rawBuffer) override;
+
+      std::list<Consumer<UserType>> consumers;
     };
 
     /**
@@ -102,10 +97,12 @@ namespace ChimeraTK::detail {
      public:
       Registration() = default;
 
-      /** Register the given channel consumer with the owner. The implementation is not performance critical and
-       *  therefore placed in the .cc file; the template is explicitly instantiated for all supported user types. The
-       *  full register info (including the register name) and channel index are kept so RawConverter error messages
-       *  stay informative; isRaw marks raw-mode slices, which form a separate raw-copy group. */
+      /**
+       * Register the given channel consumer with the owner.
+       *
+       * The full register info (including the register name) and channel index are kept so RawConverter error messages
+       * stay informative; isRaw marks raw-mode slices, which form a separate raw-copy group.
+       */
       Registration(MuxedChannelDemultiplexer* owner, const NumericAddressedRegisterInfo& info, bool isRaw,
           size_t byteOffset, size_t stride, size_t nSamples);
 
@@ -120,8 +117,7 @@ namespace ChimeraTK::detail {
       /** Remove the consumer from the registry. Idempotent. */
       void reset();
 
-      /** The staging buffer the demultiplexer fills. Its data pointer changes after each swap into the application
-       *  buffer, so the demultiplexer resolves it lazily on every read. */
+      /** Get the staging buffer the demultiplexer fills. */
       [[nodiscard]] std::vector<UserType>& staging();
 
      private:
@@ -130,6 +126,7 @@ namespace ChimeraTK::detail {
       MuxedChannelDemultiplexer* _owner{nullptr};
       std::map<GroupKey, size_t>::iterator _groupIt; // resolves this consumer's group key to its index in _groups
       std::list<Consumer<UserType>>::iterator _it;
+
       // Heap-allocated so its address (which the registered Consumer references) stays stable when the registration is
       // moved; the moveable handle owns it, the buffer's data pointer changes on each swap, never its address.
       std::unique_ptr<std::vector<UserType>> _staging;
