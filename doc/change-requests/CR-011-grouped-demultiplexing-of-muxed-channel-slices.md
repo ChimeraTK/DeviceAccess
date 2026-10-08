@@ -67,11 +67,14 @@ Affected components: `include/NumericAddressedLowLevelTransferElement.h`,
 member of `NumericAddressedLowLevelTransferElement`. It is a plain registry
 plus the demultiplexing loop; with no consumers registered it is inert and
 adds no overhead to the element's transfer path.
-- The member function bodies in `include/MuxedChannelDemultiplexer.h`
-(`Consumer<UserType>` constructor, `Group<UserType>::consumersEmpty()`,
-`Group<UserType>::rawCopy()`, `Registration<UserType>::~Registration`) are
-defined at the end of the header, ordered by declaration, including for
-template member functions.
+- The member function bodies defined at the end of
+`include/MuxedChannelDemultiplexer.h`, ordered by declaration, are the
+template member functions `Consumer<UserType>` constructor,
+`Group<UserType>::consumersEmpty()` and `Group<UserType>::rawCopy()`, plus the
+non-template inline `demultiplexingPending()` and `pendingDemultiplexing()`.
+`Registration<UserType>::~Registration()` (and the other `Registration<UserType>`
+members) are defined in `src/MuxedChannelDemultiplexer.cc`, following the
+cpp-style rule to put implementations in the .cc file.
 - `NumericAddressedBackendRegisterAccessor` registers one consumer with the
 demultiplexer of its raw element when the register is strided (element pitch
 larger than the element data width; the same property that makes raw slices
