@@ -13,9 +13,9 @@ Status: IN PROGRESS
 Aspect: runtime enforcement of the `selectedBy` metadata the parser already
 provides.
 
-- A polled read of a gated register always performs the physical read; the gate
-  is evaluated afterwards. Unselected data is reported as
-  `DataValidity::faulty`.
+- Whether a polled read of a gated register performs the physical read is
+  unspecified, and the implementation may choose. A read is gated in any case:
+  unselected data is reported as `DataValidity::faulty`.
 - The payload of an unselected value is unspecified. `DataValidity::faulty` is
   the only guarantee; consumers must not rely on the buffer contents.
 - Every channel slice of a 2D register is gated by its own effective
