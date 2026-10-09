@@ -226,6 +226,13 @@ byte-granular, so neighbouring bytes are never modified.
 `DummyRegisterRawAccessor<RawType = int32_t>`. A deduction guide keeps
 existing `DummyRegisterRawAccessor acc{...}` declarations compiling, and
 `DummyBackend::getRawAccessor` returns `DummyRegisterRawAccessor<>`.
+- The deduction guide resolves the raw type to `int32_t`, so a deduction-less
+`DummyRegisterRawAccessor acc{...}` uses 32-bit elements, like
+`getRawAccessor`; another width needs an explicit template argument.
+- A value-semantic proxy cannot be passed directly to `std::bit_cast`:
+`std::bit_cast` deduces the proxy type, not `RawType`, and no implicit
+conversion applies. A read that feeds `std::bit_cast` converts the proxy to
+`RawType` first; the affected tests are adapted accordingly (see test plan).
 - It returns value semantics instead of `int32_t&`; its proxy converts to and
 from `RawType` and implements, so that existing expressions (`raw += 5`,
 `raw++`, `raw & mask`, `~raw`) keep compiling and update the memory:
@@ -339,6 +346,9 @@ accesses the memory correctly.
 - tests that assert sizes, full reservation or backend read-only state
 (`testDummyBackend`, `testDummyRegisterAccessor`) assert lazily
 materialised content only and no longer rely on the removed `setReadOnly`;
+- tests that write the internal bar contents directly (`testDummyBackend`,
+`testDummyRegisterAccessor`) go through the backdoor accessors instead, with
+no library-side compatibility shim;
 - the out-of-range `logic_error` expectations follow the new "any address is
 valid" behaviour.
 - the `shm_exists` based tests obtain the versioned name through
@@ -351,7 +361,9 @@ valid" behaviour.
 - Adapt the other backdoor and `AddressRange` consumers for the new accessor
 semantics:
 - `testGenericMuxedInterruptDistributor`;
-- `testNumericAddressedBackendRegisterAccessor`;
+- `testNumericAddressedBackendRegisterAccessor`: the
+`std::bit_cast<float>(<raw element>)` read-backs wrap the raw element in
+`RawType(...)`;
 - `testNumericAddressedBackendUnified`;
 - `testLMapBackendUnified`;
 - `testDoubleBufferAccessor`.
@@ -365,7 +377,10 @@ semantics:
 - DI-5 [FOLDED-IN] Minor: removing `getBarSizesInBytesFromRegisterMapping()` (src/DummyBackendBase.cc:72-82) also removes the only construction-time `elementPitchBits % 8` check, so a map file with a non-byte-aligned top-level register no longer throws when opened (it only fails when an accessor is built). The requirement says the constraint "remains" and the "Accepted consequences" list (lines 188-193) does not record this behaviour change; confirm it is intended and add it there.
 - DI-6 [FOLDED-IN] Test plan omits tests/executables_src/testLMapBackendUnified.cpp from all adaptation lists (lines 338-357). It holds the removed buffer lock at lines 153 and 175 (`derived->acc.getBufferLock()`), exactly like testNumericAddressedBackendUnified (lines 917/938) which IS listed, and uses `DummyRegisterAccessor` extensively. With `getBufferLock()` removed and each element access now taking `DummyBackend::mutex` itself (CR lines 262-267, 256-261), this file will not compile / will ...
 - DI-7 [FOLDED-IN] testDummyBackendUnified.cc is listed under "Adapt the other backdoor and AddressRange consumers" (line 357) but uses none of the affected APIs: it contains only an unused `#include "DummyRegisterAccessor.h"`, no backdoor accessor, `AddressRange`, `setReadOnly`, `getBufferLock` or `_barContents`, and the `UnifiedBackendTest` framework it calls does not use them either. The entry is unjustified (minor).
-- DI-8 [NEW] CR-013 test plan (line 330) asserts the existing raw-accessor expressions in testNumericAddressedBackendRegisterAccessor 'still compile','but they cannot, and the fix is mutually exclusive with the CR metadata: the test deduces the raw type from `acc & derived->bitmask` (int32_t, line 227) and reads via `bit_cast<float>(acc)` (lines 375/393/411). CR lines 225-228 reject a default-attributed deduction guide (DI-2 already rejected the resulting ambiguity), so `DummyRegisterRawAccessor acc{exceptionDummy, "", "/Integers/unsigned32"}` (test line 225) cannot deduce, and the proxy is a fixed 32-bit type so it is not bit_cast-able to float. The two available readings (adapt the test per its own semantics in the tests-write phase, as DI-2/DI-6/DI-7 establish for the rest of the list, versus bending the API to keep it compiling) lead to opposite code, so the resolution must be supplied before implementation can be called complete.
+- DI-8 [NEW] CR-013 test plan (line 330) asserts the existing raw-accessor expressions in testNumericAddressedBackendRegisterAccessor 'still compile','but they cannot, and the fix is mutually exclusive with the CR metadata: the test deduces the raw type from `acc & derived->bitmask` (int32_t, line 227) and reads via `bit_cast<float>(acc)` (lines 375/393/411). CR lines 225-228 reject a default-attributed deduction guide (DI-2 already rejected the resulting ambiguity), so `DummyRegisterRawAccessor...
 - DI-9 [NEW] Undecided in the CR: for a deduction-less `DummyRegisterRawAccessor acc{...}` (e.g. testNumericAddressedBackendUnified.cpp:225), what fixed width should the accessor use, given CR line 238 requires `sizeof(RawType)` to equal the element width (`elementPitchBits / 8`) and CR lines 225-228 reject a default-attributed (and hence ambiguous) deduction guide?
 - DI-10 [NEW] Undecided in the CR: should the raw proxy expose a bit_cast-compatible conversion to the register's 32-bit value (testNumericAddressedBackendRegisterAccessor.cpp:375/393/411 do `bit_cast<float>(acc)`), or is that read-back expression part of the test adaptation to be dropped/rewritten in the tests-write phase?
 - DI-11 [NEW] testDummyRegisterAccessor.cpp:210-257 writes int32_t words directly into `_barContents[0xD]` in the pre-change contiguous bar layout (offset areaIndexOffset = 1000/pitch); with chunked byte storage only the backdoor proxy can place them correctly, confirming the CR-mandated adaptation (test plan line 339) - needs confirmation that no library-side compatibility shim is expected.
+- DI-12 [NEW] Raw-accessor type/conversion contract unrecorded (DI-8/DI-9/DI-10): the CR endorses a deduction guide (lines 225-228) but never states that it resolves to DummyRegisterRawAccessor<int32_t>, nor that a value-semantic proxy cannot be passed to std::bit_cast (deduction picks the proxy type, not RawType, so the implicit conversion does not apply); testNumericAddressedBackendRegisterAccessor.cpp:375/393/411 bit_cast<float>(<raw element>) therefore cannot compile unchanged, and the resolution the user confirmed (adapt the tests) must be written into the plan.
+- DI-13 [NEW] Test plan does not state the raw read-back adaptation (DI-8/DI-10): the entry for testNumericAddressedBackendRegisterAccessor (line 354) does not mention that the bit_cast<float>(<raw element>) read-backs must wrap the proxy in RawType(...).
+- DI-14 [NEW] Test plan does not record that tests writing _barContents directly are rewritten through the accessors (DI-11): testDummyRegisterAccessor.cpp:210-257 (and testDummyBackend.cpp) write int32_t words straight into _barContents, which no longer exists as a per-bar contiguous word buffer; state that these go through the backdoor accessor with no library-side compatibility shim.
