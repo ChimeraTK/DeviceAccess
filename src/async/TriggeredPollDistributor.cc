@@ -6,6 +6,7 @@
 #include "async/DataConsistencyKey.h"
 #include "async/SubDomain.h"
 #include "BackendRegisterCatalogue.h"
+#include "NumericAddressedBackend.h"
 
 namespace ChimeraTK::async {
 

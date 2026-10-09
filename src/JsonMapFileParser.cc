@@ -314,6 +314,9 @@ namespace ChimeraTK::detail {
               (void)channelName; // the channel name is the map key; the channel data carries its own offset
               channel->fill(info, inheritedSelectedBy);
             }
+            // A register-level 'selectedBy' on a 2D register gates the whole block (stored separately from the
+            // per-channel selections just applied).
+            applyRegisterSelectedBy2D(info, inheritedSelectedBy);
           }
         }
         else if(addressSetByParent) {
@@ -390,12 +393,26 @@ namespace ChimeraTK::detail {
       }
     }
 
+    // Record a register-level 'selectedBy' for a 2D (channels-bearing) register. This gates the WHOLE 2D block (the
+    // full-2D accessor) on a single selector, independent of the per-channel 'selectedBy' each channel carries. It is
+    // stored separately (NumericAddressedRegisterInfo::registerSelectedBy) rather than folded into a channel. A local
+    // 'selectedBy' overrides an inherited one.
+    void applyRegisterSelectedBy2D(
+        NumericAddressedRegisterInfo& info, const std::optional<SelectedBy>& inheritedSelectedBy) const {
+      if(selectedBy || inheritedSelectedBy) {
+        const auto& selected = selectedBy ? *selectedBy : *inheritedSelectedBy;
+        RegisterPath selReg(selected.regPath);
+        selReg.setAltSeparator(".");
+        info.registerSelectedBy.emplace(selReg, selected.value);
+      }
+    }
+
     // Build the ChannelInfo of a channel or bit-field child slice from its 'representation'. The raw type always
     // spans the whole sample word (wordBits), so the slice reads the element with its full word width in the
     // underlying transport and extracts the range via the bit offset/width. Shared by the parent channel slice and
     // the bit-field child slice creation.
-    static NumericAddressedRegisterInfo::ChannelInfo makeChannelInfo(const Representation& rep, size_t wordBits,
-        const std::optional<NumericAddressedRegisterInfo::SelectedBy>& selectedBy) {
+    static NumericAddressedRegisterInfo::ChannelInfo makeChannelInfo(
+        const Representation& rep, size_t wordBits, const std::optional<ChimeraTK::SelectedBy>& selectedBy) {
       return {rep.bitShift, NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
           rep.type != RepresentationType::IEEE754 ? rep.isSigned : true, DataType("int" + std::to_string(wordBits)),
           selectedBy};
@@ -463,7 +480,7 @@ namespace ChimeraTK::detail {
             }
             const auto& rep = channel->representation;
 
-            std::optional<NumericAddressedRegisterInfo::SelectedBy> channelSelectedBy = std::nullopt;
+            std::optional<ChimeraTK::SelectedBy> channelSelectedBy = std::nullopt;
             if(channel->selectedBy || effectiveSelectedBy) {
               const auto& sb = channel->selectedBy ? *channel->selectedBy : *effectiveSelectedBy;
               auto selReg = RegisterPath(sb.regPath);

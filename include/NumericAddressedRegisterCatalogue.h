@@ -37,19 +37,6 @@ namespace ChimeraTK {
     enum class Type { VOID = 0, FIXED_POINT = 1, IEEE754 = 2, ASCII = 3 };
 
     /**
-     * Per-channel information that contains a pair of register and value determining a condition
-     * under which this register is considered active.
-     */
-
-    /* Unfortunately, register is a reserved keyword so we use regPath.
-     * And since this is used as a std::optional, which has a value() method would make "value" a weird name
-     */
-    struct SelectedBy {
-      RegisterPath regPath; /**< Path of register that determines if a Channel/Register is considered active */
-      int64_t val;          /**< Value of that register that determines if that Channel/Register is active */
-    };
-
-    /**
      *  Per-channel information. For scalar and 1D registers, exactly one ChannelInfo is present. For 2D register, one
      *  ChannelInfo per channel is present.
      */
@@ -145,6 +132,14 @@ namespace ChimeraTK {
     /** Define per-channel information (bit interpretation etc.), 1D/scalars have exactly one entry. */
     std::vector<ChannelInfo> channels;
 
+    /**
+     * Register-level 'selectedBy' for a 2D register: gates the WHOLE 2D block (the full-2D accessor) on a single
+     * selector. This is distinct from the per-channel 'selectedBy' each ChannelInfo may carry (which gates the
+     * named channel slices individually). Scalar/1D registers store their selection in the single channel and leave
+     * this nullopt.
+     */
+    std::optional<SelectedBy> registerSelectedBy{std::nullopt};
+
     DataDescriptor dataDescriptor;
 
     bool hidden{false};
@@ -177,6 +172,8 @@ namespace ChimeraTK {
     [[nodiscard]] NumericAddressedRegisterInfo getBackendRegister(const RegisterPath& registerPathName) const override;
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
+
+    [[nodiscard]] std::optional<SelectedBy> getSelectedBy(const RegisterPath& registerPathName) const override;
 
     [[nodiscard]] const std::set<std::vector<size_t>>& getListOfInterrupts() const;
 

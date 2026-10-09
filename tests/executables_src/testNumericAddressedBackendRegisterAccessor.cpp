@@ -727,4 +727,94 @@ BOOST_AUTO_TEST_CASE(TestMergeStridedChannelSlices) {
 
 /**********************************************************************************************************************/
 
+// Runtime 'selectedBy' gating on polled scalar/1D accessors (plan tests P1-P3).
+//
+// simpleJsonFile.jmap defines two read-only alternatives sharing one physical address (DAQ/DAQ.DOUBLE_BUF area,
+// offset 1246): DAQ.SINGLE_MUXED is active while DAQ.MUX_SEL == 0 and DAQ.SINGLE_MUXED_ALT while DAQ.MUX_SEL == 1.
+// The DummyBackend's DummyRegisterAccessor writes the raw memory regardless of the declared read-only access, so it
+// is used to populate the shared data word and to set the selector register.
+
+// Opens a device on simpleJsonFile.jmap and hands back the DummyBackend for backdoor access.
+static boost::shared_ptr<DummyBackend> openSelectedByPolledDummy(Device& dev) {
+  dev.open("(dummy?map=simpleJsonFile.jmap)");
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(dev.getBackend());
+  if(!backend) {
+    BOOST_FAIL("Device did not produce a DummyBackend");
+  }
+  return backend;
+}
+
+// P1: selector matches -> read() returns DataValidity::ok and the real data.
+// Uses the top-level aligned MUX (offset 0) + SCALAR (offset 4) registers: DummyRegisterAccessor requires
+// 32-bit-aligned addresses for element access, so the unaligned DAQ.SINGLE_MUXED (offset 1246) cannot be used
+// for byte writes/reads here.
+BOOST_AUTO_TEST_CASE(TestSelectedByScalarSelectorMatches) {
+  Device device;
+  auto dummy = openSelectedByPolledDummy(device);
+
+  DummyRegisterAccessor<int32_t> mux(dummy.get(), "", "MUX");
+  DummyRegisterAccessor<int32_t> data(dummy.get(), "", "SCALAR");
+
+  mux[0] = 0; // select SCALAR (MUX == 0)
+  data[0] = 1234;
+
+  auto accessor = device.getScalarRegisterAccessor<int>("/SCALAR");
+  accessor.read();
+  BOOST_CHECK(accessor.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(accessor), 1234);
+
+  device.close();
+}
+
+// P2: selector differs -> read() returns DataValidity::faulty (payload is unspecified, so the bytes are not
+// asserted, only the validity signal is the contract).
+BOOST_AUTO_TEST_CASE(TestSelectedByScalarSelectorDiffers) {
+  Device device;
+  auto dummy = openSelectedByPolledDummy(device);
+
+  DummyRegisterAccessor<int32_t> mux(dummy.get(), "", "MUX");
+
+  mux[0] = 1; // SCALAR is NOT selected (MUX is 1)
+  auto data = DummyRegisterAccessor<int32_t>(dummy.get(), "", "SCALAR");
+  data[0] = 999;
+
+  auto accessor = device.getScalarRegisterAccessor<int>("/SCALAR");
+  accessor.read();
+  BOOST_CHECK(accessor.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  device.close();
+}
+
+// P3: switching the selector between the two alternatives flip-flops which alternative is active. The pair
+// DAQ.SINGLE_MUXED / DAQ.SINGLE_MUXED_ALT share the same (unaligned) address 1246, so the payload bytes cannot
+// be written/read via DummyRegisterAccessor; only the dataValidity flip is asserted (the validity signal is the
+// contract).
+BOOST_AUTO_TEST_CASE(TestSelectedByScalarSwitchAlternative) {
+  Device device;
+  auto dummy = openSelectedByPolledDummy(device);
+
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+
+  auto single = device.getScalarRegisterAccessor<int>("/DAQ/SINGLE_MUXED");
+  auto alt = device.getScalarRegisterAccessor<int>("/DAQ/SINGLE_MUXED_ALT");
+
+  // Select SINGLE_MUXED (MUX_SEL == 0): it is valid, the alternative is faulty.
+  muxSel[0] = 0;
+  single.read();
+  BOOST_CHECK(single.dataValidity() == ChimeraTK::DataValidity::ok);
+  alt.read();
+  BOOST_CHECK(alt.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Switch to SINGLE_MUXED_ALT (MUX_SEL == 1): now the alternative is active, SINGLE_MUXED is faulty.
+  muxSel[0] = 1;
+  alt.read();
+  BOOST_CHECK(alt.dataValidity() == ChimeraTK::DataValidity::ok);
+  single.read();
+  BOOST_CHECK(single.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

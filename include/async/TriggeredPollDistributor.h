@@ -2,15 +2,21 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "../NDRegisterAccessor.h"
 #include "../ScalarRegisterAccessor.h"
+#include "../SelectedByDecorator.h"
 #include "../TransferGroup.h"
 #include "AsyncAccessorManager.h"
 #include "DataConsistencyRealm.h"
 #include "MuxedInterruptDistributor.h"
 
+#include <map>
 #include <memory>
 
 namespace ChimeraTK::async {
+
+  /********************************************************************************************************************/
+
   /**
    *  The TriggeredPollDistributor has std::nullptr_t source data type and is polling the data for the AsyncVariables
    *  via synchronous accessors in TransferGroup.
@@ -46,11 +52,11 @@ namespace ChimeraTK::async {
    */
   template<typename UserType>
   struct PolledAsyncVariable : public AsyncVariableImpl<UserType> {
-    void fillSendBuffer() final;
+    bool fillSendBuffer() final;
 
     /// The constructor takes an already created synchronous accessor and a reference to the owing distributor
-    explicit PolledAsyncVariable(
-        boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, TriggeredPollDistributor& owner);
+    explicit PolledAsyncVariable(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_,
+        TriggeredPollDistributor& owner);
 
     unsigned int getNumberOfChannels() override { return _syncAccessor->getNumberOfChannels(); }
     unsigned int getNumberOfSamples() override { return _syncAccessor->getNumberOfSamples(); }
@@ -61,6 +67,11 @@ namespace ChimeraTK::async {
     boost::shared_ptr<NDRegisterAccessor<UserType>> _syncAccessor;
 
     TriggeredPollDistributor& _owner;
+
+    /// Whether the initial value has been delivered yet. The initial delivery always happens (a consumer activated
+    /// while the selection is not met still receives its initial faulty value); only subsequent distributions are
+    /// suppressed while unselected.
+    bool _initialDelivered{false};
   };
 
   /********************************************************************************************************************/
@@ -75,6 +86,7 @@ namespace ChimeraTK::async {
     // Don't call backend->getSyncRegisterAccessor() here. It might skip the overriding of a backend.
     auto syncAccessor = _backend->getRegisterAccessor<UserType>(
         descriptor.name, descriptor.numberOfWords, descriptor.wordOffsetInRegister, synchronousFlags);
+
     // read the initial value before adding it to the transfer group
     if(_asyncDomain->unsafeGetIsActive()) {
       try {
@@ -85,22 +97,68 @@ namespace ChimeraTK::async {
       }
     }
 
+    // Gating lives in the low-level transfer element(s): for a register declared 'selectedBy' the returned accessor
+    // is a SelectedByDecorator wrapping the (possibly double-buffered) low-level element. Enable transfer-skipping so
+    // that on an interrupt with the gate closed the physical read of the data register is skipped entirely. Enabled
+    // after the initial read above so the buffer is always initialised (the initial value is delivered even while
+    // unselected). TransferGroup reaches the low-level element(s) directly, bypassing the decorator's
+    // doReadTransferSynchronously (spec E.4), so the skip is implemented by the low-level element itself (Option B:
+    // the DoubleBufferAccessor). We still enable skip on the decorator too, so a standalone (non-group) accessor also
+    // respects the gate via the decorator's own doReadTransferSynchronously().
+    if(auto gated = boost::dynamic_pointer_cast<SelectedByDecorator<UserType>>(syncAccessor)) {
+      gated->setSkipOnUnselected(true);
+    }
+    auto hardwareElements = syncAccessor->getHardwareAccessingElements();
+    for(auto& element : hardwareElements) {
+      if(auto accessor = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(element)) {
+        accessor->setSkipOnUnselected(true);
+      }
+    }
+
     _transferGroup.addAccessor(syncAccessor);
     return std::make_unique<PolledAsyncVariable<UserType>>(syncAccessor, *this);
   }
 
   /********************************************************************************************************************/
   template<typename UserType>
-  void PolledAsyncVariable<UserType>::fillSendBuffer() {
+  bool PolledAsyncVariable<UserType>::fillSendBuffer() {
+    // The gate is evaluated at the low-level transfer element (for a double-buffer register, inside the
+    // DoubleBufferAccessor's doReadTransferSynchronously, Option B): on an interrupt with the selection not met the
+    // data read is skipped and the accessor reports isSelected()==false. Suppress the
+    // delivery in that case after the initial value has been delivered, so wait_for_new_data consumers do not wake
+    // with the inactive alternative. The initial value is always delivered (a consumer activated while the
+    // selection is not met still receives its initial faulty value).
+    //
+    // The gate state is queried through the low-level transfer elements (as for setSkipOnUnselected above) rather
+    // than by requiring the subscription accessor to be directly a SelectedByDecorator: on the unified path the
+    // accessor may be wrapped in an outer TypeChangingDecorator, which would otherwise hide the gate decision.
+    // The gate is considered closed if the top-level accessor or any hardware-accessing element reports
+    // isSelected()==false; the default reports selected (no gate), so non-gated registers are unaffected.
+    bool gateClosed = !_syncAccessor->isSelected();
+    if(!gateClosed) {
+      for(auto& element : _syncAccessor->getHardwareAccessingElements()) {
+        if(auto accessor = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(element)) {
+          if(!accessor->isSelected()) {
+            gateClosed = true;
+            break;
+          }
+        }
+      }
+    }
+    if(gateClosed && _initialDelivered) {
+      return false;
+    }
+    _initialDelivered = true;
     this->_sendBuffer.versionNumber = _owner.getVersion();
     this->_sendBuffer.dataValidity = !_owner.getForceFaulty() ? _syncAccessor->dataValidity() : DataValidity::faulty;
     this->_sendBuffer.value.swap(_syncAccessor->accessChannels());
+    return true;
   }
 
   /********************************************************************************************************************/
   template<typename UserType>
-  PolledAsyncVariable<UserType>::PolledAsyncVariable(
-      boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, TriggeredPollDistributor& owner)
+  PolledAsyncVariable<UserType>::PolledAsyncVariable(boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_,
+      TriggeredPollDistributor& owner)
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
     _syncAccessor(syncAccessor_), _owner(owner) {}
 

@@ -8,9 +8,13 @@ using namespace boost::unit_test_framework;
 
 #include "CopyRegisterDecorator.h"
 #include "Device.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "ExceptionDummyBackend.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "NumericAddressedLowLevelTransferElement.h"
+#include "ScalarRegisterAccessor.h"
+#include "SelectedByDecorator.h"
 #include "TransferElementTestAccessor.h"
 #include "TransferGroup.h"
 
@@ -1049,6 +1053,90 @@ BOOST_AUTO_TEST_CASE(testTemporaryAbstractorWorks) {
   group.read();
   BOOST_CHECK_EQUAL(a, 13);
   BOOST_CHECK_EQUAL(b->accessChannel(0)[0], 13);
+}
+
+/**********************************************************************************************************************/
+
+/**
+ * Regression test: a SelectedByDecorator produced by the NumericAddressedBackend for a 'selectedBy' register must
+ * suppress the actual bus/register transfer while the selector does not match (gate closed) inside a TransferGroup,
+ * instead of merely reporting the read as faulty.
+ *
+ * Uses simpleJsonFile.jmap's scalar register DAQ.SINGLE_MUXED ('selectedBy' DAQ.MUX_SEL == 0); DAQ.SINGLE_MUXED_ALT
+ * is its mutually exclusive alternative (MUX_SEL == 1). The 'not-new' property (physical transfer suppressed) is
+ * observed via the accessor's version number not advancing while the gate is closed. This is the behaviour required
+ * by the asynchronous 'selectedByInterrupt' path, where a TransferGroup honouring the gate must not read the
+ * unselected register.
+ */
+BOOST_AUTO_TEST_CASE(testSelectedByGateSkipsTransfer) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy != nullptr);
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+
+  auto data = device.getScalarRegisterAccessor<int32_t>("/DAQ/SINGLE_MUXED");
+
+  TransferGroup group;
+  group.addAccessor(data);
+
+  // --- gate open: MUX_SEL == 0 (matches SINGLE_MUXED) -> data register is transferred and valid ---
+  muxSel[0] = 0;
+  group.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  const auto openVersion = data.getVersionNumber();
+
+  // --- gate closed: MUX_SEL != 0 -> transfer skipped, and no new data is produced (version unchanged) ---
+  muxSel[0] = 1;
+  group.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(data.getVersionNumber() == openVersion); // not new -> physical transfer suppressed
+
+  // --- gate open again -> transfer resumes, new data (version advances) ---
+  muxSel[0] = 0;
+  group.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(data.getVersionNumber() != openVersion);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+/**
+ * Regression test mirroring testSelectedByGateSkipsTransfer but for a STANDALONE (non-group) read(): the documented
+ * polled semantics say a plain read() must only perform the physical read when the selector matches. A closed gate
+ * must therefore suppress the actual transfer of the gated data element even outside a TransferGroup, and the read
+ * must still be reported DataValidity::faulty / not-new.
+ */
+BOOST_AUTO_TEST_CASE(testSelectedByStandaloneReadSkipsTransfer) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy != nullptr);
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+
+  auto data = device.getScalarRegisterAccessor<int32_t>("/DAQ/SINGLE_MUXED");
+
+  // --- gate open: MUX_SEL == 0 (matches SINGLE_MUXED) -> data register is transferred and valid ---
+  muxSel[0] = 0;
+  data.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  const auto openVersion = data.getVersionNumber();
+
+  // --- gate closed: MUX_SEL != 0 -> standalone read must NOT perform the physical transfer (version unchanged) ---
+  muxSel[0] = 1;
+  data.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(data.getVersionNumber() == openVersion); // not new -> physical transfer suppressed
+
+  // --- gate open again -> transfer resumes, new data (version advances) ---
+  muxSel[0] = 0;
+  data.read();
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_CHECK(data.getVersionNumber() != openVersion);
+
+  device.close();
 }
 
 /**********************************************************************************************************************/
