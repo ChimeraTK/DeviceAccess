@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(TestPitchPrefixSigned) {
 // A pitch of zero is invalid.
 BOOST_AUTO_TEST_CASE(TestPitchPrefixZeroPitchThrows) {
   NumericAddressedRegisterCatalogue catalogue;
-  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/12*8u32p0"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(auto _ [[maybe_unused]] = catalogue.getBackendRegister("/#/5/12*8u32p0"), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(TestPitchPrefixZeroPitchThrows) {
 // A pitch that is not a multiple of 8 bits is invalid.
 BOOST_AUTO_TEST_CASE(TestPitchPrefixNonAlignedPitchThrows) {
   NumericAddressedRegisterCatalogue catalogue;
-  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/12*8u32p12"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(auto _ [[maybe_unused]] = catalogue.getBackendRegister("/#/5/12*8u32p12"), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(TestPitchPrefixNonAlignedPitchThrows) {
 // A pitch that does not divide the total byte span is invalid (nElements would not be integral).
 BOOST_AUTO_TEST_CASE(TestPitchPrefixNonDivisiblePitchThrows) {
   NumericAddressedRegisterCatalogue catalogue;
-  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/12*10u32p24"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(auto _ [[maybe_unused]] = catalogue.getBackendRegister("/#/5/12*10u32p24"), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(TestPitchPrefixNonDivisiblePitchThrows) {
 // An empty register (nBytes * 8 / pitchBits == 0) is invalid.
 BOOST_AUTO_TEST_CASE(TestPitchPrefixZeroElementsThrows) {
   NumericAddressedRegisterCatalogue catalogue;
-  BOOST_CHECK_THROW(catalogue.getBackendRegister("/#/5/0u32p64"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(auto _ [[maybe_unused]] = catalogue.getBackendRegister("/#/5/0u32p64"), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
