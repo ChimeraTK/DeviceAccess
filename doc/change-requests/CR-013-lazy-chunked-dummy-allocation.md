@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: PLANNED (from READY TO IMPLEMENT)
+Status: READY TO IMPLEMENT
 
 ## Requirements
 
