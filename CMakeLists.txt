@@ -133,7 +133,7 @@ include(GNUInstallDirs)
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_FULL_LIBDIR} -l${PROJECT_NAME}")
 
 # we need the public dependencies so create_cmake_config_files can find them as implicit dependencies
-list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem program_options")
+list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem")
 list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "ChimeraTK-cppext")
 
 # Install the library and the executables
