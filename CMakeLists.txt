@@ -32,7 +32,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
   set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem program_options REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
 FIND_PACKAGE(ChimeraTK-cppext 01.07 REQUIRED)
 FIND_PACKAGE(exprtk 01.04 REQUIRED)
 
@@ -118,7 +118,7 @@ target_link_libraries(${PROJECT_NAME}
 
   # we set this public because of Backend libs using shm_open (e.g. test code)
   PUBLIC ${RT_LIBRARIES}
-  PUBLIC ${Boost_LIBRARIES}
+  PUBLIC Boost::thread Boost::system Boost::chrono Boost::filesystem
 
   # cppext is public because anything using DeviceAccess also needs to find cppext headers
   PUBLIC ChimeraTK::ChimeraTK-cppext)
@@ -165,8 +165,9 @@ foreach(toolScripts chimeratk-lmap-editor chimeratk-map-to-jmap)
 endforeach(toolScripts)
 
 # Tool: write a jmap file from a device catalogue
+FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 add_executable(chimeratk-device-to-jmap tools/src/chimeratk-device-to-jmap.cc)
-target_link_libraries(chimeratk-device-to-jmap PRIVATE ${PROJECT_NAME} nlohmann_json::nlohmann_json ${Boost_LIBRARIES})
+target_link_libraries(chimeratk-device-to-jmap PRIVATE ${PROJECT_NAME} nlohmann_json::nlohmann_json Boost::program_options)
 add_dependencies(chimeratk-device-to-jmap ${PROJECT_NAME})
 # The installed tool must find its shared library when installed into a user defined prefix.
 set_property(TARGET chimeratk-device-to-jmap PROPERTY INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
