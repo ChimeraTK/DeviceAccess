@@ -15,6 +15,7 @@
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "parserUtilities.h"
+#include "SelectedByDecorator.h"
 #include "SupportedUserTypes.h"
 
 #include <nlohmann/json.hpp>
@@ -202,6 +203,11 @@ namespace ChimeraTK {
                 new NumericAddressedBackendRegisterAccessor<UserType, false>(
                     shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
           }
+          if(registerInfo.channels.front().selectedBy) {
+            accessor = boost::make_shared<SelectedByDecorator<UserType>>(accessor,
+                boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
+                *registerInfo.channels.front().selectedBy);
+          }
         }
         else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {
           if constexpr(!std::is_same<UserType, std::string>::value) {
@@ -222,6 +228,13 @@ namespace ChimeraTK {
         accessor =
             boost::shared_ptr<NDRegisterAccessor<UserType>>(new NumericAddressedBackendMuxedRegisterAccessor<UserType>(
                 registerPathName, numberOfWords, wordOffsetInRegister, shared_from_this()));
+        // A register-level 'selectedBy' gates the whole 2D block (the full-2D accessor) on a single selector. This is
+        // independent of the per-channel 'selectedBy' carried by the channels (which gate the named channel slices).
+        if(registerInfo.registerSelectedBy) {
+          accessor = boost::make_shared<SelectedByDecorator<UserType>>(accessor,
+              boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
+              *registerInfo.registerSelectedBy);
+        }
       }
     }
     // double buffer register
@@ -234,8 +247,17 @@ namespace ChimeraTK {
       if(!controlState) {
         controlState = std::make_shared<detail::CountedRecursiveMutex>();
       }
+
       accessor = boost::make_shared<DoubleBufferAccessor<UserType>>(*registerInfo.doubleBuffer, shared_from_this(),
-          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags);
+          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags,
+          registerInfo.channels.front().selectedBy
+              ? &(*registerInfo.channels.front().selectedBy)
+              : nullptr);
+      if(registerInfo.channels.front().selectedBy) {
+        accessor = boost::make_shared<SelectedByDecorator<UserType>>(accessor,
+            boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
+            *registerInfo.channels.front().selectedBy);
+      }
     }
     accessor->setExceptionBackend(shared_from_this());
     return accessor;

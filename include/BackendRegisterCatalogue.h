@@ -3,10 +3,13 @@
 #pragma once
 
 #include "async/DataConsistencyRealm.h"
+#include "BackendRegisterInfoBase.h"
 #include "RegisterCatalogue.h"
 
 #include <boost/make_shared.hpp>
 #include <boost/range/adaptors.hpp>
+
+#include <optional>
 
 namespace ChimeraTK {
 
@@ -81,6 +84,17 @@ namespace ChimeraTK {
         const std::vector<size_t>& qualifiedAsyncDomainId) const;
 
     [[nodiscard]] virtual HiddenRange hiddenRegisters() const = 0;
+
+    /**
+     * Return the effective 'selectedBy' condition of a register within the backend's catalogue, if any.
+     *
+     * A register that is conditionally active only reports valid data while the selector register equals the
+     * returned value. Non-selecting backends return std::nullopt (no gating). The default implementation always
+     * returns std::nullopt.
+     */
+    [[nodiscard]] virtual std::optional<SelectedBy> getSelectedBy(const RegisterPath& /*registerPath*/) const {
+      return std::nullopt;
+    }
   };
 
   /********************************************************************************************************************/

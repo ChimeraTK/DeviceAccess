@@ -403,7 +403,7 @@ The \c selectedBy feature works for single (scalar or 1D, non-2D) registers as w
   }
 }
 \endverbatim
-Specifying \c selectedBy on a register that also has per-channel \c channels (a 2D register) is **valid**: it serves as the default selection for all channels that do not declare their own \c selectedBy (see \ref jmap_channel_selection and \ref jmap_module_selection_inheritance). Per-channel \c selectedBy declarations always override this register-level default.
+Specifying \c selectedBy on a register that also has per-channel \c channels (a 2D register) is **valid** and gates the **whole 2D block**: the full-2D accessor is only active while the selector register equals the given \c value (see \ref jmap_channel_selection). This register-level gate is **independent** of the per-channel \c selectedBy the channels may carry — a channel with its own declaration is gated by that value alone and is unaffected by the register-level gate, while the whole-block read is gated by the register-level value even when an individual channel slice is selected. A channel that does **not** declare its own \c selectedBy still inherits the register-level value as its per-channel default (see \ref jmap_module_selection_inheritance), so for such channels the slice and the whole block are gated by the same selector.
 
 For a hardware multiplexer, several mutually exclusive scalar alternatives can be declared as separate registers that share the same \c address and differ only in their \c selectedBy \c value. Only one of them is active at a time, selected by the selector register:
 \verbatim
@@ -413,6 +413,24 @@ For a hardware multiplexer, several mutually exclusive scalar alternatives can b
 }
 \endverbatim
 Both alternatives map to the same address (\c 1246); they differ only in the selector value, exactly like muxed channels inside a 2D register.
+
+\subsection jmap_selection_runtime Runtime enforcement
+
+The following restrictions on \c selectedBy are enforced by the \c JsonMapFileParser when the map is parsed; a
+violation is a map-file parsing error and the map is rejected:
+
+\li \b Syntax: a \c selectedBy object must contain a \c register member (path of the selector register) and a
+    \c value member (an integer selector value).
+\li \b Read-only restriction: \c selectedBy may only be applied to registers with \c access \c "RO" or to
+    interrupt-triggered registers (which imply read-only). Declaring it on a writable register
+    (\c access \c "RW" or \c "WO") is rejected. For inherited \c selectedBy (a module or parent register, see
+    \ref jmap_module_selection_inheritance), the whole subtree is validated at its source: if any descendant
+    register inheriting the criterion is writable, the parse fails with an error pointing to the parent
+    declaration.
+\li \b Selector register: the referenced selector register must exist in the map, and must not itself be
+    conditionally selected by a \c selectedBy of its own.
+\li \b Selector values: the \c value of a set of alternatives must be an integer; concrete values of mutually
+    exclusive alternatives should differ so the active selection is unambiguous.
 
 \subsection jmap_double_buffering Double buffering
 

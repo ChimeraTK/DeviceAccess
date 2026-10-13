@@ -137,7 +137,7 @@
         },
         "selectedBy": {
           "$ref": "#/definitions/selectedBy",
-          "description": "Register-level mux selector for scalar/1D (non-2D, no 'channels') registers: the whole register is active when the 'register' equals 'value'. For 2D registers use per-channel 'selectedBy' instead; having both is an error."
+          "description": "Register-level mux selector. On scalar/1D (non-2D, no 'channels') registers it makes the whole register active when the 'register' equals 'value'. On a 2D register it gates the whole 2D block (the full-2D accessor); per-channel 'selectedBy' may still be used on the individual channels for independent channel slices."
         },
         "channels": {
           "type": "object",
@@ -200,15 +200,12 @@
           }
         },
         {
-          "description": "A 2D register ('channels' present) needs a 'pitch' and must not combine its channels with a register-level 'selectedBy' (channels are muxed individually). Its 'address' may be given explicitly or inherited from the parent.",
+          "description": "A 2D register ('channels' present) needs a 'pitch'. A register-level 'selectedBy' is allowed and gates the WHOLE 2D block (the full-2D accessor) on a single selector; per-channel 'selectedBy' may still be used on the individual channels and gates the named channel slices independently. Its 'address' may be given explicitly or inherited from the parent.",
           "if": {
             "required": ["channels"]
           },
           "then": {
-            "required": ["pitch"],
-            "properties": {
-              "selectedBy": false
-            }
+            "required": ["pitch"]
           }
         },
         {

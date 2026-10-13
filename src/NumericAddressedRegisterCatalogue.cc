@@ -162,7 +162,7 @@ namespace ChimeraTK {
     return (address == rhs.address) && (bar == rhs.bar) && (nElements == rhs.nElements) && (channels == rhs.channels) &&
         (pathName == rhs.pathName) && (elementPitchBits == rhs.elementPitchBits) &&
         (registerAccess == rhs.registerAccess) && (getNumberOfDimensions() == rhs.getNumberOfDimensions()) &&
-        (interruptId == rhs.interruptId);
+        (interruptId == rhs.interruptId) && (registerSelectedBy == rhs.registerSelectedBy);
   }
 
   /********************************************************************************************************************/
@@ -290,6 +290,20 @@ namespace ChimeraTK {
       return true;
     }
     return BackendRegisterCatalogue::hasRegister(registerPathName);
+  }
+
+  /********************************************************************************************************************/
+
+  std::optional<SelectedBy> NumericAddressedRegisterCatalogue::getSelectedBy(
+      const RegisterPath& registerPathName) const {
+    // A scalar/1D register (or a generated channel/BUF view, which are all single-channel) carries the effective
+    // selection on its single channel. A full 2D register carries a register-level 'selectedBy' (gating the whole
+    // block) on info.registerSelectedBy; if absent there is no single gate (per-channel selections gate the slices).
+    auto info = getBackendRegister(registerPathName);
+    if(info.channels.size() == 1) {
+      return info.channels.front().selectedBy;
+    }
+    return info.registerSelectedBy;
   }
 
   /********************************************************************************************************************/
