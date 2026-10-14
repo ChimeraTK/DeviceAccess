@@ -255,6 +255,25 @@ namespace {
     BOOST_CHECK(!shm_exists(shmName));
   }
 
+  /**
+   * Processes built with different layout versions use different segment names and never attach to each other's
+   * segment. The name derives the layout version as its last component.
+   */
+  BOOST_AUTO_TEST_CASE(testLayoutVersionPartOfSegmentName) {
+    // Rebuild the unversioned base name from the same inputs the helper uses, to check the version is appended.
+    std::string unversioned = "ChimeraTK_SharedDummy_" + std::to_string(instanceIdHash) + "_" +
+        std::to_string(std::hash<std::string>{}(boost::filesystem::absolute(mapFileName).string())) + "_" +
+        std::to_string(std::hash<std::string>{}(getUserName()));
+
+    BOOST_TEST(shmName != unversioned);
+    BOOST_TEST(shmName == unversioned + "_v" + std::to_string(SharedDummyBackend::SHARED_MEMORY_LAYOUT_VERSION));
+
+    // A process of a different layout version derives a name from a different suffix and so cannot attach.
+    const std::string otherVersion =
+        unversioned + "_v" + std::to_string(SharedDummyBackend::SHARED_MEMORY_LAYOUT_VERSION + 1);
+    BOOST_TEST(shmName != otherVersion);
+  }
+
   /********************************************************************************************************************/
   BOOST_AUTO_TEST_SUITE_END()
 

@@ -5,6 +5,8 @@
 #include "SharedDummyBackend.h"
 #include "Utilities.h"
 
+#include <boost/filesystem.hpp>
+
 #include <cstring>
 
 namespace ChimeraTK {
@@ -49,7 +51,13 @@ namespace ChimeraTK {
 
   std::string SharedDummyBackend::getSharedMemoryName(
       std::size_t instanceIdHash, const std::string& mapFileName, const std::string& userName) {
-    return Utilities::createShmName(instanceIdHash, mapFileName, userName) + "_v" +
+    // Always use the absolute map file name, so the name does not depend on the spelling of the path.
+    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
+
+    std::string mapFileHash{std::to_string(std::hash<std::string>{}(absPathToMapFile.string()))};
+    std::string userHash{std::to_string(std::hash<std::string>{}(userName))};
+
+    return "ChimeraTK_SharedDummy_" + std::to_string(instanceIdHash) + "_" + mapFileHash + "_" + userHash + "_v" +
         std::to_string(SHARED_MEMORY_LAYOUT_VERSION);
   }
 
