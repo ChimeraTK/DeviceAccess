@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: READY TO IMPLEMENT (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -479,4 +479,4 @@ initialiser;
 - DI-48 [DONE] Do not add new test .cpp files for cases of an entity that already has a test file: testChunkedDummyBackend.cpp, testChunkedSharedDummyBackend.cpp and testChunkedBackdoorAccessor.cpp duplicate existing entities and must be integrated into the existing files that already test the same entity (testDummyBackend, testSharedDummyBackend*/testSharedDummyBackendExt, testDummyRegisterAccessor).
 - DI-49 [DONE] DummyRegisterTest::testRegisterAccessor in testDummyRegisterAccessor.cpp is pointless: it tests the backdoor register accessor against itself. Rewrite it against the public API (ordinary accessors) so it exercises a different layer.
 - DI-50 [DONE] Shared-memory name derivation is duplicated: SharedDummyBackend::getSharedMemoryName() is just Utilities::createShmName(...) + "_v" + version (backends/SharedDummy/src/SharedMemoryManager.cc:50-53), yet Utilities::createShmName is still used directly in testMapFileSearch.cpp:197-198 and in testChunkedSharedDummyBackend.cpp:162. Remove Utilities::createShmName entirely and keep only getSharedMemoryName, since the name construction does not belong in Utilities; update the tes...
-- DI-51 [NEW] clang-tidy on CR-added lines in tests/executables_src/testSharedDummyBackend.cpp: the chunked-test helpers are 'static' definitions inside the anonymous namespace (opened at line 31), which the project's clang-tidy flags with two enabled checks. Affected: line 60 'static constexpr uint64_t CHUNK' (readability-static-definition-in-anonymous-namespace), and lines 65 'writeJmap', 97 'chunkSegmentName', 103 'countChunkSegments', 116 'uniqueInstanceHash' (both readability-static-definition-in-anonymous-namespace and llvm-prefer-static-over-anonymous-namespace). This regressed during the DI-48 merge (DI-31 had fixed the same warnings in the now-removed testChunkedSharedDummyBackend.cpp). Fix as in the sibling file tests/executables_src/testDummyRegisterAccessor.cpp: move the helper functions out of the anonymous namespace to file scope as 'static' functions (and drop 'static' from the CHUNK constant), so neither check fires.
+- DI-51 [IMPLEMENTED] clang-tidy on CR-added lines in tests/executables_src/testSharedDummyBackend.cpp: the chunked-test helpers are 'static' definitions inside the anonymous namespace (opened at line 31), which the project's clang-tidy flags with two enabled checks. Affected: line 60 'static constexpr uint64_t CHUNK' (readability-static-definition-in-anonymous-namespace), and lines 65 'writeJmap', 97 'chunkSegmentName', 103 'countChunkSegments', 116 'uniqueInstanceHash' (both readability-static-definit...

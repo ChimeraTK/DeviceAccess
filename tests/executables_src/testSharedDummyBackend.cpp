@@ -28,9 +28,72 @@
 #include <utility>
 #include <vector>
 
+using namespace ChimeraTK;
+
+// The chunk size is part of the public interface of DummyBackendBase, so the tests can build addresses relative to it
+// without knowing its concrete value.
+static constexpr uint64_t CHUNK = DummyBackendBase::CHUNK_SIZE;
+
+/// Write a minimal jmap file to a temporary file and return its path. The map file defines a single register of the
+/// given element count (and hence size) at the given bar and address. An explicit file name may be given to overwrite
+/// an existing map file in place (e.g. to increase the bar sizes under the same name).
+static std::string writeJmap(uint64_t bar, uint64_t address, uint64_t numberOfElements, std::string fileName = {}) {
+  if(fileName.empty()) {
+    fileName = "chunkedSharedDummyBackend_" + std::to_string(getpid()) + ".jmap";
+  }
+  std::ofstream file(fileName);
+  file << R"({
+  "mapFormatVersion": "1.0",
+  "metadata": {},
+  "interruptHandler": {},
+  "addressSpace": {
+    "MODULE": {
+      "bytesPerElement": 4,
+      "numberOfElements": )"
+       << numberOfElements << R"(,
+      "address": {
+        "type": "IO",
+        "channel": )"
+       << bar << R"(,
+        "offset": )"
+       << address << R"(
+      },
+      "representation": {
+        "isSigned": false
+      }
+    }
+  }
+})";
+  file.close();
+  return fileName;
+}
+
+/// Full name of the shared-memory object holding the chunk (bar, chunkIndex) of the given instance.
+static std::string chunkSegmentName(const std::string& baseName, uint64_t bar, uint64_t chunkIndex) {
+  // Mirrors SharedDummyBackend's internal naming: <base>_BAR_<bar>_CHUNK_<index>.
+  return baseName + "_BAR_" + std::to_string(bar) + "_CHUNK_" + std::to_string(chunkIndex);
+}
+
+/// Number of currently existing chunk segments of the given instance (any bar, any index).
+static size_t countChunkSegments(const std::string& baseName) {
+  size_t count = 0;
+  const std::string prefix = baseName + "_BAR_";
+  for(boost::filesystem::directory_iterator it("/dev/shm"), end; it != end; ++it) {
+    const std::string fileName = it->path().filename().string();
+    if(fileName.compare(0, prefix.size(), prefix) == 0) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+/// A unique instanceIdHash so different test cases do not share a segment even if they use the same map file name.
+static size_t uniqueInstanceHash(const std::string& tag) {
+  return Utilities::shmDummyInstanceIdHash(tag + "_" + std::to_string(getpid()), {});
+}
+
 namespace {
 
-  using namespace ChimeraTK;
   using namespace boost::unit_test_framework;
 
   static TestLocker testLocker("shareddummyTest.dmap");
@@ -54,68 +117,6 @@ namespace {
       return !found;
     }
   };
-
-  // The chunk size is part of the public interface of DummyBackendBase, so the tests can build addresses relative to it
-  // without knowing its concrete value.
-  static constexpr uint64_t CHUNK = DummyBackendBase::CHUNK_SIZE;
-
-  /// Write a minimal jmap file to a temporary file and return its path. The map file defines a single register of the
-  /// given element count (and hence size) at the given bar and address. An explicit file name may be given to overwrite
-  /// an existing map file in place (e.g. to increase the bar sizes under the same name).
-  static std::string writeJmap(uint64_t bar, uint64_t address, uint64_t numberOfElements, std::string fileName = {}) {
-    if(fileName.empty()) {
-      fileName = "chunkedSharedDummyBackend_" + std::to_string(getpid()) + ".jmap";
-    }
-    std::ofstream file(fileName);
-    file << R"({
-  "mapFormatVersion": "1.0",
-  "metadata": {},
-  "interruptHandler": {},
-  "addressSpace": {
-    "MODULE": {
-      "bytesPerElement": 4,
-      "numberOfElements": )"
-         << numberOfElements << R"(,
-      "address": {
-        "type": "IO",
-        "channel": )"
-         << bar << R"(,
-        "offset": )"
-         << address << R"(
-      },
-      "representation": {
-        "isSigned": false
-      }
-    }
-  }
-})";
-    file.close();
-    return fileName;
-  }
-
-  /// Full name of the shared-memory object holding the chunk (bar, chunkIndex) of the given instance.
-  static std::string chunkSegmentName(const std::string& baseName, uint64_t bar, uint64_t chunkIndex) {
-    // Mirrors SharedDummyBackend's internal naming: <base>_BAR_<bar>_CHUNK_<index>.
-    return baseName + "_BAR_" + std::to_string(bar) + "_CHUNK_" + std::to_string(chunkIndex);
-  }
-
-  /// Number of currently existing chunk segments of the given instance (any bar, any index).
-  static size_t countChunkSegments(const std::string& baseName) {
-    size_t count = 0;
-    const std::string prefix = baseName + "_BAR_";
-    for(boost::filesystem::directory_iterator it("/dev/shm"), end; it != end; ++it) {
-      const std::string fileName = it->path().filename().string();
-      if(fileName.compare(0, prefix.size(), prefix) == 0) {
-        ++count;
-      }
-    }
-    return count;
-  }
-
-  /// A unique instanceIdHash so different test cases do not share a segment even if they use the same map file name.
-  static size_t uniqueInstanceHash(const std::string& tag) {
-    return Utilities::shmDummyInstanceIdHash(tag + "_" + std::to_string(getpid()), {});
-  }
 
   BOOST_AUTO_TEST_SUITE(SharedDummyBackendTestSuite)
 
