@@ -107,9 +107,13 @@ file. The following are removed:
 - the now unused `SHARED_MEMORY_CONST_OVERHEAD`;
 - the now unused `SHARED_MEMORY_OVERHEAD_PER_VECTOR`.
 - Names and versioning:
-- Base name: `Utilities::createShmName(instanceIdHash, mapFileName, user)`
-with the layout version appended,
-`<createdName>_v<SHARED_MEMORY_LAYOUT_VERSION>`.
+- The whole name is derived by one public static helper,
+`SharedDummyBackend::getSharedMemoryName`. It replaces and absorbs
+`Utilities::createShmName`, which is removed: constructing the shared-memory
+name does not belong in a general-purpose utility.
+- The helper builds the base name from the instance-id hash, the map file name
+and the user, then appends the layout version,
+`<base>_v<SHARED_MEMORY_LAYOUT_VERSION>`.
 - `SHARED_MEMORY_LAYOUT_VERSION` is a `static constexpr`, bumped on every
 shared-memory layout change.
 - Everything derives from this base, so two library versions never attach to
@@ -117,9 +121,9 @@ each other's objects, in either direction:
 - the home segment;
 - the interprocess mutex (base name, as today);
 - every chunk segment (`<base>_BAR_<bar>_CHUNK_<index>`).
-- The versioned name is computed by one public static helper
-(`SharedDummyBackend::getSharedMemoryName`), used by the constructor, the
-stale-lock recovery path and the tests, so they cannot diverge.
+- The helper is used by the constructor, the stale-lock recovery path and the
+tests, so they cannot diverge. The tests that built the name through
+`Utilities::createShmName` directly are updated to use it (see test plan).
 - The previously unused `RequiredVersion` object is removed.
 - Chunk chain:
 - Each chunk segment carries a small fixed header with its `(bar, chunkIndex)`
@@ -337,6 +341,11 @@ constant change.
 - Tests that need a special map file write a minimal map file in jmap format to
 a temporary file and load it from there, instead of adding another file to the
 shared list of test map files.
+- Test-file organisation: each new case is added to the existing test file of
+the entity under test; no new test executables are introduced. The chunked
+allocation cases go into `testDummyBackend`, the chunked shared-memory cases
+into `testSharedDummyBackend` (and its Ext variants) and the backdoor-proxy
+cases into `testDummyRegisterAccessor`.
 - Chunk boundaries: read/write of a register crossing a chunk boundary is
 correct; neighbouring chunks stay zero.
 - Reading an untouched chunk returns zeros and materialises exactly that one
@@ -381,19 +390,28 @@ the memory for:
 - the raw accessor instantiated for a non-default `RawType` (e.g. `int16_t`)
 accesses the memory correctly.
 - Adapt the tests to the new behaviour:
-- tests that assert sizes, full reservation or backend read-only state
-(`testDummyBackend`, `testDummyRegisterAccessor`) assert lazily
-materialised content only and no longer rely on the removed `setReadOnly`;
+- obsolete read-only tests (e.g. `testDummyBackend`'s `testReadOnly`) are
+removed rather than adapted: the dummy backend no longer has a read-only
+feature, which is enforced solely in the `NumericAddressedBackend` accessor
+layer, so the tests go together with the removed `setReadOnly`,
+`_readOnlyAddresses` and `isReadOnly` members;
+- `DummyRegisterTest::testRegisterAccessor` in `testDummyRegisterAccessor` is
+rewritten against the public API (ordinary accessors) instead of the backdoor
+accessor, which it currently exercises against itself;
+- tests that assert sizes or full reservation (`testDummyBackend`,
+`testDummyRegisterAccessor`) assert lazily materialised content only;
 - tests that write the internal bar contents directly (`testDummyBackend`,
 `testDummyRegisterAccessor`) go through the backdoor accessors instead, with
 no library-side compatibility shim;
 - the out-of-range `logic_error` expectations follow the new "any address is
 valid" behaviour.
-- the `shm_exists` based tests obtain the versioned name through
-`SharedDummyBackend::getSharedMemoryName(...)` instead of
+- the tests that derived the shared-memory name themselves obtain it through
+`SharedDummyBackend::getSharedMemoryName(...)` instead of the removed
 `Utilities::createShmName(...)`:
+- `testMapFileSearch`, which used `Utilities::createShmName(...)` directly;
 - `testSharedDummyBackendExt`;
 - `testSharedDummyBackendUnified` and its Ext variant;
+- the layout-versioning test, which folds into `testSharedDummyBackendExt`;
 - `tests/scripts/testSharedDummyBackendPidManagement.sh` runs
 `testSharedDummyBackendExt` and needs no change of its own.
 - Adapt the other backdoor and `AddressRange` consumers for the new accessor
@@ -457,3 +475,7 @@ initialiser;
 - DI-44 [DONE] DummyRegisterRawAccessor is now a class template, but DummyBackend::getRawAccessor returns the fixed DummyRegisterRawAccessor<int32_t> (backends/DummyBackend/include/DummyBackend.h:80). The factory must itself become a template with RawType defaulting to int32_t, so a non-default raw type can be obtained through it; otherwise the templated accessor is unusable via getRawAccessor.
 - DI-45 [DONE] Replace static_cast<T>(...) by T(...) in the CR-added code (same effect, easier to read), e.g. the proxy conversions proxies::DummyRegisterElement::operator T() which uses static_cast<T>(*this) (backends/DummyBackend/include/DummyRegisterAccessor.h, the CR-added lines around :227, :235, :243, :252) and the CR-added static_casts in the tests.
 - DI-46 [DONE] RawByteAccess::read and RawByteAccess::write are performance-critical for some tests; move their implementations from backends/DummyBackend/src/DummyRegisterAccessor.cc:11-30 into the header (class proxies::RawByteAccess, backends/DummyBackend/include/DummyRegisterAccessor.h:48-66) and mark them inline.
+- DI-47 [NEW] Obsolete tests must be removed, not adapted: the read-only tests (e.g. testDummyBackend's testReadOnly) test a feature the dummy backend no longer has - read-only enforcement now lives entirely in the NumericAddressedBackend accessor layer - so they should be deleted along with the removed setReadOnly/_readOnlyAddresses/isReadOnly members.
+- DI-48 [NEW] Do not add new test .cpp files for cases of an entity that already has a test file: testChunkedDummyBackend.cpp, testChunkedSharedDummyBackend.cpp and testChunkedBackdoorAccessor.cpp duplicate existing entities and must be integrated into the existing files that already test the same entity (testDummyBackend, testSharedDummyBackend*/testSharedDummyBackendExt, testDummyRegisterAccessor).
+- DI-49 [NEW] DummyRegisterTest::testRegisterAccessor in testDummyRegisterAccessor.cpp is pointless: it tests the backdoor register accessor against itself. Rewrite it against the public API (ordinary accessors) so it exercises a different layer.
+- DI-50 [NEW] Shared-memory name derivation is duplicated: SharedDummyBackend::getSharedMemoryName() is just Utilities::createShmName(...) + "_v" + version (backends/SharedDummy/src/SharedMemoryManager.cc:50-53), yet Utilities::createShmName is still used directly in testMapFileSearch.cpp:197-198 and in testChunkedSharedDummyBackend.cpp:162. Remove Utilities::createShmName entirely and keep only getSharedMemoryName, since the name construction does not belong in Utilities; update the testMapFileSearch and versioning tests accordingly.
