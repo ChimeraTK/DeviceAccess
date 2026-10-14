@@ -504,6 +504,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
 }
 
 /**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
 void DummyRegisterTest::testChunkedBackdoorByteAlignedRegister() {
   std::cout << "testChunkedBackdoorByteAlignedRegister" << std::endl;
 
@@ -542,6 +543,7 @@ void DummyRegisterTest::testChunkedBackdoorByteAlignedRegister() {
 }
 
 /**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
 void DummyRegisterTest::testChunkedBackdoorRegisterSpanningChunkBoundary() {
   std::cout << "testChunkedBackdoorRegisterSpanningChunkBoundary" << std::endl;
 
@@ -565,6 +567,7 @@ void DummyRegisterTest::testChunkedBackdoorRegisterSpanningChunkBoundary() {
 }
 
 /**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
 void DummyRegisterTest::testChunkedBackdoorRawAccessorValueSemantics() {
   std::cout << "testChunkedBackdoorRawAccessorValueSemantics" << std::endl;
 
@@ -626,6 +629,7 @@ void DummyRegisterTest::testChunkedBackdoorRawAccessorValueSemantics() {
 }
 
 /**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
 void DummyRegisterTest::testChunkedBackdoorRawAccessorNonDefaultRawType() {
   std::cout << "testChunkedBackdoorRawAccessorNonDefaultRawType" << std::endl;
 
@@ -657,6 +661,7 @@ void DummyRegisterTest::testChunkedBackdoorRawAccessorNonDefaultRawType() {
 }
 
 /**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
 void DummyRegisterTest::testChunkedBackdoorRawAccessorDeductionGuide() {
   std::cout << "testChunkedBackdoorRawAccessorDeductionGuide" << std::endl;
 
