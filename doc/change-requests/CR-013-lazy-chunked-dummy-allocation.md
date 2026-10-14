@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -482,4 +482,4 @@ initialiser;
 - DI-51 [DONE] clang-tidy on CR-added lines in tests/executables_src/testSharedDummyBackend.cpp: the chunked-test helpers are 'static' definitions inside the anonymous namespace (opened at line 31), which the project's clang-tidy flags with two enabled checks. Affected: line 60 'static constexpr uint64_t CHUNK' (readability-static-definition-in-anonymous-namespace), and lines 65 'writeJmap', 97 'chunkSegmentName', 103 'countChunkSegments', 116 'uniqueInstanceHash' (both readability-static...
 - DI-52 [DONE] DI-52: tests artifact committed to the branch. `Testing/Temporary/LastTest.log` (a 3-line empty CTest run log) is tracked by git and was added by the CR-013 fixup commit b8ea2f3b; it is an accidental test-run artifact, not part of the change request. Remove it from the branch and add `Testing/` (and `core`, cf. DI-19) to the project-specific section of `.gitignore`.
 - DI-53 [DONE] DI-53: clang-tidy readability-convert-member-functions-to-static on the five CR-added test methods in tests/executables_src/testDummyRegisterAccessor.cpp:507 (`testChunkedBackdoorByteAlignedRegister`), :545 (`testChunkedBackdoorRegisterSpanningChunkBoundary`), :568 (`testChunkedBackdoorRawAccessorValueSemantics`), :629 (`testChunkedBackdoorRawAccessorNonDefaultRawType`) and :660 (`testChunkedBackdoorRawAccessorDeductionGuide`). They are members of the `DummyRegisterTest` fi...
-- DI-54 [IMPLEMENTED] clang-tidy-22 (misc-include-cleaner) on the CR-added line backends/SharedDummy/src/SharedMemoryManager.cc:8: `#include <boost/filesystem.hpp>` is reported 'included header filesystem.hpp is not used directly'. The header IS used (`boost::filesystem::path`/`boost::filesystem::absolute` at SharedMemoryManager.cc:55), so the check wants the directly used headers instead (`<boost/filesystem/path.hpp>` and `<boost/filesystem/operations.hpp>`). This is the only clang-tidy diagnostic that...
+- DI-54 [DONE] clang-tidy-22 (misc-include-cleaner) on the CR-added line backends/SharedDummy/src/SharedMemoryManager.cc:8: `#include <boost/filesystem.hpp>` is reported 'included header filesystem.hpp is not used directly'. The header IS used (`boost::filesystem::path`/`boost::filesystem::absolute` at SharedMemoryManager.cc:55), so the check wants the directly used headers instead (`<boost/filesystem/path.hpp>` and `<boost/filesystem/operations.hpp>`). This is the only clang-tidy diagnos...
