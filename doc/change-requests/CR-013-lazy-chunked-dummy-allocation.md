@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -480,3 +480,5 @@ initialiser;
 - DI-49 [DONE] DummyRegisterTest::testRegisterAccessor in testDummyRegisterAccessor.cpp is pointless: it tests the backdoor register accessor against itself. Rewrite it against the public API (ordinary accessors) so it exercises a different layer.
 - DI-50 [DONE] Shared-memory name derivation is duplicated: SharedDummyBackend::getSharedMemoryName() is just Utilities::createShmName(...) + "_v" + version (backends/SharedDummy/src/SharedMemoryManager.cc:50-53), yet Utilities::createShmName is still used directly in testMapFileSearch.cpp:197-198 and in testChunkedSharedDummyBackend.cpp:162. Remove Utilities::createShmName entirely and keep only getSharedMemoryName, since the name construction does not belong in Utilities; update the tes...
 - DI-51 [DONE] clang-tidy on CR-added lines in tests/executables_src/testSharedDummyBackend.cpp: the chunked-test helpers are 'static' definitions inside the anonymous namespace (opened at line 31), which the project's clang-tidy flags with two enabled checks. Affected: line 60 'static constexpr uint64_t CHUNK' (readability-static-definition-in-anonymous-namespace), and lines 65 'writeJmap', 97 'chunkSegmentName', 103 'countChunkSegments', 116 'uniqueInstanceHash' (both readability-static...
+- DI-52 [NEW] DI-52: tests artifact committed to the branch. `Testing/Temporary/LastTest.log` (a 3-line empty CTest run log) is tracked by git and was added by the CR-013 fixup commit b8ea2f3b; it is an accidental test-run artifact, not part of the change request. Remove it from the branch and add `Testing/` (and `core`, cf. DI-19) to the project-specific section of `.gitignore`.
+- DI-53 [NEW] DI-53: clang-tidy readability-convert-member-functions-to-static on the five CR-added test methods in tests/executables_src/testDummyRegisterAccessor.cpp:507 (`testChunkedBackdoorByteAlignedRegister`), :545 (`testChunkedBackdoorRegisterSpanningChunkBoundary`), :568 (`testChunkedBackdoorRawAccessorValueSemantics`), :629 (`testChunkedBackdoorRawAccessorNonDefaultRawType`) and :660 (`testChunkedBackdoorRawAccessorDeductionGuide`). They are members of the `DummyRegisterTest` fixture and are registered via `BOOST_CLASS_TEST_CASE`, so they cannot be made static; suppress the finding with the project's NOLINTNEXTLINE(readability-convert-member-functions-to-static) (consistent with the pre-existing `testExceptions`, which is registered and flagged the same way).
