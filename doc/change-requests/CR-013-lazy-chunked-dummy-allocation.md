@@ -35,13 +35,16 @@ valid and materialises chunks on demand.
 internal buffers. They return value-semantic proxies which handle the chunk
 discontinuities and support arbitrary byte-aligned registers (multi-byte
 access via `memcpy`).
-- The dummy backends keep a deprecated library-side compatibility shim for
-legacy downstream code that indexes the internal bar contents directly as
-`_barContents[bar][wordIndex]`. The member keeps the name `_barContents` (the
-new chunk map is renamed `_barChunks`) and its square-bracket operator hands
-out a raw backdoor accessor for an entire bar, so the old indexing expressions
-keep compiling. The shim is marked `[[deprecated]]`, so legacy code using it
-compiles with warnings.
+- `DummyBackend` keeps a deprecated library-side compatibility shim for legacy
+downstream code that indexes the internal bar contents directly as
+`_barContents[bar][wordIndex]`. The shim is a protected member, so legacy
+subclasses inherit access to it, as they did before. The member keeps the name
+`_barContents` (the new chunk map is renamed `_barChunks`) and its
+square-bracket operator hands out a raw backdoor accessor for an entire bar, so
+the old indexing expressions keep compiling. The shim is marked
+`[[deprecated]]`, so legacy code using it compiles with warnings.
+SharedDummyBackend exposes no shim: its former `_barContents` chunk map is only
+renamed `_barChunks`.
 - Read-only registers from the map file are still rejected on write, but
 enforcement stays entirely in the accessor layer.
 - The SharedDummyBackend interrupt storage keeps its current bounded layout and
@@ -316,13 +319,19 @@ plugin conversion.
 ### Deprecated bar-contents compatibility shim
 
 - For legacy downstream code that indexes the internal bar contents directly,
-both dummy backends expose a compatibility member named `_barContents`; the
-actual chunk storage lives in `_barChunks` (see "Chunked bar storage").
+`DummyBackend` exposes a protected compatibility member named `_barContents`;
+the actual chunk storage lives in `_barChunks` (see "Chunked bar storage").
+Its member is `protected`, as the historical member was, so legacy subclasses
+inherit it. `SharedDummyBackend` has no shim: its former `_barContents` chunk
+map is renamed `_barChunks` and no compatibility member is added, because the
+historical member was `private` and no downstream code could reach it.
 - The member is of a new compatibility type. Both the member's type and its
 square-bracket operator are marked `[[deprecated]]`, so any use in legacy code
 produces a compiler deprecation warning. The library itself never uses the
 shim, so the library builds warning-free.
-- `_barContents[bar]` hands out a raw backdoor accessor for the entire bar. Its
+- `_barContents[bar]` hands out the `DummyBackend` raw backdoor accessor for
+the entire bar (the same value-semantic `DummyRegisterRawAccessor` used by the
+backdoor accessors), so the shim shares its type and semantics. Its
 `operator[](wordIndex)` selects the `int32_t` word at byte offset
 `wordIndex * sizeof(int32_t)`, reproducing the historical word-based layout of
 the former `std::map<uint64_t, std::vector<int32_t>>`. The mapping from word
@@ -333,9 +342,9 @@ read/write goes through the transfer helper and so materialises chunks and
 copies exactly the element's bytes. `memcpy` keeps the access byte-granular.
 - Bar bounds: any bar is valid, consistent with the "any address is valid"
 rule; the shim bounds-checks nothing.
-- Locking: each element access takes `DummyBackend::mutex` on DummyBackend and
-goes through the interprocess mutex on SharedDummyBackend, exactly like the
-other backdoor accessors.
+- Locking: each element access takes `DummyBackend::mutex`, exactly like the
+other backdoor accessors. The shim exists only on `DummyBackend`, the only
+backend with backdoor accessors and hence the only one with this storage path.
 
 ### Alternatives considered
 
@@ -421,10 +430,12 @@ the memory for:
 - conversion to the underlying type;
 - the raw accessor instantiated for a non-default `RawType` (e.g. `int16_t`)
 accesses the memory correctly.
-- Deprecated compatibility shim: `_barContents[bar][wordIndex]` compiles and
-reads/writes the `int32_t` word at byte offset
-`wordIndex * sizeof(int32_t)`, with the deprecation warning suppressed around
-the legacy expression.
+- Deprecated compatibility shim: exercised on a `DummyBackend` through a
+subclass, so the inherited protected access is covered;
+`_barContents[bar][wordIndex]` compiles and reads/writes the `int32_t` word at
+byte offset `wordIndex * sizeof(int32_t)`, with the deprecation warning
+suppressed around the legacy expression. `SharedDummyBackend` has no shim and
+its tests use `_barChunks` directly.
 - Adapt the tests to the new behaviour:
 - obsolete read-only tests (e.g. `testDummyBackend`'s `testReadOnly`) are
 removed rather than adapted: the dummy backend no longer has a read-only
@@ -440,7 +451,10 @@ the renamed chunk map `_barChunks`;
 - tests that write the internal bar contents directly (`testDummyBackend`,
 `testDummyRegisterAccessor`) may keep the legacy `_barContents[bar][wordIndex]`
 indexing through the deprecated compatibility shim, suppressing the deprecation
-warning, or go through the backdoor accessors;
+warning, or go through the backdoor accessors; the legacy indexing is available
+only on `DummyBackend` (the listed `testDummyBackend` and
+`testDummyRegisterAccessor` are `DummyBackend`-based), while
+`SharedDummyBackend` tests have no such path and go through `_barChunks`;
 - the out-of-range `logic_error` expectations follow the new "any address is
 valid" behaviour.
 - the tests that derived the shared-memory name themselves obtain it through
@@ -524,3 +538,5 @@ initialiser;
 - DI-55 [FOLDED-IN] Add a library-side compatibility layer for legacy downstream code that reaches into the dummy internals as `_barContents[bar][wordIndex]`: the member must keep the name `_barContents` (rename the new chunk map), and its type must implement the square-bracket operator and hand out a raw backdoor accessor for an entire bar, so the old indexing expressions keep compiling. This reverses the CR's current decision 'tests that write the internal bar contents directly go through the ...
 - DI-56 [FOLDED-IN] The compatibility layer (the `_barContents` compatibility object and its square-bracket accessor handing out a raw backdoor accessor for the whole bar) must be marked `[[deprecated]]`, so legacy code using it generates compiler warnings. The intended deprecation mechanism and the resulting warnings must be specified.
 - DI-57 [FOLDED-IN] The requirements, specifications and test plan must be updated for the compatibility layer before implementation (per the playbook the plan is changed first): the 'no library-side compatibility shim' statements and the affected test-adaptation entries are no longer valid, and the new API needs its specification (type, operator semantics, word-vs-byte index mapping, bar bounds, locking contract) and a test-plan entry.
+- DI-58 [NEW] Compatibility-shim scope contradicts the backdoor-accessor specification: the folded shim (requirements CR-013 lines 38-44, spec 'Deprecated bar-contents compatibility shim' lines 316-338) says BOTH dummy backends expose `_barContents` and that its element access 'goes through the interprocess mutex on SharedDummyBackend, exactly like the other backdoor accessors', but the same CR states the backdoor accessors exist only on `DummyBackend` and take a `DummyBackend&` (spec lines 303-304), so that raw accessor cannot serve `SharedDummyBackend`. At the merge base (10388c0a) `SharedDummyBackend::_barContents` was `private` (backends/SharedDummy/include/SharedDummyBackend.h:64/70), so no legacy downstream code could reach it there, while `DummyBackend::_barContents` was `protected` (backends/DummyBackend/include/DummyBackend.h:81/103) and the legacy code subclasses `DummyBackend`. The user decided the shim stays DummyBackend-only and protected (legacy subclasses inherit access); the Requirements, the shim specification and the affected Test-plan entry must be narrowed accordingly (see doc_updates).
+- DI-59 [NEW] DI-11 and DI-14 are stale: they are predicated on the reversed 'no library-side compatibility shim' decision. DI-55 now mandates a library-side shim, so the CR no longer needs 'confirmation that no library-side compatibility shim is expected' (DI-11) and the test plan's direct-write adaptation now correctly offers the shim (test plan lines 440-443), not 'the backdoor accessor with no library-side compatibility shim' (DI-14). Both are superseded by DI-55 and reported as REPLACED.
