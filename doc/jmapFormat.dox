@@ -193,7 +193,7 @@ Example:
 
 \subsection jmap_simple_modules Modules
 
-A register/module in the \c addressSpace without an \c address is a module: it groups nested registers and modules below it by providing a \c children dictionary keyed by the children's names, and contributes its own name (its \c addressSpace / \c children key) to the hierarchical path of everything beneath it. A module is not a register and carries no data of its own. Example (from \c simpleJsonFile.jmap):
+A register/module in the \c addressSpace without an \c address, without a \c representation and without \c channels is a module: it groups nested registers and modules below it by providing a \c children dictionary keyed by the children's names, and contributes its own name (its \c addressSpace / \c children key) to the hierarchical path of everything beneath it. A module is not a register and carries no data of its own. An entry with \c channels is always a register, even without an \c address or a \c representation of its own. Example (from \c simpleJsonFile.jmap):
 \verbatim
 "addressSpace": {
   "APP": {
@@ -239,7 +239,7 @@ This yields the same registers \c APP/STATUS and \c APP.CONTROL as before, but i
 
 \subsection jmap_address_inheritance Address inheritance
 
-A child entry does not have to carry an address of its own: it inherits the address of the nearest ancestor that does. The inheritance works per field of the address entry, so e.g. only the \c type and \c channel may be inherited while the \c offset is overridden. Example (identical outcome to the last example above):
+A child entry does not have to carry an address of its own: it inherits the address of the nearest ancestor that does, also through any number of modules in between. The inheritance works per field of the address entry: the \c offset is \e never inherited and must be given whenever an \c address is present, while an omitted \c type inherits the ancestor's \c type together with its \c channel. Giving a \c type of one's own drops the inherited \c channel, so an omitted \c channel then defaults to \c 0. Only a wholly omitted \c address inherits the ancestor's \c offset as well. Example (identical outcome to the last example above):
 \verbatim
 "addressSpace": {
   "APP": {
@@ -417,7 +417,7 @@ Both alternatives map to the same address (\c 1246); they differ only in the sel
 \subsection jmap_double_buffering Double buffering
 
 A register that is fed by double-buffered DMA hardware is marked with a \c doubleBuffering object. It contains:
-\li \c secondaryBufferAddress - the address of the second (inactive) buffer, with the same members as a regular \c address.
+\li \c secondaryBufferAddress - the address of the second (inactive) buffer, with the same members as a regular \c address. Like a primary \c address, an omitted \c type inherits the register's resolved \c type together with its \c channel, while its \c offset is its own and required.
 \li \c enableRegister - path of the register used to enable double buffering.
 \li \c readBufferRegister - path of the register reporting which buffer is currently active.
 \li \c index - the index of the buffer pair within the control registers.

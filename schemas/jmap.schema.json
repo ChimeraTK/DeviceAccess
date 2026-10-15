@@ -94,7 +94,7 @@
     },
     "addressSpaceEntry": {
       "type": "object",
-      "description": "A register and/or module. A register has an 'address' (and either a flat 'representation' for scalar/1D registers or 'channels' + 'pitch' for 2D registers). A module has 'children'. Field order: engineeringUnit, description, access, triggeredByInterrupt, numberOfElements, bytesPerElement, pitch, address, representation, then channels/children.",
+      "description": "A register and/or module. A register has an 'address' (and either a flat 'representation' for scalar/1D registers or 'channels' + 'pitch' for 2D registers); its 'address' may be omitted and inherited from the parent. A module has neither an 'address' nor a 'representation' nor 'channels' and groups nested entries through 'children'. Field order: engineeringUnit, description, access, triggeredByInterrupt, numberOfElements, bytesPerElement, pitch, address, representation, then channels/children.",
       "properties": {
         "engineeringUnit": {
           "$ref": "#/definitions/engineeringUnit"
@@ -141,7 +141,7 @@
         },
         "channels": {
           "type": "object",
-          "description": "Channels of a 2D register, keyed by name. When present the register must have a 'pitch'; its 'address' is either given explicitly or inherited from the parent.",
+          "description": "Channels of a 2D register, keyed by name. Their presence makes the entry a register whatever its 'address'; a 'pitch' is then required and the 'address' is either given explicitly or inherited from an ancestor.",
           "propertyNames": {
             "description": "Keys must be non-empty.",
             "pattern": "^(?!$).+"
@@ -224,7 +224,7 @@
     },
     "address": {
       "type": "object",
-      "description": "Hardware address of a register. An address present in a child entry overrides 'type'/'channel' and/or 'offset' of an inherited address; to inherit the whole parent address, omit this member entirely.",
+      "description": "Hardware address of a register. 'offset' is always the entry's own and required. An omitted 'type' inherits the nearest ancestor address's 'type' together with its 'channel'; a 'type' of its own leaves an omitted 'channel' at 0. To inherit the whole ancestor address, including its 'offset', omit this member entirely.",
       "properties": {
         "type": {
           "type": "string",
@@ -369,6 +369,7 @@
       "description": "Double-buffer config for DAQ registers.",
       "properties": {
         "secondaryBufferAddress": {
+          "description": "Address of the second (inactive) buffer. Like a primary 'address', an omitted 'type' inherits the register's resolved 'type' together with its 'channel'; its 'offset' is its own and required.",
           "$ref": "#/definitions/address"
         },
         "enableRegister": {

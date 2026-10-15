@@ -117,11 +117,23 @@ namespace ChimeraTK::detail {
     size_t numberOfElements{1};
     size_t bytesPerElement{0};
 
+    // The register information of the nearest ancestor that is a register (has an own address). An entry that omits
+    // its whole address inherits the ancestor's register access, element pitch and element count, so the recursion
+    // carries them down. Modules pass the ancestor on unchanged.
+    struct AncestorRegister {
+      NumericAddressedRegisterInfo::Access registerAccess{NumericAddressedRegisterInfo::Access::READ_WRITE};
+      size_t elementPitchBits{32};
+      size_t nElements{1};
+    };
+    using OptionalAncestor = std::optional<AncestorRegister>;
+
+    struct Address;
+
     struct DoubleBufferingInfo {
       struct SecondAddress {
-        AddressType type{AddressType::DMA};
+        AddressType type{AddressType::addressTypeNotSet};
         size_t channel{0};
-        HexValue offset{0};
+        HexValue offset{std::numeric_limits<size_t>::max()};
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondAddress, type, channel, offset)
       };
@@ -131,11 +143,17 @@ namespace ChimeraTK::detail {
       std::string readBufferRegister;
       size_t index{0};
 
-      void fill(NumericAddressedRegisterInfo& info) const {
+      void fill(NumericAddressedRegisterInfo& info, const Address& inherited) const {
+        // A present secondaryBufferAddress inherits its omitted type/channel from the register's resolved address
+        // (the same per-field rule as a primary address): an omitted type brings the register's channel along. Its
+        // offset is always its own and required. A type of its own drops the inherited channel.
+        const bool typeInherited = secondaryBufferAddress.type == AddressType::addressTypeNotSet;
+        auto type = typeInherited ? inherited.type : secondaryBufferAddress.type;
+        auto channel = typeInherited ? inherited.channel : secondaryBufferAddress.channel;
+        assert(secondaryBufferAddress.offset.v != std::numeric_limits<size_t>::max());
         info.doubleBuffer->address = secondaryBufferAddress.offset.v;
         // The two buffers of a double-buffered register must live on the same BAR.
-        size_t secondaryBar =
-            secondaryBufferAddress.channel + (secondaryBufferAddress.type == AddressType::DMA ? 13 : 0);
+        size_t secondaryBar = channel + (type == AddressType::DMA ? 13 : 0);
         if(secondaryBar != info.bar) {
           throw ChimeraTK::logic_error("Register " + info.pathName +
               ": double-buffered registers whose two buffers lie on different BARs are not supported (primary "
@@ -153,18 +171,20 @@ namespace ChimeraTK::detail {
     std::optional<DoubleBufferingInfo> doubleBuffering;
 
     struct Address {
-      AddressType type{AddressType::IO};
+      AddressType type{AddressType::addressTypeNotSet};
       size_t channel{0};
       HexValue offset{std::numeric_limits<size_t>::max()};
 
       void fill(NumericAddressedRegisterInfo& info) const {
         assert(type != AddressType::addressTypeNotSet);
+        assert(offset.v != std::numeric_limits<size_t>::max());
         info.address = offset.v;
         info.bar = channel + (type == AddressType::DMA ? 13 : 0);
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Address, type, channel, offset)
-    } address{AddressType::addressTypeNotSet};
+    };
+    std::optional<Address> address;
 
     // Basic representation without sub elements
     struct Representation {
@@ -272,18 +292,54 @@ namespace ChimeraTK::detail {
     // authoring error.
     std::optional<SelectedBy> selectedBy;
 
+    // Resolve the register's own address from a present partial address and the inherited one (per-field
+    // inheritance), or solely from the inherited one where the entry omits its own address. The result is the
+    // address of this entry, which becomes the inherited address of its children.
+    std::optional<Address> resolveAddress(
+        const RegisterPath& pathName, const std::optional<Address>& inheritedAddress) const {
+      if(!address.has_value()) {
+        return inheritedAddress;
+      }
+      Address resolved = *address;
+      if(resolved.offset.v == std::numeric_limits<size_t>::max()) {
+        throw ChimeraTK::logic_error("Register " + pathName + ": 'address' requires an 'offset'.");
+      }
+      if(resolved.type == AddressType::addressTypeNotSet) {
+        // The type is inherited together with its channel. With no inherited address the type defaults to IO and
+        // the entry keeps its own channel (or 0 where omitted).
+        if(inheritedAddress.has_value()) {
+          resolved.type = inheritedAddress->type;
+          resolved.channel = inheritedAddress->channel;
+        }
+        else {
+          resolved.type = AddressType::IO;
+        }
+      }
+      // A type of its own drops the inherited channel; an own channel is kept.
+      return resolved;
+    }
+
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy,
-        const std::string& selectedBySource) const {
+        const std::optional<Address>& resolved, const OptionalAncestor& ancestor,
+        const std::optional<SelectedBy>& inheritedSelectedBy, const std::string& selectedBySource) const {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
+
+      // An entry with an own address overrides only the address of the ancestor; an entry that omits its whole
+      // address takes the ancestor's register access and element pitch as well.
+      const bool ownsAddress = address.has_value();
 
       if(triggeredByInterrupt.empty()) {
         if(access != Access::accessNotSet) {
           info.registerAccess = NumericAddressedRegisterInfo::Access(access);
         }
-        else if(!addressSetByParent) {
+        else if(ownsAddress || !ancestor.has_value()) {
+          // An own address (or none anywhere) uses the default; an entry that omits its whole address keeps the
+          // ancestor's access instead.
           info.registerAccess = NumericAddressedRegisterInfo::Access::READ_WRITE;
+        }
+        else {
+          info.registerAccess = ancestor->registerAccess;
         }
       }
       else {
@@ -296,47 +352,41 @@ namespace ChimeraTK::detail {
       }
 
       if(representation.type != RepresentationType::VOID) {
-        if(address.type != AddressType::addressTypeNotSet) {
-          address.fill(info);
-          if(channels.empty()) {
+        if(!resolved.has_value()) {
+          throw ChimeraTK::logic_error(
+              "Address not set but representation or channels given in register " + parentName / name);
+        }
+        resolved->fill(info);
+        if(channels.empty()) {
+          if(ownsAddress || !ancestor.has_value()) {
             auto bPerElem = (bytesPerElement != 0 ? bytesPerElement : 4); // create default if not set
             info.elementPitchBits = bPerElem * 8;
-            info.nElements = numberOfElements;
             representation.fill(info, 0, bPerElem);
-            applyRegisterSelectedBy(info, inheritedSelectedBy);
-          }
-          else {
-            info.elementPitchBits = pitch * 8;
             info.nElements = numberOfElements;
-            // Iterate the channels sorted by byte offset (see channelsInOffsetOrder) so the per-channel information
-            // (and hence the channel index of the 2D accessor) stays in the natural memory order.
-            for(const auto& [channelName, channel] : channelsInOffsetOrder()) {
-              (void)channelName; // the channel name is the map key; the channel data carries its own offset
-              channel->fill(info, inheritedSelectedBy);
-            }
-          }
-        }
-        else if(addressSetByParent) {
-          if(channels.empty()) {
-            if(representation.type == RepresentationType::representationNotSet) {
-              throw ChimeraTK::logic_error("Representation not set for register " + parentName / name +
-                  " which inherited the address from parent!");
-            }
-            // If bytesPerElement has not been set in the json file, take it from parent info
-            representation.fill(info, 0, (bytesPerElement != 0 ? bytesPerElement : info.elementPitchBits / 8));
-            applyRegisterSelectedBy(info, inheritedSelectedBy);
           }
           else {
-            throw ChimeraTK::logic_error("Address must be set for entries with channels: register " + info.pathName);
+            // The element pitch and the element count come from the ancestor register; bytesPerElement only
+            // overrides the data width.
+            info.elementPitchBits = ancestor->elementPitchBits;
+            representation.fill(info, 0, (bytesPerElement != 0 ? bytesPerElement : info.elementPitchBits / 8));
+            info.nElements = ancestor->nElements;
           }
+          applyRegisterSelectedBy(info, inheritedSelectedBy);
         }
         else {
-          throw ChimeraTK::logic_error("Address not set but representation given in register " + parentName / name);
+          info.elementPitchBits = pitch * 8;
+          info.nElements = numberOfElements;
+          // Iterate the channels sorted by byte offset (see channelsInOffsetOrder) so the per-channel information
+          // (and hence the channel index of the 2D accessor) stays in the natural memory order.
+          for(const auto& [channelName, channel] : channelsInOffsetOrder()) {
+            (void)channelName; // the channel name is the map key; the channel data carries its own offset
+            channel->fill(info, inheritedSelectedBy);
+          }
         }
       }
       else {
         // VOID registers have no address — they are pure interrupt sources
-        if(address.type != AddressType::addressTypeNotSet) {
+        if(address.has_value()) {
           throw ChimeraTK::logic_error("Address is set for void-typed register " + info.pathName);
         }
         if(triggeredByInterrupt.empty()) {
@@ -352,8 +402,9 @@ namespace ChimeraTK::detail {
       }
 
       if(doubleBuffering) {
+        assert(resolved.has_value());
         info.doubleBuffer.emplace();
-        doubleBuffering->fill(info);
+        doubleBuffering->fill(info, *resolved);
       }
       else {
         info.doubleBuffer.reset();
@@ -429,7 +480,8 @@ namespace ChimeraTK::detail {
     std::map<std::string, JsonAddressSpaceEntry> children;
 
     void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt,
+        const std::optional<Address>& inheritedAddress, const OptionalAncestor& ancestor,
+        const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt,
         const std::string& inheritedSelectedBySource = "") const {
       if(name.empty()) {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
@@ -441,13 +493,22 @@ namespace ChimeraTK::detail {
       RegisterPath thisPath = parentName / name;
       thisPath.setAltSeparator(".");
       const std::string effectiveSelectedBySource = selectedBy ? std::string(thisPath) : inheritedSelectedBySource;
-      if(address.type != AddressType::addressTypeNotSet) {
-        // New address entry. Don't use parent information
+      // The resolved address of this entry (own partial address merged with the inherited one, or inherited
+      // whole); it becomes the inherited address of the entry's children.
+      const std::optional<Address> resolvedAddress = resolveAddress(thisPath, inheritedAddress);
+      // The ancestor register info the entry's children inherit: a register entry becomes the new ancestor, a module
+      // passes the incoming one through.
+      OptionalAncestor childAncestor = ancestor;
+      // An entry is a register when it has an own address, a representation or channels; otherwise it is a module
+      // that groups nested entries and carries no data of its own.
+      if(address.has_value() || representation.type != RepresentationType::representationNotSet || !channels.empty()) {
+        // New register entry with an own or inherited address.
         NumericAddressedRegisterInfo my;
         my.channels.clear(); // default constructor already creates a channel with default settings...
-        fill(my, name, parentName, addressSetByParent, effectiveSelectedBy, effectiveSelectedBySource);
+        fill(my, name, parentName, resolvedAddress, ancestor, effectiveSelectedBy, effectiveSelectedBySource);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
+        childAncestor = AncestorRegister{my.registerAccess, my.elementPitchBits, my.nElements};
         if(!channels.empty()) {
           // create one register entry per named channel of the 2D register: a read-only 1D slice of the
           // 2D register. The channel's byte offset is folded into the address (so bitOffset == 0), and the full
@@ -539,19 +600,11 @@ namespace ChimeraTK::detail {
           catalogue.addRegister(buf1Register);
         }
       }
-      else if(representation.type != RepresentationType::representationNotSet) {
-        // take over parent address (except void interrupt registers which don't have an address)
-        auto my = catalogue.getBackendRegister(parentName);
-        my.channels.clear(); // will be refilled from representation
-        fill(my, name, parentName, addressSetByParent, effectiveSelectedBy,
-            effectiveSelectedBySource); // only updates the name and the representation
-        my.computeDataDescriptor();
-        catalogue.addRegister(my);
-      }
 
+      // A module passes the nearest ancestor's resolved address and register info on to its children, so inheritance
+      // works through any number of modules. A register passes its own resolved address and info down from here.
       for(const auto& [childName, child] : children) {
-        child.addInfos(catalogue, childName, parentName / name,
-            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effectiveSelectedBy,
+        child.addInfos(catalogue, childName, parentName / name, resolvedAddress, childAncestor, effectiveSelectedBy,
             effectiveSelectedBySource);
       }
     }
@@ -659,7 +712,7 @@ namespace ChimeraTK::detail {
       // Parse the "addressSpace" entries recursively
       std::map<std::string, JsonAddressSpaceEntry> addressSpace = data.at("addressSpace");
       for(const auto& [addressSpaceName, entry] : addressSpace) {
-        entry.addInfos(catalogue, addressSpaceName, "/", /*addressSetByParent=*/false);
+        entry.addInfos(catalogue, addressSpaceName, "/", std::nullopt, std::nullopt);
       }
 
       // Scan the catalogue for bit ranges.
