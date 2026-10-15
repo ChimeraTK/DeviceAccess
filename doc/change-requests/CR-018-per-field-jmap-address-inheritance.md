@@ -102,22 +102,27 @@ Affected components: `src/JsonMapFileParser.cc`, `schemas/jmap.schema.json`,
 
 Field presence:
 
-- `Address::type` and `Address::channel` get unset sentinels as defaults, so a
-field given in the map is told apart from an omitted one. Currently both are
-pre-set to `IO`/`0` and the `WITH_DEFAULT` deserialisation keeps them, which is
-what loses the inheritance.
-- `Address::offset` keeps its sentinel, and a present `address` without `offset`
-is now rejected instead of silently using the sentinel value; the schema
-already requires `offset` (`schemas/jmap.schema.json:247`).
+- `Address::type`, `Address::channel` and `Address::offset` (and the
+`DoubleBufferingInfo::SecondAddress` equivalents) become `std::optional`: an
+omitted field deserialises to `std::nullopt`, so a field given in the map is
+told apart from an omitted one. The `WITH_DEFAULT` deserialisation keeps that
+absence, where today the `IO`/`0` pre-set members survive it, which is what
+loses the inheritance.
+- The field-presence checks use `has_value()` instead of the
+`addressTypeNotSet` and `numeric_limits<size_t>::max()` sentinels:
+`resolveAddress` (`:304-331`) and `DoubleBufferingInfo::fill` (`:146-171`).
+- A present `address` without `offset` (an unset `std::optional`) is rejected
+instead of silently using a sentinel value; the schema already requires
+`offset` (`schemas/jmap.schema.json:247`).
 - `JsonAddressSpaceEntry::address` becomes `std::optional<Address>`. A present
 address with unset fields means "inherit" per the resolution rule below; an
 absent address means "inherit the whole ancestor address". This replaces the
 current `type == addressTypeNotSet` absence test (`:167`, `:299`, `:339`,
 `:444`, `:554`).
-- `DoubleBufferingInfo::SecondAddress` uses the same sentinels for
-`type`/`channel` instead of the `DMA`/`0` defaults, and the same unset sentinel
-for `offset` instead of the `0` default; a present `secondaryBufferAddress`
-without `offset` is rejected like a primary `address`.
+- `DoubleBufferingInfo::SecondAddress` uses the same `std::optional` fields for
+`type`/`channel`/`offset` instead of the `DMA`/`0`/`0` defaults; a present
+`secondaryBufferAddress` without `offset` is rejected like a primary
+`address`.
 
 Register or module:
 
@@ -286,3 +291,4 @@ address-less module `APP`); a secondary on the same BAR is accepted
 - DI-5 [DONE] Implementation defect in Address resolution: an address that gives its own 'channel' but omits 'type' does not keep the own channel. Specification says 'channel is its own value, else the inherited one where the type is inherited as well, else 0', and the test plan's own-channel case expects the own channel to win. resolveAddress (src/JsonMapFileParser.cc:306-320) unconditionally overwrites resolved.channel with the inherited channel whenever the type is inherited, because A...
 - DI-6 [DONE] Implementation defect in secondaryBufferAddress offset rejection: a present secondaryBufferAddress without 'offset' must be rejected with ChimeraTK::logic_error like a primary 'address', but DoubleBufferingInfo::fill (src/JsonMapFileParser.cc:153) only asserts (assert(secondaryBufferAddress.offset.v != std::numeric_limits<size_t>::max())). In a debug build the assert aborts (SIGABRT) instead of throwing, so TestSecondaryBufferAddressWithoutOffsetRejected fails and aborts the...
 - DI-7 [DONE] tests/executables_src/testJsonMapFileParser.cpp (TestChannelsEntryInheritsAddressBecomesRegister): the second assertion block fetches '/APP/CHANS_PARENT/CHANS_CHILD/B', which is the channel slice named B, but its comment claims 'A bit-field child of a channel resolves to the same address as well'. Channel B is declared as a plain channel ({bytesPerElement 4, offset 0, representation {type fixedPoint, width 4}}) with no 'children', so no bit-field child (a 'children' entry belo...
+- DI-8 [NEW] The user requests replacing the 'unset' sentinels with std::optional: Address::type/channel/offset and DoubleBufferingInfo::SecondAddress::type/channel/offset currently use addressTypeNotSet / std::numeric_limits<size_t>::max() to mark an omitted (inherited) field (src/JsonMapFileParser.cc:134-136, :179-181). They should become std::optional, with an omitted JSON field deserialising to std::nullopt and resolveAddress (:304-331) and DoubleBufferingInfo::fill (:146-171) testing has_value() instead of comparing against the sentinels. The Specifications' 'Field presence' bullet describing unset sentinels and the deserialisation behaviour must be updated, so the plan changes before re-implementation.
