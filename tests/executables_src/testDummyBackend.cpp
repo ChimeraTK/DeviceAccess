@@ -7,6 +7,7 @@
 #include "BackendFactory.h"
 #include "Device.h"
 #include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "Exception.h"
 #include "parserUtilities.h"
 
@@ -75,6 +76,26 @@ class TestableDummyBackend : public DummyBackend {
       }
     }
     return count;
+  }
+
+  /// Write an int32_t word through the deprecated `_barContents[bar][wordIndex]` compatibility shim. It is a member
+  /// function so that the inherited protected member is accessed from within the subclass, as legacy code does.
+  void writeBarContentsWord(uint64_t bar, uint64_t wordIndex, int32_t value) {
+    // test the deprecated legacy indexing without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    _barContents[bar][wordIndex] = value;
+#pragma GCC diagnostic pop
+  }
+
+  /// Read an int32_t word through the deprecated `_barContents[bar][wordIndex]` compatibility shim.
+  int32_t readBarContentsWord(uint64_t bar, uint64_t wordIndex) {
+    // test the deprecated legacy indexing without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    int32_t value = _barContents[bar][wordIndex];
+#pragma GCC diagnostic pop
+    return value;
   }
 
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
@@ -761,6 +782,40 @@ BOOST_AUTO_TEST_CASE(testChunkedBarsAreIndependent) {
   const uint64_t otherBar = 1;
   backend.read(otherBar, address, &other, sizeof(int32_t));
   BOOST_TEST(other == 0);
+
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// The deprecated compatibility shim keeps the legacy `_barContents[bar][wordIndex]` indexing of the internal bar
+// contents compiling: it hands out the raw backdoor accessor for the whole bar, whose element selects the int32_t word
+// at byte offset `wordIndex * sizeof(int32_t)`. The inherited protected access is exercised through a subclass.
+BOOST_AUTO_TEST_CASE(testDeprecatedBarContentsCompatShim) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  const uint64_t bar = 0;
+  const uint64_t wordIndex = 3;
+
+  // Write through the deprecated shim and read the word back through the backend at the byte offset it maps to.
+  backend.writeBarContentsWord(bar, wordIndex, 0x0badf00d);
+
+  int32_t word = 0;
+  backend.read(bar, wordIndex * sizeof(int32_t), &word, sizeof(int32_t));
+  BOOST_TEST(word == 0x0badf00d);
+
+  // Write through the backend and read the word back through the deprecated shim.
+  const int32_t otherValue = 0x12345678;
+  backend.write(bar, wordIndex * sizeof(int32_t), &otherValue, sizeof(int32_t));
+  BOOST_TEST(backend.readBarContentsWord(bar, wordIndex) == otherValue);
+
+  // Any bar and any word index are valid, consistent with the "any address is valid" rule.
+  const uint64_t otherBar = 9;
+  const uint64_t farWordIndex = 1000;
+  backend.writeBarContentsWord(otherBar, farWordIndex, 0x22222222);
+  BOOST_TEST(backend.readBarContentsWord(otherBar, farWordIndex) == 0x22222222);
 
   std::remove(mapFile.c_str());
 }
