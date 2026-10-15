@@ -72,7 +72,7 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
 
   // map AddressType enum to JSON as strings
-  enum AddressType { IO, DMA, addressTypeNotSet };
+  enum AddressType { IO, DMA };
   NLOHMANN_JSON_SERIALIZE_ENUM(AddressType, {{AddressType::IO, "IO"}, {AddressType::DMA, "DMA"}})
 
   /********************************************************************************************************************/
@@ -131,9 +131,11 @@ namespace ChimeraTK::detail {
 
     struct DoubleBufferingInfo {
       struct SecondAddress {
-        AddressType type{AddressType::addressTypeNotSet};
-        size_t channel{std::numeric_limits<size_t>::max()};
-        HexValue offset{std::numeric_limits<size_t>::max()};
+        // An omitted (inherited) field deserialises to std::nullopt, so a field given in the map is told apart from
+        // an omitted one.
+        std::optional<AddressType> type{std::nullopt};
+        std::optional<size_t> channel{std::nullopt};
+        std::optional<HexValue> offset{std::nullopt};
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondAddress, type, channel, offset)
       };
@@ -148,15 +150,15 @@ namespace ChimeraTK::detail {
         // (the same per-field rule as a primary address): an omitted type brings the register's channel along. An
         // own type drops the inherited channel and leaves an omitted channel at 0. Its offset is always its own and
         // required.
-        const bool channelSet = secondaryBufferAddress.channel != std::numeric_limits<size_t>::max();
-        const bool typeInherited = secondaryBufferAddress.type == AddressType::addressTypeNotSet;
-        auto type = typeInherited ? inherited.type : secondaryBufferAddress.type;
-        auto channel = channelSet ? secondaryBufferAddress.channel : (typeInherited ? inherited.channel : 0);
-        if(secondaryBufferAddress.offset.v == std::numeric_limits<size_t>::max()) {
+        const bool typeInherited = !secondaryBufferAddress.type.has_value();
+        auto type = typeInherited ? *inherited.type : *secondaryBufferAddress.type;
+        auto channel = secondaryBufferAddress.channel.has_value() ? *secondaryBufferAddress.channel :
+                                                                    (typeInherited ? *inherited.channel : size_t{0});
+        if(!secondaryBufferAddress.offset.has_value()) {
           throw ChimeraTK::logic_error(
               "Register " + info.pathName + ": 'secondaryBufferAddress' requires an 'offset'.");
         }
-        info.doubleBuffer->address = secondaryBufferAddress.offset.v;
+        info.doubleBuffer->address = secondaryBufferAddress.offset->v;
         // The two buffers of a double-buffered register must live on the same BAR.
         size_t secondaryBar = channel + (type == AddressType::DMA ? 13 : 0);
         if(secondaryBar != info.bar) {
@@ -176,16 +178,18 @@ namespace ChimeraTK::detail {
     std::optional<DoubleBufferingInfo> doubleBuffering;
 
     struct Address {
-      AddressType type{AddressType::addressTypeNotSet};
-      size_t channel{std::numeric_limits<size_t>::max()};
-      HexValue offset{std::numeric_limits<size_t>::max()};
+      // An omitted (inherited) field deserialises to std::nullopt, so a field given in the map is told apart from
+      // an omitted one.
+      std::optional<AddressType> type{std::nullopt};
+      std::optional<size_t> channel{std::nullopt};
+      std::optional<HexValue> offset{std::nullopt};
 
       void fill(NumericAddressedRegisterInfo& info) const {
-        assert(type != AddressType::addressTypeNotSet);
-        assert(channel != std::numeric_limits<size_t>::max());
-        assert(offset.v != std::numeric_limits<size_t>::max());
-        info.address = offset.v;
-        info.bar = channel + (type == AddressType::DMA ? 13 : 0);
+        assert(type.has_value());
+        assert(channel.has_value());
+        assert(offset.has_value());
+        info.address = offset->v;
+        info.bar = *channel + (*type == AddressType::DMA ? 13 : 0);
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Address, type, channel, offset)
@@ -307,25 +311,20 @@ namespace ChimeraTK::detail {
         return inheritedAddress;
       }
       Address resolved = *address;
-      if(resolved.offset.v == std::numeric_limits<size_t>::max()) {
+      if(!resolved.offset.has_value()) {
         throw ChimeraTK::logic_error("Register " + pathName + ": 'address' requires an 'offset'.");
       }
-      const bool channelSet = resolved.channel != std::numeric_limits<size_t>::max();
-      if(resolved.type == AddressType::addressTypeNotSet) {
+      const bool channelSet = resolved.channel.has_value();
+      const bool typeInherited = !resolved.type.has_value();
+      if(typeInherited) {
         // The type is inherited together with its channel. With no inherited address the type defaults to IO and an
         // omitted channel falls back to 0.
-        if(inheritedAddress.has_value()) {
-          resolved.type = inheritedAddress->type;
-        }
-        else {
-          resolved.type = AddressType::IO;
-        }
+        resolved.type = inheritedAddress.has_value() ? *inheritedAddress->type : AddressType::IO;
       }
       // An own channel is always kept. An omitted channel is the inherited one where the type is inherited as well
       // (a type of its own drops the inherited channel), else 0.
       if(!channelSet) {
-        const bool typeInherited = address->type == AddressType::addressTypeNotSet;
-        resolved.channel = (typeInherited && inheritedAddress.has_value()) ? inheritedAddress->channel : 0;
+        resolved.channel = (typeInherited && inheritedAddress.has_value()) ? *inheritedAddress->channel : size_t{0};
       }
       return resolved;
     }
@@ -605,7 +604,7 @@ namespace ChimeraTK::detail {
           NumericAddressedRegisterInfo buf1Register = my;
           buf1Register.pathName = my.pathName + "/BUF1";
           buf1Register.doubleBuffer.reset(); // it's a simple view of the buffer
-          buf1Register.address = doubleBuffering->secondaryBufferAddress.offset.v;
+          buf1Register.address = doubleBuffering->secondaryBufferAddress.offset->v;
           buf1Register.registerAccess = NumericAddressedRegisterInfo::Access::READ_ONLY;
           buf1Register.computeDataDescriptor();
           catalogue.addRegister(buf1Register);
