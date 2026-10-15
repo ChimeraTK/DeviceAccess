@@ -132,7 +132,7 @@ namespace ChimeraTK::detail {
     struct DoubleBufferingInfo {
       struct SecondAddress {
         AddressType type{AddressType::addressTypeNotSet};
-        size_t channel{0};
+        size_t channel{std::numeric_limits<size_t>::max()};
         HexValue offset{std::numeric_limits<size_t>::max()};
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondAddress, type, channel, offset)
@@ -145,12 +145,17 @@ namespace ChimeraTK::detail {
 
       void fill(NumericAddressedRegisterInfo& info, const Address& inherited) const {
         // A present secondaryBufferAddress inherits its omitted type/channel from the register's resolved address
-        // (the same per-field rule as a primary address): an omitted type brings the register's channel along. Its
-        // offset is always its own and required. A type of its own drops the inherited channel.
+        // (the same per-field rule as a primary address): an omitted type brings the register's channel along. An
+        // own type drops the inherited channel and leaves an omitted channel at 0. Its offset is always its own and
+        // required.
+        const bool channelSet = secondaryBufferAddress.channel != std::numeric_limits<size_t>::max();
         const bool typeInherited = secondaryBufferAddress.type == AddressType::addressTypeNotSet;
         auto type = typeInherited ? inherited.type : secondaryBufferAddress.type;
-        auto channel = typeInherited ? inherited.channel : secondaryBufferAddress.channel;
-        assert(secondaryBufferAddress.offset.v != std::numeric_limits<size_t>::max());
+        auto channel = channelSet ? secondaryBufferAddress.channel : (typeInherited ? inherited.channel : 0);
+        if(secondaryBufferAddress.offset.v == std::numeric_limits<size_t>::max()) {
+          throw ChimeraTK::logic_error(
+              "Register " + info.pathName + ": 'secondaryBufferAddress' requires an 'offset'.");
+        }
         info.doubleBuffer->address = secondaryBufferAddress.offset.v;
         // The two buffers of a double-buffered register must live on the same BAR.
         size_t secondaryBar = channel + (type == AddressType::DMA ? 13 : 0);
@@ -172,11 +177,12 @@ namespace ChimeraTK::detail {
 
     struct Address {
       AddressType type{AddressType::addressTypeNotSet};
-      size_t channel{0};
+      size_t channel{std::numeric_limits<size_t>::max()};
       HexValue offset{std::numeric_limits<size_t>::max()};
 
       void fill(NumericAddressedRegisterInfo& info) const {
         assert(type != AddressType::addressTypeNotSet);
+        assert(channel != std::numeric_limits<size_t>::max());
         assert(offset.v != std::numeric_limits<size_t>::max());
         info.address = offset.v;
         info.bar = channel + (type == AddressType::DMA ? 13 : 0);
@@ -304,18 +310,23 @@ namespace ChimeraTK::detail {
       if(resolved.offset.v == std::numeric_limits<size_t>::max()) {
         throw ChimeraTK::logic_error("Register " + pathName + ": 'address' requires an 'offset'.");
       }
+      const bool channelSet = resolved.channel != std::numeric_limits<size_t>::max();
       if(resolved.type == AddressType::addressTypeNotSet) {
-        // The type is inherited together with its channel. With no inherited address the type defaults to IO and
-        // the entry keeps its own channel (or 0 where omitted).
+        // The type is inherited together with its channel. With no inherited address the type defaults to IO and an
+        // omitted channel falls back to 0.
         if(inheritedAddress.has_value()) {
           resolved.type = inheritedAddress->type;
-          resolved.channel = inheritedAddress->channel;
         }
         else {
           resolved.type = AddressType::IO;
         }
       }
-      // A type of its own drops the inherited channel; an own channel is kept.
+      // An own channel is always kept. An omitted channel is the inherited one where the type is inherited as well
+      // (a type of its own drops the inherited channel), else 0.
+      if(!channelSet) {
+        const bool typeInherited = address->type == AddressType::addressTypeNotSet;
+        resolved.channel = (typeInherited && inheritedAddress.has_value()) ? inheritedAddress->channel : 0;
+      }
       return resolved;
     }
 
