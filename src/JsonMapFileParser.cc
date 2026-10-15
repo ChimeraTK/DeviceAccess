@@ -301,7 +301,7 @@ namespace ChimeraTK::detail {
     // Resolve the register's own address from a present partial address and the inherited one (per-field
     // inheritance), or solely from the inherited one where the entry omits its own address. The result is the
     // address of this entry, which becomes the inherited address of its children.
-    std::optional<Address> resolveAddress(
+    [[nodiscard]] std::optional<Address> resolveAddress(
         const RegisterPath& pathName, const std::optional<Address>& inheritedAddress) const {
       if(!address.has_value()) {
         return inheritedAddress;
