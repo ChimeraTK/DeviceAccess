@@ -38,7 +38,7 @@ Aspect: register or module, and the inheritance chain.
   an own address nor a `representation`, is dropped without a register and
   without an error, although it is a register (`schemas/jmap.schema.json:97`).
 - An entry with `channels` is always a register, whatever resolves its address
-  (`schemas/jmap.schema.json:178`): `channels` alone makes it one, and its
+  (`schemas/jmap.schema.json:144`): `channels` alone makes it one, and its
   `address` is its own or inherited like for any other register.
 - The channel entries below `channels` never carry an address of their own and
   always take the resolved address of their direct 2D parent, which is always a
@@ -67,6 +67,10 @@ Aspect: `secondaryBufferAddress`.
   `primary BAR 18, secondary BAR 13`.
 - An omitted `type` inherits the register's resolved `type` and `channel` as a
   pair; a `type` of its own leaves an omitted `channel` at `0`.
+- Its `offset` is its own and required, like for a primary `address`: the schema
+  `$ref` to `address` requires `offset` (`schemas/jmap.schema.json:371-373`), so
+  a present `secondaryBufferAddress` without `offset` is rejected instead of
+  inheriting the register's `offset`.
 - A `type`/`channel` of its own that resolves to a different BAR than the primary
   address is still rejected.
 
@@ -83,11 +87,13 @@ Aspect: documentation and schema.
   fields.
 - `doc/jmapFormat.dox:196` defines a module by its missing `address` alone, which
   also covers entries that are registers; it must name all three missing members
-  instead. `schemas/jmap.schema.json:178`, which already lets a 2D register
+  instead. `schemas/jmap.schema.json:203`, which already lets a 2D register
   inherit its address, is correct and stays as it is; the parser was the side
   that deviated.
 - Both additionally state that a `secondaryBufferAddress` inherits its omitted
-  fields from the register's address, with the same `type`/`channel` tie.
+  `type`/`channel` from the register's resolved address, with the same
+  `type`/`channel` tie; its `offset` is its own and required, so a present
+  `secondaryBufferAddress` without `offset` is rejected like a primary `address`.
 
 ## Specifications
 
@@ -109,8 +115,9 @@ Field presence:
   current `type == addressTypeNotSet` absence test (`:167`, `:299`, `:339`,
   `:444`, `:554`).
 - `DoubleBufferingInfo::SecondAddress` uses the same sentinels for
-  `type`/`channel` instead of the `DMA`/`0` defaults; its `offset` keeps the `0`
-  default.
+  `type`/`channel` instead of the `DMA`/`0` defaults, and the same unset sentinel
+  for `offset` instead of the `0` default; a present `secondaryBufferAddress`
+  without `offset` is rejected like a primary `address`.
 
 Register or module:
 
@@ -156,6 +163,8 @@ Double buffering:
 - `DoubleBufferingInfo::fill` resolves the secondary `type`/`channel` against the
   register's resolved address by the same rule, so an omitted `type` brings the
   register's channel along, before computing the secondary BAR.
+- The secondary `offset` is never inherited: a present `secondaryBufferAddress`
+  must carry it, matching the primary `address` rule and the schema `$ref`.
 - The same-BAR check and its error message are unchanged.
 
 ### Alternatives considered
@@ -169,6 +178,9 @@ Double buffering:
 - Dropping `type`/`channel` from `secondaryBufferAddress` entirely, always
   taking the primary BAR: rejected, distinct `type`/`channel` pairs may map to
   the same BAR and explicit control is kept.
+- Inheriting an omitted `secondaryBufferAddress` `offset` from the register:
+  rejected, the second buffer would share the primary's address and the two
+  buffers would be indistinguishable.
 - Making every entry below an address-bearing ancestor a register, its omitted
   `representation` defaulting to 32-bit (`doc/jmapFormat.dox:104`): rejected, it
   would add a register for every grouping module, against
@@ -190,9 +202,11 @@ message.
   `representation` and one child whose `address` gives only `offset`; both
   children land on the parent's channel (the second currently on channel 0).
   - Requirement: per-field inheritance of a partial `address`.
-  - Necessary: no existing map has an address-bearing ancestor with a partial
-    child `address`; the `APP.STATUS` children of `tests/simpleJsonFile.jmap`
-    inherit a whole address, which is a different code path that works today.
+  - Necessary: `BSP` in `tests/simpleJsonFile.jmap` already has partial child
+    addresses (`BSP.VERSION` gives only `offset`, `BSP.SOME_INFO` gives
+    `channel` 0 and `offset`), but its channel is 0, so an omitted `channel`
+    yields 0 whether inherited or defaulted. The example's parent on channel 2
+    is the case that tells the two apart.
 - A child `address` giving only `type` below a `DMA` address on channel 5: the
   child's own `type` applies and its omitted `channel` falls back to `0`
   (unchanged outcome, currently also `0`).
@@ -224,7 +238,8 @@ message.
     (`APP`, `MY_INTC`) and a module without any address (`MY_INTC.SUB0`), but no
     module between an address-bearing entry and an address-less descendant. One
     module level suffices, the pass-through is the recursion itself.
-- A present `address` without `offset`: rejected.
+- A present `address`, and likewise a present `secondaryBufferAddress`, without
+  `offset`: rejected.
   - Requirement: per-field inheritance of a partial `address` (`offset` is
     always the entry's own, `schemas/jmap.schema.json:247`).
   - Necessary: no existing map has an address without `offset`.
@@ -244,9 +259,9 @@ message.
 - A double-buffered register whose primary address is `DMA` on a non-zero
   channel and whose `secondaryBufferAddress` gives only `offset`: parses, with
   the secondary on the primary's channel (currently the spurious "different
-  BARs" failure). In the same fixture, a `secondaryBufferAddress` giving only its
-  own `type` does not take the primary's channel over and is rejected by the
-  same-BAR check.
+  BARs" failure). In the same fixture, a `secondaryBufferAddress` giving its own
+  `type` and `offset` but omitting `channel` does not take the primary's channel
+  over and is rejected by the same-BAR check.
   - Requirement: `secondaryBufferAddress` inherits an omitted `type`/`channel`
     from the register's resolved address, with the `type`/`channel` tie.
   - Necessary: every `secondaryBufferAddress` in the existing maps gives `type`
@@ -254,7 +269,14 @@ message.
     (`DoubleBufferingInfo::fill`), so the tie needs an assertion there too.
 - Not repeated, already covered today: an `address` giving only `offset` with no
   address-bearing ancestor defaults to `IO`/`0`
-  (`tests/selectedByInheritance.jmap`, the `MY_INTC` entries); a secondary on
-  the same BAR is accepted (`DAQ.CTRL` in `TestGoodMapFileParse`) and a
-  different BAR is rejected (`TestDoubleBufferDiffBarThrows`). Those fixtures and
-  tests stay untouched.
+  (`tests/selectedByInheritance.jmap`, e.g. `APP.OUTPUT_SELECT`, below the
+  address-less module `APP`); a secondary on the same BAR is accepted
+  (`DAQ.CTRL` in `TestGoodMapFileParse`) and a different BAR is rejected
+  (`TestDoubleBufferDiffBarThrows`). Those fixtures and tests stay untouched.
+
+## Deferred issue
+
+- DI-1 [NEW] The plan cites the schema reference rule at schemas/jmap.schema.json:178 twice, but line 178 is the access/triggeredByInterrupt exclusivity rule. The channels-inherit-address text is at :144 and :203; correct both citations.
+- DI-2 [NEW] The test plan's first case is labelled 'Necessary' on the claim that no existing map has a partial child address. This is factually wrong: tests/simpleJsonFile.jmap already has BSP, an address-bearing parent with partial child addresses BSP.VERSION ({offset 4}) and BSP.SOME_INFO ({channel 0, offset 8}). Re-state the motivation for the case rather than asserting non-existence.
+- DI-3 [NEW] The test plan's 'Not repeated' bullet mis-attributes coverage: MY_INTC is defined in tests/simpleJsonFile.jmap with an explicit channel 4, not in tests/selectedByInheritance.jmap, and it does not give only offset. Correct the fixture and field attribution.
+- DI-4 [NEW] secondaryBufferAddress/offset inconsistency: the requirements demand that both the format documentation and the specification state a secondaryBufferAddress inherits its omitted fields, but the specification keeps SecondAddress::offset at its default 0 while simultaneously rejecting a present address without offset. The schema types both primary and secondary addresses as #/definitions/address with offset required, so the rejection rule and the inheritance claim must be reconciled and stated explicitly.
