@@ -35,6 +35,13 @@ valid and materialises chunks on demand.
 internal buffers. They return value-semantic proxies which handle the chunk
 discontinuities and support arbitrary byte-aligned registers (multi-byte
 access via `memcpy`).
+- The dummy backends keep a deprecated library-side compatibility shim for
+legacy downstream code that indexes the internal bar contents directly as
+`_barContents[bar][wordIndex]`. The member keeps the name `_barContents` (the
+new chunk map is renamed `_barChunks`) and its square-bracket operator hands
+out a raw backdoor accessor for an entire bar, so the old indexing expressions
+keep compiling. The shim is marked `[[deprecated]]`, so legacy code using it
+compiles with warnings.
 - Read-only registers from the map file are still rejected on write, but
 enforcement stays entirely in the accessor layer.
 - The SharedDummyBackend interrupt storage keeps its current bounded layout and
@@ -44,7 +51,8 @@ is not chunked.
 
 ### Chunked bar storage
 
-- `_barContents` becomes a flat, byte-based map keyed by `(bar, chunkIndex)`.
+- The chunk map (renamed `_barChunks`, freeing the name `_barContents` for the
+compatibility shim) becomes a flat, byte-based map keyed by `(bar, chunkIndex)`.
 The value is `std::map<std::pair<uint64_t,uint64_t>, std::vector<std::byte>>`
 for DummyBackend and `std::map<std::pair<uint64_t,uint64_t>,
 SharedMemoryByteVector*>` for SharedDummyBackend, where
@@ -56,7 +64,7 @@ byte allocator type is introduced for the chunk vectors.
 chunk-index arithmetic.
 - Chunks are created zero-initialised on first access; reads materialise missing
 chunks too. Only the touched chunk is materialised.
-- `_barContents` stays in the derived classes. Their value types differ, and
+- `_barChunks` stays in the derived classes. Their value types differ, and
 `DummyBackendBase` is in the core library and cannot use the
 boost-interprocess types.
 - Each backend implements one virtual storage method returning a `std::byte*` to
@@ -305,6 +313,30 @@ API break. Tests that held it drop the explicit locking, and the short
 per-element lock scope also removes the lock-order inversion with the math
 plugin conversion.
 
+### Deprecated bar-contents compatibility shim
+
+- For legacy downstream code that indexes the internal bar contents directly,
+both dummy backends expose a compatibility member named `_barContents`; the
+actual chunk storage lives in `_barChunks` (see "Chunked bar storage").
+- The member is of a new compatibility type. Both the member's type and its
+square-bracket operator are marked `[[deprecated]]`, so any use in legacy code
+produces a compiler deprecation warning. The library itself never uses the
+shim, so the library builds warning-free.
+- `_barContents[bar]` hands out a raw backdoor accessor for the entire bar. Its
+`operator[](wordIndex)` selects the `int32_t` word at byte offset
+`wordIndex * sizeof(int32_t)`, reproducing the historical word-based layout of
+the former `std::map<uint64_t, std::vector<int32_t>>`. The mapping from word
+index to byte offset is the deprecated legacy layout; new code uses byte
+offsets through the backdoor accessors.
+- The accessor is value-semantic like the other backdoor accessors: an element
+read/write goes through the transfer helper and so materialises chunks and
+copies exactly the element's bytes. `memcpy` keeps the access byte-granular.
+- Bar bounds: any bar is valid, consistent with the "any address is valid"
+rule; the shim bounds-checks nothing.
+- Locking: each element access takes `DummyBackend::mutex` on DummyBackend and
+goes through the interprocess mutex on SharedDummyBackend, exactly like the
+other backdoor accessors.
+
 ### Alternatives considered
 
 - Keep `int32_t` as internal storage type: rejected, keeps the reinterpret_casts
@@ -389,6 +421,10 @@ the memory for:
 - conversion to the underlying type;
 - the raw accessor instantiated for a non-default `RawType` (e.g. `int16_t`)
 accesses the memory correctly.
+- Deprecated compatibility shim: `_barContents[bar][wordIndex]` compiles and
+reads/writes the `int32_t` word at byte offset
+`wordIndex * sizeof(int32_t)`, with the deprecation warning suppressed around
+the legacy expression.
 - Adapt the tests to the new behaviour:
 - obsolete read-only tests (e.g. `testDummyBackend`'s `testReadOnly`) are
 removed rather than adapted: the dummy backend no longer has a read-only
@@ -399,10 +435,12 @@ layer, so the tests go together with the removed `setReadOnly`,
 rewritten against the public API (ordinary accessors) instead of the backdoor
 accessor, which it currently exercises against itself;
 - tests that assert sizes or full reservation (`testDummyBackend`,
-`testDummyRegisterAccessor`) assert lazily materialised content only;
+`testDummyRegisterAccessor`) assert lazily materialised content only and use
+the renamed chunk map `_barChunks`;
 - tests that write the internal bar contents directly (`testDummyBackend`,
-`testDummyRegisterAccessor`) go through the backdoor accessors instead, with
-no library-side compatibility shim;
+`testDummyRegisterAccessor`) may keep the legacy `_barContents[bar][wordIndex]`
+indexing through the deprecated compatibility shim, suppressing the deprecation
+warning, or go through the backdoor accessors;
 - the out-of-range `logic_error` expectations follow the new "any address is
 valid" behaviour.
 - the tests that derived the shared-memory name themselves obtain it through
@@ -483,3 +521,6 @@ initialiser;
 - DI-52 [DONE] DI-52: tests artifact committed to the branch. `Testing/Temporary/LastTest.log` (a 3-line empty CTest run log) is tracked by git and was added by the CR-013 fixup commit b8ea2f3b; it is an accidental test-run artifact, not part of the change request. Remove it from the branch and add `Testing/` (and `core`, cf. DI-19) to the project-specific section of `.gitignore`.
 - DI-53 [DONE] DI-53: clang-tidy readability-convert-member-functions-to-static on the five CR-added test methods in tests/executables_src/testDummyRegisterAccessor.cpp:507 (`testChunkedBackdoorByteAlignedRegister`), :545 (`testChunkedBackdoorRegisterSpanningChunkBoundary`), :568 (`testChunkedBackdoorRawAccessorValueSemantics`), :629 (`testChunkedBackdoorRawAccessorNonDefaultRawType`) and :660 (`testChunkedBackdoorRawAccessorDeductionGuide`). They are members of the `DummyRegisterTest` fi...
 - DI-54 [DONE] clang-tidy-22 (misc-include-cleaner) on the CR-added line backends/SharedDummy/src/SharedMemoryManager.cc:8: `#include <boost/filesystem.hpp>` is reported 'included header filesystem.hpp is not used directly'. The header IS used (`boost::filesystem::path`/`boost::filesystem::absolute` at SharedMemoryManager.cc:55), so the check wants the directly used headers instead (`<boost/filesystem/path.hpp>` and `<boost/filesystem/operations.hpp>`). This is the only clang-tidy diagnos...
+- DI-55 [NEW] Add a library-side compatibility layer for legacy downstream code that reaches into the dummy internals as `_barContents[bar][wordIndex]`: the member must keep the name `_barContents` (rename the new chunk map), and its type must implement the square-bracket operator and hand out a raw backdoor accessor for an entire bar, so the old indexing expressions keep compiling. This reverses the CR's current decision 'tests that write the internal bar contents directly go through the backdoor accessors instead, with no library-side compatibility shim' (test plan; DI-11, DI-14) and adds a new API element to the requirements and specifications.
+- DI-56 [NEW] The compatibility layer (the `_barContents` compatibility object and its square-bracket accessor handing out a raw backdoor accessor for the whole bar) must be marked `[[deprecated]]`, so legacy code using it generates compiler warnings. The intended deprecation mechanism and the resulting warnings must be specified.
+- DI-57 [NEW] The requirements, specifications and test plan must be updated for the compatibility layer before implementation (per the playbook the plan is changed first): the 'no library-side compatibility shim' statements and the affected test-adaptation entries are no longer valid, and the new API needs its specification (type, operator semantics, word-vs-byte index mapping, bar bounds, locking contract) and a test-plan entry.
