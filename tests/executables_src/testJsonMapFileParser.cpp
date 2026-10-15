@@ -18,6 +18,7 @@ using namespace ChimeraTK;
 #include <unistd.h>
 
 #include <fstream>
+#include <functional>
 #include <string>
 #include <vector>
 using namespace boost::unit_test_framework;
@@ -1317,6 +1318,276 @@ BOOST_AUTO_TEST_CASE(TestMapFormatVersionWithPatch) {
       parseWithMapFormatVersion("mapFormatVersionMissing.jmap", nlohmann::json(nullptr)), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
       parseWithMapFormatVersion("mapFormatVersionWrongType.jmap", nlohmann::json(1.0)), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// Helper used by the per-field address inheritance tests below: load simpleJsonFile.jmap as the base map, let the
+// caller modify the JSON tree (e.g. add a children entry to an existing register), write it to <outFile> and parse
+// it. This follows the selectedBy fault helper: the case is built from the shared fixture rather than a new
+// fixture file, so the existing maps stay untouched.
+static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue> parseModifiedMap(
+    const std::string& outFile, const std::function<void(nlohmann::json&)>& modify) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  modify(map);
+  std::ofstream(outFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(outFile);
+}
+
+// Build a unique temporary map file name for <name>, following the getpid() suffix pattern used by the other
+// injected-fault tests so that the tests can run in parallel.
+static std::string tempMapFile(const std::string& name) {
+  return name + "_" + std::to_string(getpid()) + ".jmap";
+}
+
+/**********************************************************************************************************************/
+
+// The inheritance example of doc/jmapFormat.dox (Address inheritance): a parent carrying {type IO, channel 2,
+// offset 0x8000} with two children. The first child gives only a 'representation' and inherits the whole parent
+// address; the second gives only 'offset' and inherits the parent's 'type' together with its 'channel'. Both
+// children must therefore land on the parent's channel 2 (the second would previously fall back to the default
+// channel 0).
+BOOST_AUTO_TEST_CASE(TestAddressInheritanceDocumentedExample) {
+  std::string tmpFile = tempMapFile("addressInheritanceExample");
+  auto [regs, metas] = parseModifiedMap(tmpFile, [](nlohmann::json& map) {
+    map["addressSpace"]["APP"]["children"]["STATUS_INH"] = {{"access", "RO"},
+        {"address", {{"type", "IO"}, {"channel", 2}, {"offset", "0x8000"}}}, {"numberOfElements", 2},
+        {"children",
+            {{"REP_CHILD", {{"access", "RO"}, {"representation", {{"width", 3}}}}},
+                {"OFFSET_CHILD",
+                    {{"access", "RW"}, {"address", {{"offset", "0x8004"}}}, {"representation", {{"width", 5}}}}}}}};
+  });
+  std::remove(tmpFile.c_str());
+
+  {
+    // The first child inherits the whole parent address: BAR 2, offset 0x8000.
+    auto reg = regs.getBackendRegister("/APP/STATUS_INH/REP_CHILD");
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8000);
+  }
+  {
+    // The second child gives only 'offset': it inherits the parent's type and channel, so BAR 2 and offset 0x8004.
+    auto reg = regs.getBackendRegister("/APP/STATUS_INH/OFFSET_CHILD");
+    BOOST_TEST(reg.bar == 2);
+    BOOST_TEST(reg.address == 0x8004);
+  }
+}
+
+/**********************************************************************************************************************/
+
+// A child address giving its own 'type' (and the always-required 'offset') below a DMA parent on channel 5: the
+// child's own type applies and its omitted channel falls back to 0 (a type of its own drops the inherited channel).
+BOOST_AUTO_TEST_CASE(TestAddressInheritanceOwnTypeDropsChannel) {
+  std::string tmpFile = tempMapFile("addressOwnType");
+  auto [regs, metas] = parseModifiedMap(tmpFile, [](nlohmann::json& map) {
+    map["addressSpace"]["APP"]["children"]["DMAPARENT"] = {{"access", "RO"},
+        {"address", {{"type", "DMA"}, {"channel", 5}, {"offset", "0x1000"}}}, {"numberOfElements", 2},
+        {"children",
+            {{"OWN_TYPE",
+                {{"access", "RO"}, {"address", {{"type", "IO"}, {"offset", "0x1004"}}},
+                    {"representation", {{"width", 4}}}}}}}};
+  });
+  std::remove(tmpFile.c_str());
+
+  // The parent's address lives on BAR 13 + 5 = 18.
+  auto parent = regs.getBackendRegister("/APP/DMAPARENT");
+  BOOST_TEST(parent.bar == 18);
+  BOOST_TEST(parent.address == 0x1000);
+
+  // The child's own IO type applies; an omitted channel falls back to 0, so the child is on BAR 0.
+  auto reg = regs.getBackendRegister("/APP/DMAPARENT/OWN_TYPE");
+  BOOST_TEST(reg.bar == 0);
+  BOOST_TEST(reg.address == 0x1004);
+}
+
+/**********************************************************************************************************************/
+
+// A child address giving only 'channel' (and the always-required 'offset') below a DMA parent on channel 5: the
+// inherited type applies and the channel is the entry's own, not the inherited 5.
+BOOST_AUTO_TEST_CASE(TestAddressInheritanceOwnChannelKept) {
+  std::string tmpFile = tempMapFile("addressOwnChannel");
+  auto [regs, metas] = parseModifiedMap(tmpFile, [](nlohmann::json& map) {
+    map["addressSpace"]["APP"]["children"]["DMAPARENT"] = {{"access", "RO"},
+        {"address", {{"type", "DMA"}, {"channel", 5}, {"offset", "0x1000"}}}, {"numberOfElements", 2},
+        {"children",
+            {{"OWN_CHANNEL",
+                {{"access", "RO"}, {"address", {{"channel", 7}, {"offset", "0x1004"}}},
+                    {"representation", {{"width", 4}}}}}}}};
+  });
+  std::remove(tmpFile.c_str());
+
+  // The inherited DMA type applies, so the BAR is 13 + the child's own channel 7 = 20 (not 13 + 5 = 18).
+  auto reg = regs.getBackendRegister("/APP/DMAPARENT/OWN_CHANNEL");
+  BOOST_TEST(reg.bar == 20);
+  BOOST_TEST(reg.address == 0x1004);
+}
+
+/**********************************************************************************************************************/
+
+// An entry with 'channels' but neither an own 'address' nor a 'representation', below an address-bearing parent:
+// 'channels' alone makes it a register on the inherited address, and its channels and their bit-field children
+// resolve to the same address.
+BOOST_AUTO_TEST_CASE(TestChannelsEntryInheritsAddressBecomesRegister) {
+  std::string tmpFile = tempMapFile("channelsInheritAddress");
+  auto [regs, metas] = parseModifiedMap(tmpFile, [](nlohmann::json& map) {
+    map["addressSpace"]["APP"]["children"]["CHANS_PARENT"] = {{"access", "RO"},
+        {"address", {{"type", "IO"}, {"channel", 3}, {"offset", "0x9000"}}}, {"numberOfElements", 4}, {"pitch", 4},
+        {"children",
+            {{"CHANS_CHILD",
+                {{"numberOfElements", 4}, {"pitch", 4},
+                    {"channels",
+                        {{"A", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"width", 16}}}}},
+                            {"B",
+                                {{"bytesPerElement", 4}, {"offset", 0},
+                                    {"representation", {{"type", "fixedPoint"}, {"width", 4}}}}}}}}}}}};
+  });
+  std::remove(tmpFile.c_str());
+
+  // The child is a register on the inherited address (BAR 3, offset 0x9000) even without an own address.
+  auto child = regs.getBackendRegister("/APP/CHANS_PARENT/CHANS_CHILD");
+  BOOST_TEST(child.bar == 3);
+  BOOST_TEST(child.address == 0x9000);
+  BOOST_REQUIRE(child.channels.size() == 2);
+
+  // Its channel slices resolve to the same address.
+  auto sliceA = regs.getBackendRegister("/APP/CHANS_PARENT/CHANS_CHILD/A");
+  BOOST_TEST(sliceA.bar == 3);
+  BOOST_TEST(sliceA.address == 0x9000);
+
+  // A bit-field child of a channel resolves to the same address as well.
+  auto bitField = regs.getBackendRegister("/APP/CHANS_PARENT/CHANS_CHILD/B");
+  BOOST_TEST(bitField.bar == 3);
+  BOOST_TEST(bitField.address == 0x9000);
+}
+
+/**********************************************************************************************************************/
+
+// An inherited address reaches a descendant through a module: an address-bearing entry with a module child holding
+// an address-less child that carries a 'representation'. The module itself yields no register and is no longer a
+// dead end for its children.
+BOOST_AUTO_TEST_CASE(TestAddressInheritanceThroughModule) {
+  std::string tmpFile = tempMapFile("addressThroughModule");
+  auto [regs, metas] = parseModifiedMap(tmpFile, [](nlohmann::json& map) {
+    map["addressSpace"]["APP"]["children"]["MODPARENT"] = {{"access", "RO"},
+        {"address", {{"type", "IO"}, {"channel", 1}, {"offset", "0x6000"}}}, {"numberOfElements", 2},
+        {"children", {{"MODULE", {{"children", {{"LEAF", {{"access", "RO"}, {"representation", {{"width", 8}}}}}}}}}}}};
+  });
+  std::remove(tmpFile.c_str());
+
+  // The module itself is not a register.
+  BOOST_TEST(!regs.hasRegister("/APP/MODPARENT/MODULE"));
+
+  // The address reaches the leaf through the module: BAR 1, offset 0x6000.
+  auto reg = regs.getBackendRegister("/APP/MODPARENT/MODULE/LEAF");
+  BOOST_TEST(reg.bar == 1);
+  BOOST_TEST(reg.address == 0x6000);
+}
+
+/**********************************************************************************************************************/
+
+// A present 'address' without 'offset' is rejected: a present address always carries its own offset (the schema
+// requires it), unlike a wholly omitted address which inherits the offset as well.
+BOOST_AUTO_TEST_CASE(TestAddressWithoutOffsetRejected) {
+  std::string tmpFile = tempMapFile("addressWithoutOffset");
+  BOOST_CHECK_THROW(parseModifiedMap(tmpFile,
+                        [](nlohmann::json& map) {
+                          map["addressSpace"]["APP"]["children"]["STATUS"]["children"]["NO_OFFSET"] = {{"access", "RO"},
+                              {"address", {{"type", "IO"}, {"channel", 2}}}, {"representation", {{"width", 4}}}};
+                        }),
+      ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A present 'secondaryBufferAddress' without 'offset' is rejected like a primary address.
+BOOST_AUTO_TEST_CASE(TestSecondaryBufferAddressWithoutOffsetRejected) {
+  std::string tmpFile = tempMapFile("secondaryBufferWithoutOffset");
+  BOOST_CHECK_THROW(parseModifiedMap(tmpFile,
+                        [](nlohmann::json& map) {
+                          map["addressSpace"]["DAQ"]["children"]["MACRO_PULSE_NUMBER"]["doubleBuffering"]
+                             ["secondaryBufferAddress"] = {{"type", "DMA"}};
+                        }),
+      ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An entry with 'channels' and no address anywhere in its ancestry is rejected (it is a register, so it cannot be
+// silently dropped).
+BOOST_AUTO_TEST_CASE(TestChannelsEntryWithoutAncestorAddressRejected) {
+  std::string tmpFile = tempMapFile("channelsWithoutAddress");
+  BOOST_CHECK_THROW(
+      parseModifiedMap(tmpFile,
+          [](nlohmann::json& map) {
+            map["addressSpace"]["APP"]["children"]["CHANSNOADDR"] = {{"access", "RO"}, {"numberOfElements", 4},
+                {"pitch", 4},
+                {"channels", {{"A", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"width", 16}}}}}}}};
+          }),
+      ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An entry with a 'representation' and no address anywhere in its ancestry is rejected instead of yielding a
+// register.
+BOOST_AUTO_TEST_CASE(TestRepresentationWithoutAncestorAddressRejected) {
+  std::string tmpFile = tempMapFile("representationWithoutAddress");
+  BOOST_CHECK_THROW(parseModifiedMap(tmpFile,
+                        [](nlohmann::json& map) {
+                          map["addressSpace"]["APP"]["children"]["REPNOADDR"] = {
+                              {"access", "RO"}, {"representation", {{"width", 16}}}};
+                        }),
+      ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A double-buffered register whose primary address is DMA on a non-zero channel and whose 'secondaryBufferAddress'
+// gives only 'offset': it parses, with the secondary on the primary's inherited channel. The same fixture then
+// gives the secondary its own 'type' but omits 'channel'; that does not take the primary's channel over, so the
+// same-BAR check rejects it.
+BOOST_AUTO_TEST_CASE(TestSecondaryBufferAddressInheritsTypeAndChannel) {
+  std::string tmpFile = tempMapFile("secondaryInheritsTypeChannel");
+  auto [regs, metas] = parseModifiedMap(tmpFile, [](nlohmann::json& map) {
+    // Primary DMA on channel 4 -> BAR 13 + 4 = 17. A secondary giving only 'offset' inherits type DMA and channel 4.
+    map["addressSpace"]["DAQ"]["children"]["DBL_INH"] = {{"access", "RO"},
+        {"address", {{"type", "DMA"}, {"channel", 4}, {"offset", "0x5000"}}}, {"numberOfElements", 1},
+        {"doubleBuffering",
+            {{"secondaryBufferAddress", {{"offset", "0x5200"}}}, {"enableRegister", "DAQ.DOUBLE_BUF.ENA"},
+                {"readBufferRegister", "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID"}, {"index", 0}}},
+        {"representation", {{"width", 32}}}};
+  });
+  std::remove(tmpFile.c_str());
+
+  auto reg = regs.getBackendRegister("/DAQ/DBL_INH");
+  BOOST_TEST(reg.bar == 17);
+  BOOST_TEST(reg.address == 0x5000);
+  BOOST_REQUIRE(reg.doubleBuffer.has_value());
+  BOOST_TEST(reg.doubleBuffer->address == 0x5200);
+}
+
+// The same-BAR check rejects a secondary that gives its own 'type' (DMA) but omits 'channel': the own type drops
+// the primary's channel, so the secondary falls on BAR 13 + 0 = 13 while the primary is on BAR 17.
+BOOST_AUTO_TEST_CASE(TestSecondaryBufferAddressOwnTypeDropsChannelRejected) {
+  std::string tmpFile = tempMapFile("secondaryOwnTypeDiffBar");
+  BOOST_CHECK_THROW(parseModifiedMap(tmpFile,
+                        [](nlohmann::json& map) {
+                          map["addressSpace"]["DAQ"]["children"]["DBL_OWN_TYPE"] = {{"access", "RO"},
+                              {"address", {{"type", "DMA"}, {"channel", 4}, {"offset", "0x5000"}}},
+                              {"numberOfElements", 1},
+                              {"doubleBuffering",
+                                  {{"secondaryBufferAddress", {{"type", "DMA"}, {"offset", "0x5200"}}},
+                                      {"enableRegister", "DAQ.DOUBLE_BUF.ENA"},
+                                      {"readBufferRegister", "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID"}, {"index", 0}}},
+                              {"representation", {{"width", 32}}}};
+                        }),
+      ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
 }
 
 /**********************************************************************************************************************/
