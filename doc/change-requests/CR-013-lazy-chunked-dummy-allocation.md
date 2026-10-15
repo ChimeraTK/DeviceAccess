@@ -465,7 +465,9 @@ indexing through the deprecated compatibility shim, suppressing the deprecation
 warning, or go through the backdoor accessors; the legacy indexing is available
 only on `DummyBackend` (the listed `testDummyBackend` and
 `testDummyRegisterAccessor` are `DummyBackend`-based), while
-`SharedDummyBackend` tests have no such path and go through `_barChunks`;
+`SharedDummyBackend` tests have neither path: `_barChunks` is private there, as
+the historical member was, so they observe the shared memory from outside by
+counting chunk segments;
 - the out-of-range `logic_error` expectations follow the new "any address is
 valid" behaviour.
 - the tests that derived the shared-memory name themselves obtain it through
@@ -554,3 +556,4 @@ initialiser;
 - DI-60 [FOLDED-IN] The folded deprecation mechanism contradicts its own warning-free claim (DI-56 fold, CR-013 lines 328-331): attaching `[[deprecated]]` to the member's *type* makes DummyBackend's own declaration `CompatType _barContents;` a use of a deprecated entity, which the compiler diagnoses (-Wdeprecated-declarations, cf. std::auto_ptr members), so the library does not build warning-free as stated. `[[deprecated]]` must go on the member declaration and/or on its square-bracket operator ...
 - DI-61 [FOLDED-IN] The shim's whole-bar accessor has no specified construction path (DI-57 fold, CR-013 lines 332-334): the spec says `_barContents[bar]` hands out 'the same value-semantic DummyRegisterRawAccessor used by the backdoor accessors for the entire bar', but that type only exists for a *named* register - its constructor does `_registerMap.getBackendRegister(module + '.' + name)` and its bar, address, element pitch and element count all come from `_registerInfo` (backends/DummyBackend...
 - DI-62 [FOLDED-IN] Test-plan inaccuracy (DI-57 fold, CR-013 lines 437-438): the shim bullet claims that 'its tests use `_barChunks` directly' for SharedDummyBackend, but `_barChunks` is private there, exactly as the historical `_barContents` was (merge base backends/SharedDummy/include/SharedDummyBackend.h:64 private, :70 member), and those tests observe the shared memory from outside by counting chunk segments (tests/executables_src/testSharedDummyBackend.cpp:78, countChunkSegments). No test h...
+- DI-63 [NEW] DI-62 not fully folded / test-plan self-contradiction: CR-013 line 468 still states that the 'SharedDummyBackend tests have no such path and go through `_barChunks`', which directly contradicts the shim bullet at lines 446-449 ('`_barChunks` is private there, as the historical member was, so no test accesses it directly and its tests observe the shared memory from outside by counting chunk segments'). `_barChunks` is private on SharedDummyBackend, so no test can go through it; the line-468 clause is a leftover of the pre-DI-62 wording. One of the two statements must be corrected so SharedDummyBackend tests are described consistently (neither the legacy `_barContents` path nor direct `_barChunks` access).
