@@ -7,7 +7,7 @@ and a partial `secondaryBufferAddress` silently fall back to the member defaults
 has `channels` but no `representation`, and a module in the hierarchy breaks the
 inheritance chain.
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -194,13 +194,13 @@ its own").
 
 ## Test plan
 
-All test cases go into `tests/executables_src/testJsonMapFileParser.cpp`. The
-positive cases extend `tests/simpleJsonFile.jmap`; the rejection cases erase an
-`address` from a copy of it, like the existing selectedBy and map-format-version
-helpers, so no fault-only fixtures are added. The shared fixtures are used by the
-backend test binaries as well, which no case here affects. A rejection case
-expects a `ChimeraTK::logic_error` and nothing more; no case asserts an error
-message.
+All test cases go into `tests/executables_src/testJsonMapFileParser.cpp`. Each
+case loads `tests/simpleJsonFile.jmap` as the base map, injects its change into
+the JSON tree and writes the result to a temporary file, like the existing
+selectedBy and map-format-version helpers, so no fault-only fixtures are added.
+The shared fixture is used by the backend test binaries as well, which no case
+here affects. A rejection case expects a `ChimeraTK::logic_error` and nothing
+more; no case asserts an error message.
 
 - The documented inheritance example (`doc/jmapFormat.dox:242-261`): an
 address-bearing parent on `IO` channel 2 with one child carrying only a
