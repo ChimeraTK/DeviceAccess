@@ -222,13 +222,16 @@ inherited 5.
 - Necessary: the other cases have the `channel` omitted; only this one pins
 that an inherited `type` leaves an own `channel` in place.
 - An entry with `channels`, neither an own `address` nor a `representation`,
-below an address-bearing entry: yields a register on that address, and its
-channels and their bit-field `children` resolve to the same address (currently
-dropped silently).
+below an address-bearing entry: yields a register on that address. Its own
+channels resolve to that address, and so does a bit-field `children` entry
+nested below one of the channels; the bit-field child is asserted through its
+own register, not through the channel slice above it (currently all dropped
+silently).
 - Requirement: register or module, and the inheritance chain (`channels` alone
 makes a register).
 - Necessary: every `channels` entry in the existing maps carries its own
-`address`.
+`address`; the existing bit-field `children` sit below such channels, so
+inheriting a bit-field child through an address-less register is untested.
 - An address-bearing entry with a module child holding an address-less child
 that carries a `representation`: the address reaches the child through the
 module (currently `Register ... does not exist`), and the module itself yields
@@ -280,5 +283,6 @@ address-less module `APP`); a secondary on the same BAR is accepted
 - DI-2 [IMPLEMENTED] The test plan's first case is labelled 'Necessary' on the claim that no existing map has a partial child address. This is factually wrong: tests/simpleJsonFile.jmap already has BSP, an address-bearing parent with partial child addresses BSP.VERSION ({offset 4}) and BSP.SOME_INFO ({channel 0, offset 8}). Re-state the motivation for the case rather than asserting non-existence.
 - DI-3 [IMPLEMENTED] The test plan's 'Not repeated' bullet mis-attributes coverage: MY_INTC is defined in tests/simpleJsonFile.jmap with an explicit channel 4, not in tests/selectedByInheritance.jmap, and it does not give only offset. Correct the fixture and field attribution.
 - DI-4 [IMPLEMENTED] secondaryBufferAddress/offset inconsistency: the requirements demand that both the format documentation and the specification state a secondaryBufferAddress inherits its omitted fields, but the specification keeps SecondAddress::offset at its default 0 while simultaneously rejecting a present address without offset. The schema types both primary and secondary addresses as #/definitions/address with offset required, so the rejection rule and the inheritance claim must be reco...
-- DI-5 [IMPLEMENTED] Implementation defect in Address resolution: an address that gives its own 'channel' but omits 'type' does not keep the own channel. Specification says 'channel is its own value, else the inherited one where the type is inherited as well, else 0', and the test plan's own-channel case expects the own channel to win. resolveAddress (src/JsonMapFileParser.cc:306-320) unconditionally overwrites resolved.channel with the inherited channel whenever the type is inherited, because Address::...
-- DI-6 [IMPLEMENTED] Implementation defect in secondaryBufferAddress offset rejection: a present secondaryBufferAddress without 'offset' must be rejected with ChimeraTK::logic_error like a primary 'address', but DoubleBufferingInfo::fill (src/JsonMapFileParser.cc:153) only asserts (assert(secondaryBufferAddress.offset.v != std::numeric_limits<size_t>::max())). In a debug build the assert aborts (SIGABRT) instead of throwing, so TestSecondaryBufferAddressWithoutOffsetRejected fails and aborts the whole t...
+- DI-5 [IMPLEMENTED] Implementation defect in Address resolution: an address that gives its own 'channel' but omits 'type' does not keep the own channel. Specification says 'channel is its own value, else the inherited one where the type is inherited as well, else 0', and the test plan's own-channel case expects the own channel to win. resolveAddress (src/JsonMapFileParser.cc:306-320) unconditionally overwrites resolved.channel with the inherited channel whenever the type is inherited, because A...
+- DI-6 [IMPLEMENTED] Implementation defect in secondaryBufferAddress offset rejection: a present secondaryBufferAddress without 'offset' must be rejected with ChimeraTK::logic_error like a primary 'address', but DoubleBufferingInfo::fill (src/JsonMapFileParser.cc:153) only asserts (assert(secondaryBufferAddress.offset.v != std::numeric_limits<size_t>::max())). In a debug build the assert aborts (SIGABRT) instead of throwing, so TestSecondaryBufferAddressWithoutOffsetRejected fails and aborts the...
+- DI-7 [NEW] tests/executables_src/testJsonMapFileParser.cpp (TestChannelsEntryInheritsAddressBecomesRegister): the second assertion block fetches '/APP/CHANS_PARENT/CHANS_CHILD/B', which is the channel slice named B, but its comment claims 'A bit-field child of a channel resolves to the same address as well'. Channel B is declared as a plain channel ({bytesPerElement 4, offset 0, representation {type fixedPoint, width 4}}) with no 'children', so no bit-field child (a 'children' entry below a channel) is created or asserted. The test plan case states 'its channels and their bit-field children resolve to the same address', so that coverage is not delivered and the comment mislabels the register. Give channel B a real bit-field child (a 'children' entry with bitShift/width under the channel, e.g. width 4 at bitShift 0 in the 32-bit word) and assert its bar/address, or correct the comment (and the test plan if the bit-field-child coverage is dropped).
