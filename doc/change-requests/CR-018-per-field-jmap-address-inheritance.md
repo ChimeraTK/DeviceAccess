@@ -7,7 +7,7 @@ and a partial `secondaryBufferAddress` silently fall back to the member defaults
 has `channels` but no `representation`, and a module in the hierarchy breaks the
 inheritance chain.
 
-Status: READY TO IMPLEMENT
+Status: IMPLEMENTED
 
 ## Requirements
 
@@ -276,7 +276,7 @@ address-less module `APP`); a secondary on the same BAR is accepted
 
 ## Deferred issue
 
-- DI-1 [FOLDED-IN] The plan cites the schema reference rule at schemas/jmap.schema.json:178 twice, but line 178 is the access/triggeredByInterrupt exclusivity rule. The channels-inherit-address text is at :144 and :203; correct both citations.
-- DI-2 [FOLDED-IN] The test plan's first case is labelled 'Necessary' on the claim that no existing map has a partial child address. This is factually wrong: tests/simpleJsonFile.jmap already has BSP, an address-bearing parent with partial child addresses BSP.VERSION ({offset 4}) and BSP.SOME_INFO ({channel 0, offset 8}). Re-state the motivation for the case rather than asserting non-existence.
-- DI-3 [FOLDED-IN] The test plan's 'Not repeated' bullet mis-attributes coverage: MY_INTC is defined in tests/simpleJsonFile.jmap with an explicit channel 4, not in tests/selectedByInheritance.jmap, and it does not give only offset. Correct the fixture and field attribution.
-- DI-4 [FOLDED-IN] secondaryBufferAddress/offset inconsistency: the requirements demand that both the format documentation and the specification state a secondaryBufferAddress inherits its omitted fields, but the specification keeps SecondAddress::offset at its default 0 while simultaneously rejecting a present address without offset. The schema types both primary and secondary addresses as #/definitions/address with offset required, so the rejection rule and the inheritance claim must be reconciled a...
+- DI-1 [IMPLEMENTED] The plan cites the schema reference rule at schemas/jmap.schema.json:178 twice, but line 178 is the access/triggeredByInterrupt exclusivity rule. The channels-inherit-address text is at :144 and :203; correct both citations.
+- DI-2 [IMPLEMENTED] The test plan's first case is labelled 'Necessary' on the claim that no existing map has a partial child address. This is factually wrong: tests/simpleJsonFile.jmap already has BSP, an address-bearing parent with partial child addresses BSP.VERSION ({offset 4}) and BSP.SOME_INFO ({channel 0, offset 8}). Re-state the motivation for the case rather than asserting non-existence.
+- DI-3 [IMPLEMENTED] The test plan's 'Not repeated' bullet mis-attributes coverage: MY_INTC is defined in tests/simpleJsonFile.jmap with an explicit channel 4, not in tests/selectedByInheritance.jmap, and it does not give only offset. Correct the fixture and field attribution.
+- DI-4 [IMPLEMENTED] secondaryBufferAddress/offset inconsistency: the requirements demand that both the format documentation and the specification state a secondaryBufferAddress inherits its omitted fields, but the specification keeps SecondAddress::offset at its default 0 while simultaneously rejecting a present address without offset. The schema types both primary and secondary addresses as #/definitions/address with offset required, so the rejection rule and the inheritance claim must be reconc...
