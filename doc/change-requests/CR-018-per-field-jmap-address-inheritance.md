@@ -7,7 +7,7 @@ and a partial `secondaryBufferAddress` silently fall back to the member defaults
 has `channels` but no `representation`, and a module in the hierarchy breaks the
 inheritance chain.
 
-Status: PLANNED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
