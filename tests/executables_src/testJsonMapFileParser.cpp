@@ -1440,7 +1440,8 @@ BOOST_AUTO_TEST_CASE(TestChannelsEntryInheritsAddressBecomesRegister) {
                         {{"A", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"width", 16}}}}},
                             {"B",
                                 {{"bytesPerElement", 4}, {"offset", 0},
-                                    {"representation", {{"type", "fixedPoint"}, {"width", 4}}}}}}}}}}}};
+                                    {"representation", {{"type", "fixedPoint"}, {"width", 4}}},
+                                    {"children", {{"BF", {{"representation", {{"width", 2}}}}}}}}}}}}}}}};
   });
   std::remove(tmpFile.c_str());
 
@@ -1455,8 +1456,8 @@ BOOST_AUTO_TEST_CASE(TestChannelsEntryInheritsAddressBecomesRegister) {
   BOOST_TEST(sliceA.bar == 3);
   BOOST_TEST(sliceA.address == 0x9000);
 
-  // A bit-field child of a channel resolves to the same address as well.
-  auto bitField = regs.getBackendRegister("/APP/CHANS_PARENT/CHANS_CHILD/B");
+  // A bit-field child nested below a channel resolves to the same address as well.
+  auto bitField = regs.getBackendRegister("/APP/CHANS_PARENT/CHANS_CHILD/B/BF");
   BOOST_TEST(bitField.bar == 3);
   BOOST_TEST(bitField.address == 0x9000);
 }
