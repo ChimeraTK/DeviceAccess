@@ -83,7 +83,7 @@ namespace ChimeraTK {
     /// Bar contents with shared-memory compatible byte vector type, keyed by (bar, chunkIndex). Plain pointers are
     /// used since this is what we get from the shared memory allocation. Each value is a CHUNK_SIZE big,
     /// zero-initialised chunk.
-    std::map<std::pair<uint64_t, uint64_t>, SharedMemoryByteVector*> _barContents;
+    std::map<std::pair<uint64_t, uint64_t>, SharedMemoryByteVector*> _barChunks;
 
     /// Number of characters reserved for a segment name in the chunk chain header.
     static constexpr size_t SHARED_MEMORY_CHUNK_NAME_LENGTH = 512;

@@ -470,6 +470,19 @@ namespace ChimeraTK {
       this->_byteOffset = _registerInfo.address;
     }
 
+    /// Register-less construction for a whole bar. It is used by the deprecated bar-contents compatibility shim,
+    /// because a whole bar has no register map entry. The bar's word count is derived from the map file, but any
+    /// address is accessible even beyond it.
+    DummyRegisterRawAccessor(boost::shared_ptr<DummyBackend> const& dev, uint64_t bar)
+    : DummyRegisterRawElement<RawType>(dev, bar, 0) {
+      assert(this->_backend);
+      _registerInfo.bar = bar;
+      _registerInfo.address = 0;
+      _registerInfo.nElements = static_cast<uint32_t>(this->_backend->getBarSizeInBytes(bar) / sizeof(RawType));
+      _registerInfo.elementPitchBits = sizeof(RawType) * 8U;
+      _registerInfo.channels.emplace_back();
+    }
+
     // declare that we want the default copy constructor. Needed because we have a custom = operator
     DummyRegisterRawAccessor(const DummyRegisterRawAccessor&) = default;
 
@@ -498,5 +511,17 @@ namespace ChimeraTK {
       -> DummyRegisterRawAccessor<int32_t>;
 
   /********************************************************************************************************************/
+
+  /// Definition of the deprecated bar-contents compatibility shim. It is out of line, after DummyRegisterRawAccessor is
+  /// complete, because DummyBackend's class definition cannot use the accessor type (it would be incomplete there).
+  inline auto DummyBackend::getWholeBarRawAccessor(uint64_t bar) {
+    // Non-owning shared_ptr: the accessor is used immediately and BarContentsCompat's backend outlives it, so there is
+    // no need to share ownership (and shared_from_this() would be const here).
+    return DummyRegisterRawAccessor<int32_t>(boost::shared_ptr<DummyBackend>(this, [](auto*) {}), bar);
+  }
+
+  inline auto DummyBackend::BarContentsCompat::operator[](uint64_t bar) const {
+    return _backend->getWholeBarRawAccessor(bar);
+  }
 
 } // namespace ChimeraTK

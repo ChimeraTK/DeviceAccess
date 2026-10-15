@@ -58,7 +58,7 @@ class TestableDummyBackend : public DummyBackend {
  public:
   explicit TestableDummyBackend(std::string mapFileName) : DummyBackend(mapFileName) {}
   using DummyBackend::checkSizeIsMultipleOfWordSize;
-  using DummyBackend::_barContents;
+  using DummyBackend::_barChunks;
   using DummyBackend::AddressRange;
   using DummyBackend::setWriteCallbackFunction;
   using DummyBackend::writeRegisterWithoutCallback;
@@ -69,7 +69,7 @@ class TestableDummyBackend : public DummyBackend {
   /// check that only the touched chunks were materialised.
   size_t chunkCount(uint64_t bar) {
     size_t count = 0;
-    for(const auto& entry : _barContents) {
+    for(const auto& entry : _barChunks) {
       if(entry.first.first == bar) {
         ++count;
       }
@@ -526,7 +526,7 @@ BOOST_AUTO_TEST_CASE(testIsWriteRangeOverlap) {
 BOOST_AUTO_TEST_CASE(testFinalClosing) {
   // all features have to be enabled before closing
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  BOOST_CHECK(!dummyBackend->_barContents.empty());
+  BOOST_CHECK(!dummyBackend->_barChunks.empty());
   BOOST_CHECK(dummyBackend->_writeCallbackFunctions.size() != 0);
 
   dummyBackend->close();
@@ -538,7 +538,7 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
   // The address space is not reserved up front any more: the number of materialised chunks equals the number of touched
   // (bar, chunk) pairs, not the number of bars in the map file.
-  BOOST_CHECK(!dummyBackend->_barContents.empty());
+  BOOST_CHECK(!dummyBackend->_barChunks.empty());
 
   // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL

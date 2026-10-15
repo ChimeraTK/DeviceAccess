@@ -14,8 +14,12 @@
 
 namespace ChimeraTK {
 
+  // The deprecated member is initialised here on purpose so legacy downstream code keeps working.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   DummyBackend::DummyBackend(const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
-  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName) {}
+  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName), _barContents(this) {}
+#pragma GCC diagnostic pop
 
   /********************************************************************************************************************/
 
@@ -30,11 +34,26 @@ namespace ChimeraTK {
   std::byte* DummyBackend::getChunk(uint64_t bar, uint64_t chunkIndex) {
     // std::vector<std::byte> is value-initialised on first access because operator[] default-constructs the vector,
     // which yields a zero-initialised, CHUNK_SIZE big buffer.
-    auto& chunk = _barContents[{bar, chunkIndex}];
+    auto& chunk = _barChunks[{bar, chunkIndex}];
     if(chunk.empty()) {
       chunk.resize(CHUNK_SIZE, std::byte{0});
     }
     return chunk.data();
+  }
+
+  /********************************************************************************************************************/
+
+  uint64_t DummyBackend::getBarSizeInBytes(uint64_t bar) const {
+    uint64_t size = 0;
+    for(const auto& registerCatalogueEntry : _registerMap) {
+      const auto& registerInfo = _registerMap.getBackendRegister(registerCatalogueEntry.getRegisterName());
+      if(registerInfo.bar != bar) {
+        continue;
+      }
+      const uint64_t registerSize = static_cast<uint64_t>(registerInfo.nElements) * registerInfo.elementPitchBits / 8U;
+      size = std::max(size, registerInfo.address + registerSize);
+    }
+    return size;
   }
 
   /********************************************************************************************************************/

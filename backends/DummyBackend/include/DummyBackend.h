@@ -112,14 +112,47 @@ namespace ChimeraTK {
 
     /// The lazily materialised bar contents, keyed by (bar, chunkIndex). Each value is a CHUNK_SIZE big,
     /// zero-initialised chunk.
-    std::map<std::pair<uint64_t, uint64_t>, std::vector<std::byte>> _barContents;
+    std::map<std::pair<uint64_t, uint64_t>, std::vector<std::byte>> _barChunks;
+
+    /// Deprecated compatibility shim for legacy downstream code which indexes the internal bar contents as
+    /// `_barContents[bar][wordIndex]`. Its square-bracket operator hands out a raw backdoor accessor for the whole
+    /// bar, so the historical word-based indexing keeps compiling and keeps updating the memory.
+    class BarContentsCompat {
+     public:
+      explicit BarContentsCompat(DummyBackend* backend) : _backend(backend) {}
+
+      /// Deprecated: hand out the raw backdoor accessor for the whole bar. Word indices are the historical layout:
+      /// `wordIndex` selects the int32_t word at byte offset `wordIndex * sizeof(int32_t)`.
+      ///
+      /// It is defined out of line, after the raw accessor it returns is complete.
+      [[deprecated("DummyBackend::_barContents[bar] is deprecated. Use the backdoor accessors instead.")]] auto
+          operator[](uint64_t bar) const;
+
+     private:
+      DummyBackend* _backend;
+    };
+
+    /// Deprecated: the historical name of the bar contents. It is kept so legacy downstream code that indexes it as
+    /// `_barContents[bar][wordIndex]` keeps compiling. New code uses the backdoor accessors with byte offsets.
+    // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
+    [[deprecated("DummyBackend::_barContents is deprecated. Use the backdoor accessors instead.")]]
+    BarContentsCompat _barContents;
+
+    /// Return the raw accessor for a whole bar, register-lessly. Called by BarContentsCompat::operator[]; it lives on
+    /// DummyBackend so that the accessor type can stay incomplete in the class definition. Not const: the accessor it
+    /// hands out lazily materialises chunks through the backend.
+    auto getWholeBarRawAccessor(uint64_t bar);
 
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
     std::mutex mutex;
 
     /// Return a pointer to the requested chunk, creating it zero-initialised on first access. This is the only
-    /// method which touches _barContents.
+    /// method which touches _barChunks.
     std::byte* getChunk(uint64_t bar, uint64_t chunkIndex);
+
+    /// Size in bytes of a whole bar, as far as the map file defines it. Only used to report the number of words
+    /// through the deprecated BarContentsCompat accessor; every bar is addressable beyond this size.
+    [[nodiscard]] uint64_t getBarSizeInBytes(uint64_t bar) const;
 
     void runWriteCallbackFunctionsForAddressRange(AddressRange addressRange);
     std::list<boost::function<void(void)>> findCallbackFunctionsForAddressRange(AddressRange addressRange);

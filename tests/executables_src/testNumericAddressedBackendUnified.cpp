@@ -982,7 +982,7 @@ struct RegBitRangeDescriptor : OneDRegisterDescriptorBase<Derived> {
 
   void setRemoteValue() { derived->target.setRemoteValue(); }
 
-  /// Read the raw full word value from _barContents directly via the DummyRegisterAccessor
+  /// Read the raw full word value from the bar contents directly via the backdoor accessor.
   uint64_t debugReadRawFullWord() { return static_cast<uint64_t>(static_cast<uint32_t>(derived->target.acc)); }
 
   void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }

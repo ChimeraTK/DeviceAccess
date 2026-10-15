@@ -46,14 +46,14 @@ namespace ChimeraTK {
   // Reset the per-process chunk map. The chunks themselves live in shared memory and are managed by the chain.
   void SharedDummyBackend::setupBarContents() {
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
-    _barContents.clear();
+    _barChunks.clear();
   }
 
   /********************************************************************************************************************/
 
   std::byte* SharedDummyBackend::getChunk(uint64_t bar, uint64_t chunkIndex) {
     auto* chunk = sharedMemoryManager->findOrConstructChunk(bar, chunkIndex);
-    _barContents[{bar, chunkIndex}] = chunk;
+    _barChunks[{bar, chunkIndex}] = chunk;
     return chunk->data();
   }
 
