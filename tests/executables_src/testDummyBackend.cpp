@@ -627,8 +627,6 @@ BOOST_AUTO_TEST_CASE(testCreateBackend) {
 
 /**********************************************************************************************************************/
 
-/**********************************************************************************************************************/
-
 // The chunk size is part of the public interface of DummyBackendBase, so the tests can build addresses relative to it
 // without knowing its concrete value.
 static constexpr uint64_t CHUNK_SIZE = DummyBackendBase::CHUNK_SIZE;

@@ -522,9 +522,9 @@ void DummyRegisterTest::testChunkedBackdoorByteAlignedRegister() {
   backend->misaligned[0] = 0x11111111;
   backend->misaligned[1] = 0x22222222;
   backend->misaligned[2] = 0x33333333;
-  BOOST_CHECK((int)backend->misaligned[0] == 0x11111111);
-  BOOST_CHECK((int)backend->misaligned[1] == 0x22222222);
-  BOOST_CHECK((int)backend->misaligned[2] == 0x33333333);
+  BOOST_CHECK(int(backend->misaligned[0]) == 0x11111111);
+  BOOST_CHECK(int(backend->misaligned[1]) == 0x22222222);
+  BOOST_CHECK(int(backend->misaligned[2]) == 0x33333333);
 
   // The bytes after the register were not modified by the byte-granular element accesses.
   int32_t neighbour = 0;
@@ -557,10 +557,10 @@ void DummyRegisterTest::testChunkedBackdoorRegisterSpanningChunkBoundary() {
   backend->boundary[2] = 0x0c0c0c0c;
   backend->boundary[3] = 0x0d0d0d0d;
 
-  BOOST_CHECK((int)backend->boundary[0] == 0x0a0a0a0a);
-  BOOST_CHECK((int)backend->boundary[1] == 0x0b0b0b0b);
-  BOOST_CHECK((int)backend->boundary[2] == 0x0c0c0c0c);
-  BOOST_CHECK((int)backend->boundary[3] == 0x0d0d0d0d);
+  BOOST_CHECK(int(backend->boundary[0]) == 0x0a0a0a0a);
+  BOOST_CHECK(int(backend->boundary[1]) == 0x0b0b0b0b);
+  BOOST_CHECK(int(backend->boundary[2]) == 0x0c0c0c0c);
+  BOOST_CHECK(int(backend->boundary[3]) == 0x0d0d0d0d);
 
   backend->close();
   std::remove(mapFile.c_str());
