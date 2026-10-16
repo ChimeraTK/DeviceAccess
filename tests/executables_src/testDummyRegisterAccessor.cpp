@@ -3,6 +3,7 @@
 
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
 /// BOOST_AUTO_TEST_CASE!
+#include "BackendFactory.h"
 #include "boost_dynamic_init_test.h"
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
@@ -14,14 +15,93 @@
 #include <boost/make_shared.hpp>
 
 #include <math.h>
+#include <unistd.h>
 
 #include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <map>
+#include <string>
+#include <type_traits>
 
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
 
 #define TEST_MAPPING_FILE "testDummyRegisterAccessors.map"
 #define INVALID_MAPPING_FILE "invalidSequences.map"
+
+// The chunk size is part of the public interface of DummyBackendBase, so the tests can build addresses relative to it
+// without knowing its concrete value.
+static constexpr uint64_t CHUNK = DummyBackendBase::CHUNK_SIZE;
+
+/// Write a minimal jmap file with registers at odd byte offsets, a 16-bit register and a register spanning a chunk
+/// boundary, then return its path.
+static std::string writeChunkedBackdoorJmap() {
+  std::string fileName = "chunkedBackdoorAccessor_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream file(fileName);
+  file << R"({
+  "mapFormatVersion": "1.0",
+  "metadata": {},
+  "interruptHandler": {},
+  "addressSpace": {
+    "MODULE.MISALIGNED": {
+      "bytesPerElement": 4,
+      "numberOfElements": 3,
+      "address": {
+        "type": "IO",
+        "channel": 1,
+        "offset": 3
+      },
+      "representation": {
+        "isSigned": false
+      }
+    },
+    "MODULE.SIXTEEN_BIT": {
+      "bytesPerElement": 2,
+      "numberOfElements": 4,
+      "address": {
+        "type": "IO",
+        "channel": 1,
+        "offset": 32
+      },
+      "representation": {
+        "isSigned": false
+      }
+    },
+    "MODULE.BOUNDARY": {
+      "bytesPerElement": 4,
+      "numberOfElements": 4,
+      "address": {
+        "type": "IO",
+        "channel": 2,
+        "offset": )"
+       << (CHUNK - 2 * sizeof(int32_t)) << R"(
+      },
+      "representation": {
+        "isSigned": false
+      }
+    }
+  }
+})";
+  file.close();
+  return fileName;
+}
+
+namespace {
+
+  /// DummyBackend exposing the chunked backdoor accessors for the temporary map file, which lives at odd byte offsets
+  /// and across a chunk boundary.
+  class ChunkedBackdoorDummyBackend : public DummyBackend {
+   public:
+    explicit ChunkedBackdoorDummyBackend(const std::string& mapFileName)
+    : DummyBackend(mapFileName), misaligned(this, "MODULE", "MISALIGNED"), boundary(this, "MODULE", "BOUNDARY") {}
+
+    DummyRegisterAccessor<int> misaligned;
+    DummyRegisterAccessor<int> boundary;
+  };
+
+} // namespace
 
 // Test implementation of the dummy backend with two accessors
 class DummyRegisterTest;
@@ -34,8 +114,27 @@ class TestableDummyBackend : public DummyBackend {
   DummyRegisterAccessor<int> someRegister;
   DummyMultiplexedRegisterAccessor<int> someMuxedRegister;
 
-  friend class DummyRegisterTest;
+  /// Backdoor accessor used to place the pre-packed 32-bit words into the memory; the internal bar contents are
+  /// chunked byte storage and are not written directly any more. It addresses the multiplexed area through its 1D raw
+  /// view ("APP0.DAQ0_ADCA.MULTIPLEXED_RAW"), so that consecutive indices map to consecutive transport words from the
+  /// area start, exactly like the pre-change word indexing into the bar contents. The raw accessor is created through
+  /// DummyBackend::getRawAccessor(), which supplies the shared pointer to the backend.
+  std::unique_ptr<DummyRegisterRawAccessor<std::int32_t>> muxedBackdoor;
+
+  // NOLINTNEXTLINE(performance-unnecessary-value-param)
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return boost::shared_ptr<DeviceBackend>(new TestableDummyBackend(parameters["map"]));
+  }
+  class BackendRegisterer {
+   public:
+    BackendRegisterer() {
+      ChimeraTK::BackendFactory::getInstance().registerBackendType(
+          "TestableDummy", &TestableDummyBackend::createInstance);
+    }
+  };
+  static BackendRegisterer backendRegisterer;
 };
+TestableDummyBackend::BackendRegisterer TestableDummyBackend::backendRegisterer;
 
 // Test implementation of the dummy backend for the invalid map file
 class InvalidDummyBackend : public DummyBackend {
@@ -51,7 +150,12 @@ class InvalidDummyBackend : public DummyBackend {
 /**********************************************************************************************************************/
 class DummyRegisterTest {
  public:
-  DummyRegisterTest() { device = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE)); }
+  DummyRegisterTest() {
+    device = boost::dynamic_pointer_cast<TestableDummyBackend>(
+        BackendFactory::getInstance().createBackend("(TestableDummy?map=" TEST_MAPPING_FILE ")"));
+    device->muxedBackdoor = std::make_unique<DummyRegisterRawAccessor<std::int32_t>>(
+        device->getRawAccessor("APP0", "DAQ0_ADCA.MULTIPLEXED_RAW"));
+  }
 
   /// test exceptions
   void testExceptions();
@@ -61,6 +165,21 @@ class DummyRegisterTest {
 
   /// test the register accessor
   void testMuxedRegisterAccessor();
+
+  /// test a backdoor accessor at an odd byte offset, and the byte-granular semantics enabled by chunked storage
+  void testChunkedBackdoorByteAlignedRegister();
+
+  /// test a backdoor accessor for a register spanning a chunk boundary
+  void testChunkedBackdoorRegisterSpanningChunkBoundary();
+
+  /// test the value semantics of the chunked raw accessor
+  void testChunkedBackdoorRawAccessorValueSemantics();
+
+  /// test the chunked raw accessor instantiated for a non-default RawType
+  void testChunkedBackdoorRawAccessorNonDefaultRawType();
+
+  /// test the deduction guide of the chunked raw accessor
+  void testChunkedBackdoorRawAccessorDeductionGuide();
 
  private:
   boost::shared_ptr<TestableDummyBackend> device;
@@ -76,6 +195,11 @@ class DummyRegisterTestSuite : public test_suite {
     add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testRegisterAccessor, dummyDeviceTest));
     add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testMuxedRegisterAccessor, dummyDeviceTest));
     add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testExceptions, dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorByteAlignedRegister, dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorRegisterSpanningChunkBoundary, dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorRawAccessorValueSemantics, dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorRawAccessorNonDefaultRawType, dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorRawAccessorDeductionGuide, dummyDeviceTest));
   }
 };
 
@@ -101,42 +225,30 @@ void DummyRegisterTest::testRegisterAccessor() {
   // open the device
   device->open();
 
+  // This test exercises the public API (ordinary accessors), not the backdoor accessor, so it covers the accessor
+  // layer rather than the backdoor accessor against itself.
+  auto accessor = device->getRegisterAccessor<int>("APP0.SOME_REGISTER", 10, 0, {});
+
   // check number of elements getter
-  BOOST_CHECK(device->someRegister.getNumberOfElements() == 10);
+  BOOST_CHECK(accessor->getNumberOfSamples() == 10);
 
-  // test operator=
-  device->someRegister = 3;
-  BOOST_CHECK(device->_barContents[1][0] == 3);
+  // write a full block through the ordinary one-dimensional API and read it back
+  std::vector<int32_t> data{0, 11, 22, 33, 44, 55, 66, 77, 88, 99};
+  accessor->accessChannel(0) = data;
+  accessor->write();
 
-  // test operator[] on r.h.s.
-  device->_barContents[1][0] = 5;
-  device->_barContents[1][3] = 77;
-  BOOST_CHECK(device->someRegister[0] == 5);
-  BOOST_CHECK(device->someRegister[3] == 77);
+  accessor->read();
+  BOOST_CHECK(accessor->accessChannel(0) == data);
 
-  // test operator[] on l.h.s.
-  device->someRegister[0] = 666;
-  device->someRegister[9] = 999;
-  BOOST_CHECK(device->_barContents[1][0] == 666);
-  BOOST_CHECK(device->_barContents[1][9] == 999);
-  device->someRegister[1] = 111;
-  device->someRegister[2] = 222;
-  device->someRegister[3] = 333;
-  device->someRegister[4] = 444;
-  BOOST_CHECK(device->_barContents[1][1] == 111);
-  BOOST_CHECK(device->_barContents[1][2] == 222);
-  BOOST_CHECK(device->_barContents[1][3] == 333);
-  BOOST_CHECK(device->_barContents[1][4] == 444);
+  // write a single element and read it back
+  accessor->accessChannel(0)[3] = 77;
+  accessor->write();
+  accessor->read();
+  BOOST_CHECK(accessor->accessChannel(0)[3] == 77);
 
-  // test increment and decrement operators
-  BOOST_CHECK(device->someRegister[1]++ == 111);
-  BOOST_CHECK(device->someRegister[2]-- == 222);
-  BOOST_CHECK(++device->someRegister[3] == 334);
-  BOOST_CHECK(--device->someRegister[4] == 443);
-  BOOST_CHECK(device->_barContents[1][1] == 112);
-  BOOST_CHECK(device->_barContents[1][2] == 221);
-  BOOST_CHECK(device->_barContents[1][3] == 334);
-  BOOST_CHECK(device->_barContents[1][4] == 443);
+  // elements that were never touched still read back their previously written value
+  BOOST_CHECK(accessor->accessChannel(0)[0] == 0);
+  BOOST_CHECK(accessor->accessChannel(0)[9] == 99);
 
   // close the device
   device->close();
@@ -153,9 +265,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(device->someMuxedRegister.getNumberOfElements() == 4096);
   BOOST_CHECK(device->someMuxedRegister.getNumberOfSequences() == 16);
 
-  // the area offset is 1000 bytes. When addressing the index of the 32 bit word
-  // in the bar, we have to divide by 4
-  static const int areaIndexOffset = 1000 / 4;
+  // the area offset is 1000 bytes into the bar; the accessor addresses it by byte offset directly
 
   // since our register does not have a fixed type, we use this union/struct to
   // fill the bar content directly the packed attribute prevents the compiler
@@ -201,16 +311,17 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 13;
   mixedReg.cooked.r14 = 14;
   mixedReg.cooked.r15 = 15;
-  for(int i = 0; i < 13; i++) device->_barContents[0xD][areaIndexOffset + i] = mixedReg.raw[i];
+  for(int i = 0; i < 13; i++) {
+    int32_t word;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+    std::memcpy(&word, &mixedReg.raw[i], sizeof(word));
+    (*device->muxedBackdoor)[i] = word;
+  }
 
   // test the test, to be sure the union is not going wrong
   BOOST_CHECK((int)((char*)&(mixedReg.cooked.r5) - (char*)&(mixedReg.cooked.r0)) == 10);
   BOOST_CHECK((int)((char*)&(mixedReg.cooked.r10) - (char*)&(mixedReg.cooked.r0)) == 28);
   BOOST_CHECK((int)((char*)&(mixedReg.cooked.r15) - (char*)&(mixedReg.cooked.r0)) == pitch - 4);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 0] == 42);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 1] == 120 + 0x10000 * 222);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 9] == 12);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 12] == 15);
 
   mixedReg.cooked.r0 = 1;
   mixedReg.cooked.r1 = 11;
@@ -228,15 +339,13 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 333;
   mixedReg.cooked.r14 = 444;
   mixedReg.cooked.r15 = 555;
-  for(int i = 0; i < 13; i++) device->_barContents[0xD][areaIndexOffset + pitch / 4 + i] = mixedReg.raw[i];
+  for(int i = 0; i < 13; i++) {
+    int32_t word;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+    std::memcpy(&word, &mixedReg.raw[i], sizeof(word));
+    (*device->muxedBackdoor)[13 + i] = word;
+  }
 
-  // test the test, to be sure the union is not going wrong
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 0] == 1);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 1] == 11 + 0x10000 * 22);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 9] == 222);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 12] == 555);
-
-  // fill the rest of the register (has 4096 samples per channel)
   for(int i = 2; i < 4096; i++) {
     mixedReg.cooked.r0 = i + 0;
     mixedReg.cooked.r1 = i + 1;
@@ -254,7 +363,12 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     mixedReg.cooked.r13 = i + 13;
     mixedReg.cooked.r14 = i + 14;
     mixedReg.cooked.r15 = i + 15;
-    for(int k = 0; k < 13; k++) device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k] = mixedReg.raw[k];
+    for(int k = 0; k < 13; k++) {
+      int32_t word;
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+      std::memcpy(&word, &mixedReg.raw[k], sizeof(word));
+      (*device->muxedBackdoor)[i * 13 + k] = word;
+    }
   }
 
   // test reading by [][] operator
@@ -339,7 +453,11 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     }
   }
 
-  for(int k = 0; k < 13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset + k];
+  for(int k = 0; k < 13; k++) {
+    int32_t word = (*device->muxedBackdoor)[k];
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+    std::memcpy(&mixedReg.raw[k], &word, sizeof(word));
+  }
   BOOST_CHECK(mixedReg.cooked.r0 == 666);
   BOOST_CHECK(mixedReg.cooked.r1 == 999);
   BOOST_CHECK(mixedReg.cooked.r2 == 222);
@@ -358,7 +476,11 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(mixedReg.cooked.r15 == 6666);
 
   for(int i = 1; i < 65536 / 16; i++) {
-    for(int k = 0; k < 13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k];
+    for(int k = 0; k < 13; k++) {
+      int32_t word = (*device->muxedBackdoor)[i * 13 + k];
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) deliberate union member access
+      std::memcpy(&mixedReg.raw[k], &word, sizeof(word));
+    }
     BOOST_CHECK(mixedReg.cooked.r0 == 10 * 0 + i);
     BOOST_CHECK(mixedReg.cooked.r1 == std::min(10 * 1 + i, 32767));
     BOOST_CHECK(mixedReg.cooked.r2 == std::min(10 * 2 + i, 32767));
@@ -379,4 +501,182 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
 
   // close the device
   device->close();
+}
+
+/**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
+void DummyRegisterTest::testChunkedBackdoorByteAlignedRegister() {
+  std::cout << "testChunkedBackdoorByteAlignedRegister" << std::endl;
+
+  std::string mapFile = writeChunkedBackdoorJmap();
+  auto backend = boost::make_shared<ChunkedBackdoorDummyBackend>(mapFile);
+  backend->open();
+
+  // A full word just after the register (which occupies bytes 3..14) stays untouched by the byte-granular accesses.
+  const int32_t neighbourValue = 0x0a0b0c0d;
+  const uint64_t bar = 1;
+  const uint64_t neighbourAddress = 16;
+  backend->write(bar, neighbourAddress, &neighbourValue, sizeof(int32_t));
+
+  // Write through the accessor: elements are 4 bytes wide starting at byte offset 3.
+  backend->misaligned[0] = 0x11111111;
+  backend->misaligned[1] = 0x22222222;
+  backend->misaligned[2] = 0x33333333;
+  BOOST_CHECK(int(backend->misaligned[0]) == 0x11111111);
+  BOOST_CHECK(int(backend->misaligned[1]) == 0x22222222);
+  BOOST_CHECK(int(backend->misaligned[2]) == 0x33333333);
+
+  // The bytes after the register were not modified by the byte-granular element accesses.
+  int32_t neighbour = 0;
+  backend->read(bar, neighbourAddress, &neighbour, sizeof(int32_t));
+  BOOST_CHECK(neighbour == neighbourValue);
+
+  // The first register byte sits at offset 3, so the low byte of a word at offset 0 (bytes 0..2) is zero.
+  int32_t word = -1;
+  const uint64_t firstAddress = 0;
+  backend->read(bar, firstAddress, &word, sizeof(int32_t));
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
+  BOOST_CHECK((word & 0x00ffffff) == 0);
+
+  backend->close();
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
+void DummyRegisterTest::testChunkedBackdoorRegisterSpanningChunkBoundary() {
+  std::cout << "testChunkedBackdoorRegisterSpanningChunkBoundary" << std::endl;
+
+  std::string mapFile = writeChunkedBackdoorJmap();
+  auto backend = boost::make_shared<ChunkedBackdoorDummyBackend>(mapFile);
+  backend->open();
+
+  // The register starts two words before the chunk boundary and has 4 elements, so it straddles it.
+  backend->boundary[0] = 0x0a0a0a0a;
+  backend->boundary[1] = 0x0b0b0b0b;
+  backend->boundary[2] = 0x0c0c0c0c;
+  backend->boundary[3] = 0x0d0d0d0d;
+
+  BOOST_CHECK(int(backend->boundary[0]) == 0x0a0a0a0a);
+  BOOST_CHECK(int(backend->boundary[1]) == 0x0b0b0b0b);
+  BOOST_CHECK(int(backend->boundary[2]) == 0x0c0c0c0c);
+  BOOST_CHECK(int(backend->boundary[3]) == 0x0d0d0d0d);
+
+  backend->close();
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
+void DummyRegisterTest::testChunkedBackdoorRawAccessorValueSemantics() {
+  std::cout << "testChunkedBackdoorRawAccessorValueSemantics" << std::endl;
+
+  std::string mapFile = writeChunkedBackdoorJmap();
+  auto backend = boost::make_shared<ChunkedBackdoorDummyBackend>(mapFile);
+  backend->open();
+
+  auto raw = backend->getRawAccessor("MODULE", "MISALIGNED");
+
+  raw = 100;
+  BOOST_CHECK(int(raw) == 100);
+
+  raw += 5;
+  BOOST_CHECK(int(raw) == 105);
+  raw -= 3;
+  BOOST_CHECK(int(raw) == 102);
+  raw *= 2;
+  BOOST_CHECK(int(raw) == 204);
+  raw /= 4;
+  BOOST_CHECK(int(raw) == 51);
+  raw %= 10;
+  BOOST_CHECK(int(raw) == 1);
+
+  raw = 0x0f0f;
+  raw &= 0x00ff;
+  BOOST_CHECK(int(raw) == 0x000f);
+  raw |= 0x00f0;
+  BOOST_CHECK(int(raw) == 0x00ff);
+  raw ^= 0x000f;
+  BOOST_CHECK(int(raw) == 0x00f0);
+  raw <<= 4;
+  BOOST_CHECK(int(raw) == 0x0f00);
+  raw >>= 4;
+  BOOST_CHECK(int(raw) == 0x00f0);
+
+  raw = 10;
+  BOOST_CHECK(++raw == 11);
+  BOOST_CHECK(--raw == 10);
+  BOOST_CHECK(raw++ == 10);
+  BOOST_CHECK(int(raw) == 11);
+  BOOST_CHECK(raw-- == 11);
+  BOOST_CHECK(int(raw) == 10);
+
+  raw = 0x1234;
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
+  BOOST_CHECK((raw & 0x00ff) == 0x0034);
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
+  BOOST_CHECK((~raw) == ~0x1234);
+
+  // The memory itself holds the last written value.
+  int32_t word = 0;
+  const uint64_t bar = 1;
+  const uint64_t address = 3;
+  backend->read(bar, address, &word, sizeof(int32_t));
+  BOOST_CHECK(word == 0x1234);
+
+  backend->close();
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
+void DummyRegisterTest::testChunkedBackdoorRawAccessorNonDefaultRawType() {
+  std::cout << "testChunkedBackdoorRawAccessorNonDefaultRawType" << std::endl;
+
+  std::string mapFile = writeChunkedBackdoorJmap();
+  auto backend = boost::make_shared<ChunkedBackdoorDummyBackend>(mapFile);
+  backend->open();
+
+  // A non-default raw type is obtained through the templated factory, like the default through a deduction-less call.
+  auto raw = backend->getRawAccessor<int16_t>("MODULE", "SIXTEEN_BIT");
+
+  BOOST_CHECK(raw.getNumberOfElements() == 4U);
+
+  raw[0] = int16_t(0x1234);
+  raw[1] = int16_t(0x5678);
+  raw[2] = int16_t(-1);
+  raw[3] = int16_t(-32768);
+
+  BOOST_CHECK(raw[0].get() == int16_t(0x1234));
+  BOOST_CHECK(raw[1].get() == int16_t(0x5678));
+  BOOST_CHECK(raw[2].get() == int16_t(-1));
+  BOOST_CHECK(raw[3].get() == int16_t(-32768));
+
+  // Value semantics with the narrower raw type.
+  raw[0] += int16_t(1);
+  BOOST_CHECK(raw[0].get() == int16_t(0x1235));
+
+  backend->close();
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
+void DummyRegisterTest::testChunkedBackdoorRawAccessorDeductionGuide() {
+  std::cout << "testChunkedBackdoorRawAccessorDeductionGuide" << std::endl;
+
+  std::string mapFile = writeChunkedBackdoorJmap();
+  auto backend = boost::make_shared<ChunkedBackdoorDummyBackend>(mapFile);
+  backend->open();
+
+  // No explicit template argument: the deduction guide fixes RawType to int32_t. This only compiles if the guide
+  // resolves to a 32-bit type, because the 4-byte register would fail the element-width assert otherwise.
+  DummyRegisterRawAccessor deduced(backend, "MODULE", "MISALIGNED");
+  static_assert(std::is_same_v<decltype(deduced), DummyRegisterRawAccessor<int32_t>>);
+
+  deduced[0] = 0x0badf00d;
+  BOOST_CHECK(int(deduced[0]) == 0x0badf00d);
+
+  backend->close();
+  std::remove(mapFile.c_str());
 }

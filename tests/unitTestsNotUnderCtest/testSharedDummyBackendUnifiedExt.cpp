@@ -5,6 +5,7 @@
 #define BOOST_TEST_MODULE SharedDummyBackendUnifiedTest
 #include "Device.h"
 #include "ProcessManagement.h"
+#include "SharedDummyBackend.h"
 #include "sharedDummyHelpers.h"
 #include "Utilities.h"
 
@@ -25,7 +26,7 @@ namespace {
   //  Use hardcoded information from sharedDummyUnified.dmap to only use public interface here.
   std::string mapFileName{"sharedDummyUnified.map"};
   std::size_t instanceIdHash = Utilities::shmDummyInstanceIdHash("1", {{"map", mapFileName}});
-  std::string shmName{Utilities::createShmName(instanceIdHash, mapFileName, getUserName())};
+  std::string shmName{SharedDummyBackend::getSharedMemoryName(instanceIdHash, mapFileName, getUserName())};
 
   BOOST_AUTO_TEST_SUITE(SharedDummyBackendUnifiedTestSuite)
 

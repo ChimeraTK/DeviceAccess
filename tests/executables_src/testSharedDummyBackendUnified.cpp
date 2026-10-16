@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(SharedDummyBackendUnifiedTestSuite)
 static std::string instanceId{"1"};
 static std::string mapFileName{"sharedDummyUnified.map"};
 static std::size_t instanceIdHash = Utilities::shmDummyInstanceIdHash(instanceId, {{"map", mapFileName}});
-static std::string shmName{Utilities::createShmName(instanceIdHash, mapFileName, getUserName())};
+static std::string shmName{SharedDummyBackend::getSharedMemoryName(instanceIdHash, mapFileName, getUserName())};
 
 static std::string cdd(std::string("(sharedMemoryDummy:") + instanceId + "?map=" + mapFileName + ")");
 static boost::shared_ptr<SharedDummyBackend> sharedDummy;

@@ -7,12 +7,20 @@
 #include "BackendFactory.h"
 #include "Device.h"
 #include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "Exception.h"
 #include "parserUtilities.h"
 
 #include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
+
+#include <unistd.h>
+
+#include <cstdio>
+#include <fstream>
+#include <string>
+#include <vector>
 
 // FIXME Remove
 #include <regex>
@@ -51,14 +59,44 @@ class TestableDummyBackend : public DummyBackend {
  public:
   explicit TestableDummyBackend(std::string mapFileName) : DummyBackend(mapFileName) {}
   using DummyBackend::checkSizeIsMultipleOfWordSize;
-  using DummyBackend::_barContents;
-  using DummyBackend::setReadOnly;
+  using DummyBackend::_barChunks;
   using DummyBackend::AddressRange;
   using DummyBackend::setWriteCallbackFunction;
   using DummyBackend::writeRegisterWithoutCallback;
   using DummyBackend::isWriteRangeOverlap;
-  using DummyBackend::_readOnlyAddresses;
   using DummyBackend::_writeCallbackFunctions;
+
+  /// Number of materialised chunks for the given bar. The address space is allocated lazily in chunks, so a test can
+  /// check that only the touched chunks were materialised.
+  size_t chunkCount(uint64_t bar) {
+    size_t count = 0;
+    for(const auto& entry : _barChunks) {
+      if(entry.first.first == bar) {
+        ++count;
+      }
+    }
+    return count;
+  }
+
+  /// Write an int32_t word through the deprecated `_barContents[bar][wordIndex]` compatibility shim. It is a member
+  /// function so that the inherited protected member is accessed from within the subclass, as legacy code does.
+  void writeBarContentsWord(uint64_t bar, uint64_t wordIndex, int32_t value) {
+    // test the deprecated legacy indexing without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    _barContents[bar][wordIndex] = value;
+#pragma GCC diagnostic pop
+  }
+
+  /// Read an int32_t word through the deprecated `_barContents[bar][wordIndex]` compatibility shim.
+  int32_t readBarContentsWord(uint64_t bar, uint64_t wordIndex) {
+    // test the deprecated legacy indexing without warning about it...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    int32_t value = _barContents[bar][wordIndex];
+#pragma GCC diagnostic pop
+    return value;
+  }
 
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new TestableDummyBackend(parameters["map"]));
@@ -139,15 +177,18 @@ BOOST_AUTO_TEST_CASE(testReadWriteSingleWordRegister) {
   dummyBackend->read(bar, offset, &dataContent, 4);
   BOOST_CHECK(dataContent == 47);
 
-  // the size as index is invalid, allowed range is 0..size-1 included.
-  BOOST_CHECK_THROW(
-      dummyBackend->read(
-          bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)), &dataContent, 4),
-      ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(
-      dummyBackend->write(
-          bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)), &dataContent, 4),
-      ChimeraTK::logic_error);
+  // any address is valid now: a read beyond the map-defined bar size yields zero, a write materialises a chunk on
+  // demand and the value is read back.
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
+  uint64_t beyondOffset = 1U << 20; // 1 MiB, well beyond the map-defined bar size
+  dataContent = -1;
+  BOOST_CHECK_NO_THROW(dummyBackend->read(bar, beyondOffset, &dataContent, 4));
+  BOOST_CHECK(dataContent == 0);
+  dataContent = 0x5a5a5a5a;
+  BOOST_CHECK_NO_THROW(dummyBackend->write(bar, beyondOffset, &dataContent, 4));
+  dataContent = -1;
+  dummyBackend->read(bar, beyondOffset, &dataContent, 4);
+  BOOST_CHECK(dataContent == 0x5a5a5a5a);
 }
 
 /**********************************************************************************************************************/
@@ -163,14 +204,14 @@ BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
   std::vector<int32_t> dataContent(sizeInWords, -1);
 
   BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes));
-  for(std::vector<int32_t>::iterator dataIter = dataContent.begin(); dataIter != dataContent.end(); ++dataIter) {
+  for(auto value : dataContent) {
     std::stringstream errorMessage;
-    errorMessage << "*dataIter = " << *dataIter;
-    BOOST_CHECK_MESSAGE(*dataIter == 0, errorMessage.str());
+    errorMessage << "value = " << value;
+    BOOST_CHECK_MESSAGE(value == 0, errorMessage.str());
   }
 
   for(unsigned int index = 0; index < dataContent.size(); ++index) {
-    dataContent[index] = static_cast<int32_t>((index + 1) * (index + 1));
+    dataContent[index] = int32_t((index + 1) * (index + 1));
   }
   BOOST_CHECK_NO_THROW(dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes));
   // make sure the value is really being read
@@ -181,29 +222,20 @@ BOOST_AUTO_TEST_CASE(testReadWriteMultiWordRegister) {
 
   // make sure the value is really being read
   for(unsigned int index = 0; index < dataContent.size(); ++index) {
-    BOOST_CHECK(dataContent[index] == static_cast<int32_t>((index + 1) * (index + 1)));
+    BOOST_CHECK(dataContent[index] == int32_t((index + 1) * (index + 1)));
   }
 
   // tests for exceptions
-  // 1. base address too large
-  BOOST_CHECK_THROW(
-      dummyBackend->read(bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
-          &(dataContent[0]), sizeInBytes),
-      ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(
-      dummyBackend->write(bar, static_cast<uint64_t>(dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
-          &(dataContent[0]), sizeInBytes),
-      ChimeraTK::logic_error);
-  // 2. size too large (works because the target register is not at offfset 0)
-  // resize the data vector for this test
-  dataContent.resize(dummyBackend->_barContents[bar].size());
-  BOOST_CHECK_THROW(
-      dummyBackend->read(bar, offset, &(dataContent[0]), dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
-      ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(
-      dummyBackend->write(bar, offset, &(dataContent[0]), dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
-      ChimeraTK::logic_error);
-  // 3. size not multiple of 4
+  // 1. base address too large: this is now a valid address, reads yield zeros and writes are stored
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
+  uint64_t beyondOffset = 1U << 21; // 2 MiB, beyond the map-defined bar size
+  std::vector<int32_t> beyondWords(sizeInBytes / sizeof(int32_t), 0);
+  BOOST_CHECK_NO_THROW(dummyBackend->read(bar, beyondOffset, &(beyondWords[0]), sizeInBytes));
+  for(auto& word : beyondWords) {
+    BOOST_CHECK(word == 0);
+  }
+  BOOST_CHECK_NO_THROW(dummyBackend->write(bar, beyondOffset, &(dataContent[0]), sizeInBytes));
+  // 2. size not multiple of 4
   BOOST_CHECK_THROW(dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes - 1), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes - 1), ChimeraTK::logic_error);
 }
@@ -228,64 +260,6 @@ BOOST_AUTO_TEST_CASE(testReadDeviceInfo) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testReadOnly) {
-  TestableDummyBackend* dummyBackend = f.getBackendInstance();
-
-  // WORD_CLK_MUX                      0x00000004    0x00000020    0x00000010    0x00000000       32         0         0
-  uint64_t offset = 0x20;
-  uint64_t bar = 0;
-  size_t sizeInBytes = 0x10;
-  size_t sizeInWords = 0x4;
-  std::stringstream errorMessage;
-  errorMessage << "This register should have 4 words. If you changed your "
-                  "mapping you have to adapt the testReadOnly() test.";
-  BOOST_REQUIRE_MESSAGE(sizeInWords == 4, errorMessage.str());
-
-  std::vector<int32_t> dataContent(sizeInWords);
-  for(unsigned int index = 0; index < dataContent.size(); ++index) {
-    dataContent[index] = static_cast<int32_t>((index + 1) * (index + 1));
-  }
-  dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes);
-  dummyBackend->setReadOnly(bar, offset, 1);
-
-  // the actual test: write 42 to all registers, register 0 must not change, all
-  // others have to
-  std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 42);
-  dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes);
-  std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
-  dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes);
-  BOOST_CHECK(dataContent[0] == 1);
-  BOOST_CHECK(dataContent[1] == 42);
-  BOOST_CHECK(dataContent[2] == 42);
-  BOOST_CHECK(dataContent[3] == 42);
-  // also set the last two words to read only. Now only the second word has to
-  // change.
-  // We use the addressRange interface for it to also cover this.
-  TestableDummyBackend::AddressRange lastTwoMuxRegisters(bar, offset + 2 * sizeof(int32_t), 2 * sizeof(int32_t));
-  dummyBackend->setReadOnly(lastTwoMuxRegisters);
-  std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 29);
-  // also test with single write operations
-  for(size_t index = 0; index < sizeInWords; ++index) {
-    dummyBackend->write(bar, offset + index * sizeof(int32_t), &dataContent[index], 4);
-  }
-
-  std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
-  dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes);
-  BOOST_CHECK(dataContent[0] == 1);
-  BOOST_CHECK(dataContent[1] == 29);
-  BOOST_CHECK(dataContent[2] == 42);
-  BOOST_CHECK(dataContent[3] == 42);
-
-  // check that the next register is still writeable (boundary test)
-  int32_t originalNextDataWord;
-  dummyBackend->read(bar, offset + sizeInBytes, &originalNextDataWord, 4);
-  int32_t writeWord = originalNextDataWord + 1;
-  dummyBackend->write(bar, offset + sizeInBytes, &writeWord, 4);
-  int32_t readbackWord;
-  dummyBackend->read(bar, offset + sizeInBytes, &readbackWord, 4);
-  BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
-}
-
 BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
   // We just require the first bar to be 12 registers long.
   // Everything else would overcomplicate this test. For a real
@@ -294,7 +268,6 @@ BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
 
   // from the previous test we know that adresses 32, 40 and 44 are write only
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  BOOST_REQUIRE(dummyBackend->_barContents[0].size() >= 13);
   f.a = 0;
   f.b = 0;
   f.c = 0;
@@ -321,25 +294,26 @@ BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
   BOOST_CHECK(f.a == 0);
   BOOST_CHECK(f.b == 1);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(static_cast<uint64_t>(0), 32, &dataWord, 4); // read only
+  // read-only registers are enforced in the accessor layer only, so a direct backend write runs the callbacks too
+  dummyBackend->write(static_cast<uint64_t>(0), 32, &dataWord, 4); // b
   BOOST_CHECK(f.a == 0);
-  BOOST_CHECK(f.b == 1);
+  BOOST_CHECK(f.b == 2);
   BOOST_CHECK(f.c == 3);
   dummyBackend->write(static_cast<uint64_t>(0), 36, &dataWord, 4); // ab
   BOOST_CHECK(f.a == 1);
-  BOOST_CHECK(f.b == 2);
+  BOOST_CHECK(f.b == 3);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(static_cast<uint64_t>(0), 40, &dataWord, 4); // read only
+  dummyBackend->write(static_cast<uint64_t>(0), 40, &dataWord, 4); // b
   BOOST_CHECK(f.a == 1);
-  BOOST_CHECK(f.b == 2);
+  BOOST_CHECK(f.b == 4);
   BOOST_CHECK(f.c == 3);
-  dummyBackend->write(static_cast<uint64_t>(0), 44, &dataWord, 4); // read only
+  dummyBackend->write(static_cast<uint64_t>(0), 44, &dataWord, 4); // b
   BOOST_CHECK(f.a == 1);
-  BOOST_CHECK(f.b == 2);
+  BOOST_CHECK(f.b == 5);
   BOOST_CHECK(f.c == 3);
   dummyBackend->write(static_cast<uint64_t>(0), 48, &dataWord, 4); // b
   BOOST_CHECK(f.a == 1);
-  BOOST_CHECK(f.b == 3);
+  BOOST_CHECK(f.b == 6);
   BOOST_CHECK(f.c == 3);
 
   std::vector<int32_t> dataContents(8, 42); // eight words, each with content 42
@@ -366,13 +340,13 @@ BOOST_AUTO_TEST_CASE(testWriteCallbackFunctions) {
   BOOST_CHECK(f.a == 3);
   BOOST_CHECK(f.b == 4);
   BOOST_CHECK(f.c == 4);
-  dummyBackend->write(static_cast<uint64_t>(0), 40, &(dataContents[0]), 8); // readOnly
+  dummyBackend->write(static_cast<uint64_t>(0), 40, &(dataContents[0]), 8); // b
   BOOST_CHECK(f.a == 3);
-  BOOST_CHECK(f.b == 4);
+  BOOST_CHECK(f.b == 5);
   BOOST_CHECK(f.c == 4);
   dummyBackend->write(static_cast<uint64_t>(0), 4, &(dataContents[0]), 8); // nothing
   BOOST_CHECK(f.a == 3);
-  BOOST_CHECK(f.b == 4);
+  BOOST_CHECK(f.b == 5);
   BOOST_CHECK(f.c == 4);
 }
 
@@ -573,8 +547,7 @@ BOOST_AUTO_TEST_CASE(testIsWriteRangeOverlap) {
 BOOST_AUTO_TEST_CASE(testFinalClosing) {
   // all features have to be enabled before closing
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  BOOST_CHECK(dummyBackend->_barContents.size() != 0);
-  BOOST_CHECK(dummyBackend->_readOnlyAddresses.size() != 0);
+  BOOST_CHECK(!dummyBackend->_barChunks.empty());
   BOOST_CHECK(dummyBackend->_writeCallbackFunctions.size() != 0);
 
   dummyBackend->close();
@@ -584,16 +557,9 @@ BOOST_AUTO_TEST_CASE(testFinalClosing) {
 
 BOOST_AUTO_TEST_CASE(testOpenClose) {
   TestableDummyBackend* dummyBackend = f.getBackendInstance();
-  // there have to be bars 0 and 2  with sizes 0x14C and 0x1000 bytes,
-  // plus the dma bar 0xD
-  // BOOST_CHECK((*dummyBackend)._barContents.size() == 3 );
-  BOOST_CHECK(dummyBackend->_barContents.size() == 3);
-  std::map<uint64_t, std::vector<int32_t>>::const_iterator bar0Iter = dummyBackend->_barContents.find(0);
-  BOOST_REQUIRE(bar0Iter != dummyBackend->_barContents.end());
-  BOOST_CHECK(bar0Iter->second.size() == 0x53); // 0x14C bytes in 32 bit words
-  std::map<uint64_t, std::vector<int32_t>>::const_iterator bar2Iter = dummyBackend->_barContents.find(2);
-  BOOST_REQUIRE(bar2Iter != dummyBackend->_barContents.end());
-  BOOST_CHECK(bar2Iter->second.size() == 0x400); // 0x1000 bytes in 32 bit words
+  // The address space is not reserved up front any more: the number of materialised chunks equals the number of touched
+  // (bar, chunk) pairs, not the number of bars in the map file.
+  BOOST_CHECK(!dummyBackend->_barChunks.empty());
 
   // the "portmapFile" has an implicit conversion to bool to check
   // if it points to NULL
@@ -660,3 +626,211 @@ BOOST_AUTO_TEST_CASE(testCreateBackend) {
 }
 
 /**********************************************************************************************************************/
+
+// The chunk size is part of the public interface of DummyBackendBase, so the tests can build addresses relative to it
+// without knowing its concrete value.
+static constexpr uint64_t CHUNK_SIZE = DummyBackendBase::CHUNK_SIZE;
+
+/// Write a minimal jmap file to a temporary file and return its path. The map file defines a single 4-byte register
+/// at the given bar and address.
+static std::string writeSingleRegisterJmap(uint64_t bar, uint64_t address) {
+  std::string fileName = "chunkedDummyBackend_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream file(fileName);
+  file << R"({
+  "mapFormatVersion": "1.0",
+  "metadata": {},
+  "interruptHandler": {},
+  "addressSpace": {
+    "MODULE": {
+      "bytesPerElement": 4,
+      "numberOfElements": 1,
+      "address": {
+        "type": "IO",
+        "channel": )"
+       << bar << R"(,
+        "offset": )"
+       << address << R"(
+      },
+      "representation": {
+        "isSigned": false
+      }
+    }
+  }
+})";
+  file.close();
+  return fileName;
+}
+
+/**********************************************************************************************************************/
+
+// A transfer that crosses a chunk boundary is stitched together correctly, and the untouched neighbouring chunks stay
+// zero.
+BOOST_AUTO_TEST_CASE(testChunkedWriteReadAcrossChunkBoundary) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  // Write a word that straddles the boundary between chunk 0 and chunk 1.
+  const uint64_t address = CHUNK_SIZE - 2 * sizeof(int32_t);
+  std::vector<int32_t> data{0x11112222, 0x33334444, 0x55556666, 0x77778888};
+  const uint64_t bar = 0;
+  backend.write(bar, address, data.data(), data.size() * sizeof(int32_t));
+
+  std::vector<int32_t> readBack(data.size(), 0);
+  backend.read(bar, address, readBack.data(), readBack.size() * sizeof(int32_t));
+  BOOST_TEST(readBack == data, boost::test_tools::per_element());
+
+  // The two touched chunks exist, nothing else.
+  BOOST_TEST(backend.chunkCount(0) == 2U);
+
+  // Bytes before the written range within chunk 0 are still zero.
+  int32_t before = -1;
+  backend.read(bar, address - sizeof(int32_t), &before, sizeof(int32_t));
+  BOOST_TEST(before == 0);
+
+  // Bytes after the written range within chunk 1 are still zero.
+  int32_t after = -1;
+  backend.read(bar, address + data.size() * sizeof(int32_t), &after, sizeof(int32_t));
+  BOOST_TEST(after == 0);
+
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// Reading a never-allocated chunk yields zeros and materialises exactly that one chunk.
+BOOST_AUTO_TEST_CASE(testChunkedReadUntouchedChunkYieldsZeros) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  // Read far beyond the map-defined range from a chunk that was never touched.
+  int32_t word = -1;
+  const uint64_t bar = 0;
+  backend.read(bar, 10 * CHUNK_SIZE, &word, sizeof(int32_t));
+  BOOST_TEST(word == 0);
+
+  // Reading materialises the chunk (a read materialises missing chunks too), but only that single chunk.
+  BOOST_TEST(backend.chunkCount(0) == 1U);
+
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A write materialises only the touched chunk.
+BOOST_AUTO_TEST_CASE(testChunkedWriteMaterialisesOnlyTouchedChunk) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  int32_t word = 42;
+  const uint64_t bar = 0;
+  backend.write(bar, 3 * CHUNK_SIZE + 8, &word, sizeof(int32_t));
+
+  BOOST_TEST(backend.chunkCount(0) == 1U);
+
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// Any address is valid: reads beyond the map-defined bar size yield zeros, writes materialise chunks on demand, and
+// the same holds for an arbitrary bar.
+BOOST_AUTO_TEST_CASE(testChunkedAccessBeyondMapDefinedRange) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  const uint64_t farAddress = 1234567 * CHUNK_SIZE + 4;
+
+  int32_t word = -1;
+  const uint64_t bar = 7;
+  backend.read(bar, farAddress, &word, sizeof(int32_t));
+  BOOST_TEST(word == 0);
+
+  word = 0x0badf00d;
+  backend.write(bar, farAddress, &word, sizeof(int32_t));
+
+  word = 0;
+  backend.read(bar, farAddress, &word, sizeof(int32_t));
+  BOOST_TEST(word == 0x0badf00d);
+
+  // Only bar 7 got a chunk, and only one.
+  BOOST_TEST(backend.chunkCount(7) == 1U);
+  BOOST_TEST(backend.chunkCount(0) == 0U);
+
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// Chunks of different bars are independent, even at the same offset.
+BOOST_AUTO_TEST_CASE(testChunkedBarsAreIndependent) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  int32_t word = 0x12345678;
+  const uint64_t bar = 0;
+  const uint64_t address = 0;
+  backend.write(bar, address, &word, sizeof(int32_t));
+
+  int32_t other = -1;
+  const uint64_t otherBar = 1;
+  backend.read(otherBar, address, &other, sizeof(int32_t));
+  BOOST_TEST(other == 0);
+
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// The deprecated compatibility shim keeps the legacy `_barContents[bar][wordIndex]` indexing of the internal bar
+// contents compiling: it hands out the raw backdoor accessor for the whole bar, whose element selects the int32_t word
+// at byte offset `wordIndex * sizeof(int32_t)`. The inherited protected access is exercised through a subclass.
+BOOST_AUTO_TEST_CASE(testDeprecatedBarContentsCompatShim) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  const uint64_t bar = 0;
+  const uint64_t wordIndex = 3;
+
+  // Write through the deprecated shim and read the word back through the backend at the byte offset it maps to.
+  backend.writeBarContentsWord(bar, wordIndex, 0x0badf00d);
+
+  int32_t word = 0;
+  backend.read(bar, wordIndex * sizeof(int32_t), &word, sizeof(int32_t));
+  BOOST_TEST(word == 0x0badf00d);
+
+  // Write through the backend and read the word back through the deprecated shim.
+  const int32_t otherValue = 0x12345678;
+  backend.write(bar, wordIndex * sizeof(int32_t), &otherValue, sizeof(int32_t));
+  BOOST_TEST(backend.readBarContentsWord(bar, wordIndex) == otherValue);
+
+  // Any bar and any word index are valid, consistent with the "any address is valid" rule.
+  const uint64_t otherBar = 9;
+  const uint64_t farWordIndex = 1000;
+  backend.writeBarContentsWord(otherBar, farWordIndex, 0x22222222);
+  BOOST_TEST(backend.readBarContentsWord(otherBar, farWordIndex) == 0x22222222);
+
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// The check that the transfer size is a multiple of the word size is unchanged.
+BOOST_AUTO_TEST_CASE(testChunkedTransferSizeMustBeMultipleOfWordSize) {
+  std::string mapFile = writeSingleRegisterJmap(0, 0);
+  TestableDummyBackend backend(mapFile);
+  backend.open();
+
+  uint64_t bar = 0;
+  uint64_t address = 0;
+  int32_t word = 0;
+  BOOST_CHECK_THROW(backend.read(bar, address, &word, 3), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(backend.write(bar, address, &word, 3), ChimeraTK::logic_error);
+
+  std::remove(mapFile.c_str());
+}
