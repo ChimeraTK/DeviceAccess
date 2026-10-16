@@ -79,6 +79,8 @@ enforced, so no map content carrying the old key is in use.
 - the register catalogue
 - the Doxygen documentation
 - the test fixtures
+- the `selectedBy` mention in the `chimeratk-map-to-jmap` tool docstring
+(`tools/chimeratk-map-to-jmap:618`)
 - `NumericAddressedRegisterInfo::SelectedBy` becomes `GatedBy`. Its members
 change accordingly:
 - `selectedBy` becomes `gatedBy`
@@ -90,15 +92,15 @@ catalogue and the gate accessor.
 - The word "selection" is gone. The terms of the runtime aspect above are used
 instead. A register carrying a `gatedBy` is described with the adjective
 "gated", not with a second state word.
-- The `chimeratk-map-to-jmap` tool is unaffected, as it does not cover this
-feature.
+- The `chimeratk-map-to-jmap` tool does not cover this feature, apart from a
+stale `selectedBy` mention in its `_build_2d_descriptor` docstring. That
+mention is renamed too, so no `selectedBy` survives anywhere.
 
 ## Specifications
 
 Affected components:
 
-- `include/NumericAddressedLowLevelTransferElement.h` /
-`src/NumericAddressedLowLevelTransferElement.cc`:
+- `include/NumericAddressedLowLevelTransferElement.h` (header-only):
 - read the gate accessors
 - enforce the gate where a consumer's raw data is converted
 - `include/ReadCoordinator.h` / `src/ReadCoordinator.cc` (from CR-011): the
@@ -169,6 +171,10 @@ only on a read-only register
 gate").
 - The `value` member becomes an unsigned integer (`uint64_t`) in the schema,
 the parser and the catalogue.
+- `tools/chimeratk-map-to-jmap` does not implement this feature. Its only
+reference is a stale `selectedBy` mention in the `_build_2d_descriptor`
+docstring (`tools/chimeratk-map-to-jmap:618`), which the rename updates so
+no `selectedBy` survives.
 
 ### Gate in the low-level element
 
@@ -625,7 +631,9 @@ not skip a backend's override.
 
 ## Deferred issue
 
-- DI-1 [FOLDED-IN] Register-level `gatedBy` on a 2D register: the plan changes the documented behaviour. Today the parser applies a register-level `selectedBy` on a 2D register as the default for all channels (doc/jmapFormat.dox:406, tests/selectedByInheritance.jmap:112, tests/executables_src/testJsonMapFileParser.cpp:1283/1291), but CR-016 says it is 'recorded separately ... independent of the per-channel gates' and gates the whole block on the full-register accessor, while the 'Renamed format' secti...
-- DI-2 [FOLDED-IN] The full-register accessor of a 2D register is a `NumericAddressedBackendMuxedRegisterAccessor` (include/NumericAddressedBackendMuxedRegisterAccessor.h:106 getInternalElements() == {}, :108 replaceTransferElement() no-op, own doReadTransferSynchronously; CR-011 serves only the channel slices). It has no low-level element and no `ReadCoordinator` registration, so the planned `GatedByDecorator`+registration mechanism (and the 'the full-register accessor of a 2D register with a registe...
+- DI-1 [FOLDED-IN] Register-level `gatedBy` on a 2D register: the plan changes the documented behaviour. Today the parser applies a register-level `selectedBy` on a 2D register as the default for all channels (doc/jmapFormat.dox:406, tests/selectedByInheritance.jmap:112, tests/executables_src/testJsonMapFileParser.cpp:1283/1291), but CR-016 says it is 'recorded separately ... independent of the per-channel gates' and gates the whole block on the full-register accessor, while the 'Renamed format'...
+- DI-2 [FOLDED-IN] The full-register accessor of a 2D register is a `NumericAddressedBackendMuxedRegisterAccessor` (include/NumericAddressedBackendMuxedRegisterAccessor.h:106 getInternalElements() == {}, :108 replaceTransferElement() no-op, own doReadTransferSynchronously; CR-011 serves only the channel slices). It has no low-level element and no `ReadCoordinator` registration, so the planned `GatedByDecorator`+registration mechanism (and the 'the full-register accessor of a 2D register with a r...
 - DI-3 [FOLDED-IN] The Requirements claim `NumericAddressedRegisterInfo::registerSelectedBy` becomes `registerGatedBy`, but no such member exists anywhere in the code (src/JsonMapFileParser.cc stores the register-level gate only in `Channel::selectedBy`/`info.channels.back().selectedBy`). The Specifications correctly call `registerGatedBy` a new member, so the Requirements wording is factually wrong and internally inconsistent.
 - DI-4 [FOLDED-IN] The plan does not extend the existing parser validations to the new register-level `registerGatedBy`: the checks that a selector register exists, that it is not itself gated, and that `selectedBy` is used only on read-only registers iterate `reg.channels[].selectedBy` (src/JsonMapFileParser.cc:695-721 and 365-378). Stored separately, a register-level gate would bypass them, accepting an undefined or gated selector register.
+- DI-5 [NEW] Specifications lists a non-existent affected component `src/NumericAddressedLowLevelTransferElement.cc`; `NumericAddressedLowLevelTransferElement` is header-only (include/NumericAddressedLowLevelTransferElement.h, 212 lines) and no such .cc exists anywhere in the tree (also absent in CR-011, which named only the header).
+- DI-6 [NEW] Requirements claim the word 'selection' is eliminated, but Specifications state the `chimeratk-map-to-jmap` tool is unaffected, while tools/chimeratk-map-to-jmap:618 (`_build_2d_descriptor` docstring) still names the key `selectedBy`; the two statements conflict and a stale mention survives the rename scope.
