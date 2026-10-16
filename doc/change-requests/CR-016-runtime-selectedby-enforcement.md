@@ -32,10 +32,12 @@ provides.
 - 2D register:
    - Every channel slice has its own effective gate.
    - A closed slice is faulty while the open slices of the same read stay valid.
-   - A `gatedBy` on the register itself gates the whole 2D block on the
-     full-register accessor.
-   - That register-level gate is independent of the per-channel gates of the
-     slices.
+   - A `gatedBy` on the register itself is recorded in the new
+     `NumericAddressedRegisterInfo::registerGatedBy`.
+   - That register-level gate gates only the full-register accessor of the
+     block.
+   - It is not inherited by the channel slices. The slices stay gated only by
+     their own per-channel `gatedBy`.
    - A register-level `gatedBy` on a 2D register becomes legal input:
       - the schema accepts it
       - the parser accepts it and records it separately from the per-channel
@@ -80,8 +82,9 @@ Aspect: unification of the feature wording on "gate".
 - `NumericAddressedRegisterInfo::SelectedBy` becomes `GatedBy`. Its members
   change accordingly:
    - `selectedBy` becomes `gatedBy`
-   - `registerSelectedBy` becomes `registerGatedBy`
    - `val` becomes `uint64_t` (was `int64_t`)
+   - `registerGatedBy` is a new member. It carries the register-level gate of a
+     2D register, separate from the per-channel gates.
 - The gate value is unsigned everywhere: the jmap `value`, the parser, the
   catalogue and the gate accessor.
 - The word "selection" is gone. The terms of the runtime aspect above are used
@@ -117,6 +120,10 @@ Affected components:
   result and suppresses the delivery through a closed gate.
 - `include/NumericAddressedBackend.h` / `src/NumericAddressedBackend.cc`: wrap
   the synchronous accessor of a gated register in `GatedByDecorator`.
+- `include/NumericAddressedBackendMuxedRegisterAccessor.h` /
+  `src/NumericAddressedBackendMuxedRegisterAccessor.cc`: enforce the
+  register-level gate of a 2D register on the full-register accessor, which
+  the `GatedByDecorator` path does not reach.
 - `include/NumericAddressedRegisterCatalogue.h` /
   `src/NumericAddressedRegisterCatalogue.cc`:
    - new `registerGatedBy` member
@@ -127,6 +134,9 @@ Affected components:
    - rename the key and the type
    - make the gate `value` unsigned, so a negative `value` is rejected
    - reword the diagnostics to the gate wording
+   - apply the existing selector checks to `registerGatedBy`: the selector
+     register must exist, must not itself be gated, and the gate is allowed
+     only on a read-only register
 - `doc/jmapFormat.dox`:
    - rename the key
    - rename the anchor `jmap_channel_selection`
@@ -153,8 +163,10 @@ Affected components:
    - `muxedPolled.jmap`
 - The parser test names and expectations follow.
 - The rename is otherwise a plain substitution of the wording. The grammar of
-  `gatedBy` (an object with `register` and `value`) is unchanged, as are the
-  inheritance rules.
+  `gatedBy` (an object with `register` and `value`) is unchanged.
+- The per-channel inheritance rules are unchanged. A register-level gate on a
+  2D register is no longer inherited by its channels (see "2D register-level
+  gate").
 - The `value` member becomes an unsigned integer (`uint64_t`) in the schema,
   the parser and the catalogue.
 
@@ -225,10 +237,12 @@ Affected components:
 - The gate is built into the registration of:
    - a gated scalar/1D accessor
    - every gated channel slice of a 2D register
-   - the full-register accessor of a 2D register with a register-level
-     `gatedBy`
-- CR-011 registers every read consumer, strided or not. The gate is therefore
-  attached uniformly instead of being special-cased per conversion path.
+- The full-register accessor of a 2D register with a register-level `gatedBy`
+  is not a registration consumer. It enforces the gate itself (see "2D
+  register-level gate").
+- CR-011 registers every read consumer of the low-level element, strided or
+  not. The gate is therefore attached uniformly instead of being special-cased
+  per conversion path.
 - The accessor's `doPostRead()` copies two things into its own buffer:
    - the payload, from the staging buffer
    - the validity, from its registration
@@ -242,9 +256,25 @@ Affected components:
 
 - The parser records a register-level `gatedBy` on a 2D register in
   `NumericAddressedRegisterInfo::registerGatedBy`. It is separate from the
-  per-channel `gatedBy` its channels carry.
+  per-channel `gatedBy` its channels carry, and it is not inherited by them.
 - The per-channel gates are unaffected. They continue to gate the channel
   slices.
+- The full-register accessor of a 2D register is a
+  `NumericAddressedBackendMuxedRegisterAccessor`. It is not one of the
+  registration consumers:
+   - it has no low-level transfer element (`getInternalElements()` is empty)
+   - `replaceTransferElement()` is a no-op
+   - it owns its transfer, so it registers nothing with a
+     `detail::ReadCoordinator`
+- The `GatedByDecorator` and the registration mechanism therefore do not
+  reach it. It enforces the register-level gate itself:
+   - it obtains the gating register accessor the same way as the other
+     accessors (`getRegisterAccessor<uint64_t>(...)`, scalar check, see
+     "Accessor construction")
+   - it reads it once in its transfer phase, next to the raw block read
+   - a closed gate marks the whole block `DataValidity::faulty` in
+     `doPostRead()` instead of `ok`, so the payload is unspecified
+- The channel slices keep using the per-consumer mechanism above.
 - `schemas/jmap.schema.json` no longer forbids `gatedBy` on a register with
   `channels`.
 - `doc/jmapFormat.dox` describes the register-level gate.
@@ -276,7 +306,8 @@ Affected components:
 - The gate result is per consumer. A registration belongs to exactly one
   consumer, so:
    - each slice of a 2D register carries its own gate result
-   - the full-register accessor carries its own gate result
+   - the full-register accessor of a 2D register with a register-level gate
+     determines its own result directly, not through a registration
    - the result is never shared
 - `GatedByDecorator` reads the result through the registration it resolved at
   construction. A transfer-group merge re-seats the registration in place when
@@ -472,6 +503,13 @@ stack as above, reached through the object
 - Parser and catalogue:
    - a register-level `gatedBy` on a 2D register is accepted and recorded in
      `registerGatedBy`, independent of the per-channel values
+   - the former inheritance of a register-level gate into the channel slices is
+     gone: the channels report no gate unless they carry one of their own (this
+     replaces the expectations for `/REG2D_TOP` in
+     `testJsonMapFileParser.cpp:1283` and `:1291`)
+   - the extended selector checks apply to `registerGatedBy`: an undefined
+     selector register, a gated selector register and a gate on a writable
+     register are rejected
    - a register without `gatedBy` reports no gate (regression)
 - Polled scalar/1D (`testNumericAddressedBackendRegisterAccessor.cpp`):
    - an open gate returns `DataValidity::ok` and the data
@@ -489,7 +527,8 @@ stack as above, reached through the object
    - the parser rejects a negative `value`
 - Polled 2D (`testMultiplexedDataAccesor.cpp`):
    - per-channel gating of the slices within one read
-   - register-level whole-block gate on the full-register accessor
+   - register-level whole-block gate on the full-register accessor, enforced
+     in `NumericAddressedBackendMuxedRegisterAccessor`
    - independence of the two gates on a register that uses both
 - Async (`testAsyncRead.cpp`, new fixture `tests/gatedByInterrupt.jmap`):
    - open-gate interrupts deliver a new value
@@ -583,3 +622,10 @@ stack as above, reached through the object
   `NumericAddressedBackend::getSyncRegisterAccessor()`: rejected.
   `getRegisterAccessor()` is synchronous without `wait_for_new_data` and does
   not skip a backend's override.
+
+## Deferred issue
+
+- DI-1 [NEW] Register-level `gatedBy` on a 2D register: the plan changes the documented behaviour. Today the parser applies a register-level `selectedBy` on a 2D register as the default for all channels (doc/jmapFormat.dox:406, tests/selectedByInheritance.jmap:112, tests/executables_src/testJsonMapFileParser.cpp:1283/1291), but CR-016 says it is 'recorded separately ... independent of the per-channel gates' and gates the whole block on the full-register accessor, while the 'Renamed format' section also claims 'the inheritance rules are unchanged'. The user decided: record it separately, gate only the full-register accessor, drop the per-channel inheritance of a register-level gate, and update the dox, fixtures and parser tests accordingly.
+- DI-2 [NEW] The full-register accessor of a 2D register is a `NumericAddressedBackendMuxedRegisterAccessor` (include/NumericAddressedBackendMuxedRegisterAccessor.h:106 getInternalElements() == {}, :108 replaceTransferElement() no-op, own doReadTransferSynchronously; CR-011 serves only the channel slices). It has no low-level element and no `ReadCoordinator` registration, so the planned `GatedByDecorator`+registration mechanism (and the 'the full-register accessor of a 2D register with a register-level gatedBy' bullet in 'Accessor construction') cannot enforce a gate there. The class is absent from the affected-components list and from the specification.
+- DI-3 [NEW] The Requirements claim `NumericAddressedRegisterInfo::registerSelectedBy` becomes `registerGatedBy`, but no such member exists anywhere in the code (src/JsonMapFileParser.cc stores the register-level gate only in `Channel::selectedBy`/`info.channels.back().selectedBy`). The Specifications correctly call `registerGatedBy` a new member, so the Requirements wording is factually wrong and internally inconsistent.
+- DI-4 [NEW] The plan does not extend the existing parser validations to the new register-level `registerGatedBy`: the checks that a selector register exists, that it is not itself gated, and that `selectedBy` is used only on read-only registers iterate `reg.channels[].selectedBy` (src/JsonMapFileParser.cc:695-721 and 365-378). Stored separately, a register-level gate would bypass them, accepting an undefined or gated selector register.
