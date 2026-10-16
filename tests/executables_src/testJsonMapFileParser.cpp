@@ -25,19 +25,19 @@ using namespace boost::unit_test_framework;
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 
-// Helper used by the selectedBy fault tests below: load simpleJsonFile.jmap as the base map, overwrite the
-// selectedBy of the existing COLLISION/FD/Sel0 channel with the supplied (possibly malformed) one, write the result
-// to <outFile>, then parse it. This replaces the standalone selectedBy*.jmap fixtures: the fault is injected into an
+// Helper used by the gatedBy fault tests below: load simpleJsonFile.jmap as the base map, overwrite the
+// gatedBy of the existing COLLISION/FD/Sel0 channel with the supplied (possibly malformed) one, write the result
+// to <outFile>, then parse it. This replaces the standalone gatedBy*.jmap fixtures: the fault is injected into an
 // existing entry of the full simpleJsonFile map (via nlohmann-json) and the produced file is what gets parsed, so no
 // separate fault-only map files need to be kept.
-static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue>
-    parseInjectedSelectedByFault(const std::string& outFile, const nlohmann::json& selectedBy) {
+static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue> parseInjectedGatedByFault(
+    const std::string& outFile, const nlohmann::json& gatedBy) {
   std::ifstream base("simpleJsonFile.jmap");
   nlohmann::json map = nlohmann::json::parse(base);
 
-  // Overwrite the selectedBy of an existing channel (COLLISION/FD/Sel0) already carrying one, so the fault is
+  // Overwrite the gatedBy of an existing channel (COLLISION/FD/Sel0) already carrying one, so the fault is
   // injected into an existing entry rather than introducing a new register.
-  map["addressSpace"]["COLLISION"]["children"]["FD"]["channels"]["Sel0"]["selectedBy"] = selectedBy;
+  map["addressSpace"]["COLLISION"]["children"]["FD"]["channels"]["Sel0"]["gatedBy"] = gatedBy;
 
   std::ofstream(outFile) << map.dump(2);
   return ChimeraTK::MapFileParser::parse(outFile);
@@ -45,7 +45,7 @@ static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::Metada
 
 // Helper used by the map format version tests below: load simpleJsonFile.jmap as the base map, set the top-level
 // mapFormatVersion entry to the supplied value (or remove it when the value is null), write the result to <outFile>,
-// then parse it. As with the selectedBy fault helper above, this avoids keeping a set of near-identical variant
+// then parse it. As with the gatedBy fault helper above, this avoids keeping a set of near-identical variant
 // fixtures: the version under test is injected into an existing full map and the produced file is what gets parsed.
 static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue> parseWithMapFormatVersion(
     const std::string& outFile, const nlohmann::json& version) {
@@ -155,9 +155,9 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     auto reg = regs.getBackendRegister("/SCALAR");
     BOOST_TEST(reg.nElements == 1);
     BOOST_REQUIRE(reg.channels.size() == 1);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/MUX");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[0].gatedBy->regPath == "/MUX");
+    BOOST_TEST(reg.channels[0].gatedBy->val == 0);
   }
   {
     auto reg = regs.getBackendRegister("APP.STATUS.ProbeLimiter");
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_REQUIRE(reg.channels.size() == 5);
 
     for(const auto& channel : reg.channels) {
-      BOOST_TEST(!channel.selectedBy);
+      BOOST_TEST(!channel.gatedBy);
     }
 
     BOOST_TEST(reg.channels[0].bitOffset == 0);
@@ -357,8 +357,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
     BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
-    // A slice of a non-muxed channel carries no selector
-    BOOST_TEST(!reg.channels[0].selectedBy);
+    // A slice of a non-muxed channel carries no gating
+    BOOST_TEST(!reg.channels[0].gatedBy);
     BOOST_TEST(reg.doubleBuffer.has_value());
     BOOST_TEST(reg.doubleBuffer->address == 0x40200);
     BOOST_TEST(reg.doubleBuffer->enableRegisterPath == "/DAQ.DOUBLE_BUF.ENA");
@@ -438,8 +438,8 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_CHECK(reg.channels[0].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].getRawType() == ChimeraTK::DataType("int16"));
-    // A slice of a non-muxed SIMPLE2D channel carries no selector
-    BOOST_TEST(!reg.channels[0].selectedBy);
+    // A slice of a non-muxed SIMPLE2D channel carries no gating
+    BOOST_TEST(!reg.channels[0].gatedBy);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.FD");
@@ -458,36 +458,36 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[0].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].gatedBy->val == 0);
 
     BOOST_TEST(reg.channels[1].bitOffset == 0);
     BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[1].width == 32);
     BOOST_TEST(reg.channels[1].nFractionalBits == 0);
     BOOST_TEST(reg.channels[1].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[1].selectedBy);
-    BOOST_TEST(reg.channels[1].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+    BOOST_REQUIRE(reg.channels[1].gatedBy);
+    BOOST_TEST(reg.channels[1].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[1].gatedBy->val == 1);
 
     BOOST_TEST(reg.channels[2].bitOffset == 2 * 8);
     BOOST_CHECK(reg.channels[2].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[2].width == 16);
     BOOST_TEST(reg.channels[2].nFractionalBits == -2);
     BOOST_TEST(reg.channels[2].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[2].selectedBy);
-    BOOST_TEST(reg.channels[2].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[2].selectedBy->val == 0);
+    BOOST_REQUIRE(reg.channels[2].gatedBy);
+    BOOST_TEST(reg.channels[2].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[2].gatedBy->val == 0);
 
     BOOST_TEST(reg.channels[3].bitOffset == 4 * 8);
     BOOST_CHECK(reg.channels[3].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[3].width == 32);
     BOOST_TEST(reg.channels[3].nFractionalBits == 0);
     BOOST_TEST(reg.channels[3].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[3].selectedBy);
-    BOOST_TEST(reg.channels[3].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[3].selectedBy->val == 1);
+    BOOST_REQUIRE(reg.channels[3].gatedBy);
+    BOOST_TEST(reg.channels[3].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[3].gatedBy->val == 1);
     BOOST_TEST(reg.isBitRange == false);
   }
   {
@@ -535,36 +535,36 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[0].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].gatedBy->val == 0);
 
     BOOST_TEST(reg.channels[1].bitOffset == 0);
     BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[1].width == 32);
     BOOST_TEST(reg.channels[1].nFractionalBits == 0);
     BOOST_TEST(reg.channels[1].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[1].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[1].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[1].gatedBy->val == 1);
 
     BOOST_TEST(reg.channels[2].bitOffset == 2 * 8);
     BOOST_CHECK(reg.channels[2].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[2].width == 16);
     BOOST_TEST(reg.channels[2].nFractionalBits == -2);
     BOOST_TEST(reg.channels[2].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[2].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[2].selectedBy->val == 0);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[2].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[2].gatedBy->val == 0);
 
     BOOST_TEST(reg.channels[3].bitOffset == 4 * 8);
     BOOST_CHECK(reg.channels[3].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[3].width == 32);
     BOOST_TEST(reg.channels[3].nFractionalBits == 0);
     BOOST_TEST(reg.channels[3].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[3].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[3].selectedBy->val == 1);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[3].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[3].gatedBy->val == 1);
     BOOST_TEST(reg.isBitRange == false);
   }
   {
@@ -581,36 +581,36 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
     BOOST_TEST(reg.channels[0].width == 16);
     BOOST_TEST(reg.channels[0].nFractionalBits == -2);
     BOOST_TEST(reg.channels[0].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 0);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[0].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].gatedBy->val == 0);
 
     BOOST_TEST(reg.channels[1].bitOffset == 0);
     BOOST_CHECK(reg.channels[1].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[1].width == 32);
     BOOST_TEST(reg.channels[1].nFractionalBits == 0);
     BOOST_TEST(reg.channels[1].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[1].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[1].selectedBy->val == 1);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[1].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[1].gatedBy->val == 1);
 
     BOOST_TEST(reg.channels[2].bitOffset == 2 * 8);
     BOOST_CHECK(reg.channels[2].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[2].width == 16);
     BOOST_TEST(reg.channels[2].nFractionalBits == -2);
     BOOST_TEST(reg.channels[2].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[2].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[2].selectedBy->val == 0);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[2].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[2].gatedBy->val == 0);
 
     BOOST_TEST(reg.channels[3].bitOffset == 4 * 8);
     BOOST_CHECK(reg.channels[3].dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT);
     BOOST_TEST(reg.channels[3].width == 32);
     BOOST_TEST(reg.channels[3].nFractionalBits == 0);
     BOOST_TEST(reg.channels[3].signedFlag == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[3].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[3].selectedBy->val == 1);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[3].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[3].gatedBy->val == 1);
     BOOST_TEST(reg.isBitRange == false);
   }
   {
@@ -973,31 +973,31 @@ BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeChildBuf0CollisionThrows) {
 
 /**********************************************************************************************************************/
 
-// A bit-field child slice of a muxed channel inherits the channel's selectedBy condition (fixture
-// simpleJsonFile.jmap DAQ.MUXED_WITH_STATUS, which combines a per-channel 'selectedBy' with a 'children'
-// dictionary). Every child slice carries the same register+value selector as the parent channel slice.
-BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeMuxedChildSelectedBy) {
+// A bit-field child slice of a muxed channel inherits the channel's gatedBy condition (fixture
+// simpleJsonFile.jmap DAQ.MUXED_WITH_STATUS, which combines a per-channel 'gatedBy' with a 'children'
+// dictionary). Every child slice carries the same register+value gating as the parent channel slice.
+BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeMuxedChildGatedBy) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
 
-  // The muxed parent channel slice inherits the selectedBy condition.
+  // The muxed parent channel slice inherits the gatedBy condition.
   {
     auto reg = regs.getBackendRegister("DAQ.MUXED_WITH_STATUS.StatusCh0");
     BOOST_REQUIRE(reg.channels.size() == 1);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 2);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[0].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].gatedBy->val == 2);
     BOOST_TEST(reg.isBitRange == false);
   }
-  // Each bit-field child slice of the muxed channel inherits the channel's selectedBy condition.
+  // Each bit-field child slice of the muxed channel inherits the channel's gatedBy condition.
   {
     auto reg = regs.getBackendRegister("DAQ.MUXED_WITH_STATUS.StatusCh0.ProbeLimiter");
     BOOST_REQUIRE(reg.channels.size() == 1);
     BOOST_TEST(reg.channels[0].bitOffset == 0);
     BOOST_TEST(reg.channels[0].width == 1);
     BOOST_TEST(reg.isBitRange == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 2);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[0].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].gatedBy->val == 2);
   }
   {
     auto reg = regs.getBackendRegister("DAQ.MUXED_WITH_STATUS.StatusCh0.ErrorCounter");
@@ -1005,9 +1005,9 @@ BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeMuxedChildSelectedBy) {
     BOOST_TEST(reg.channels[0].bitOffset == 2);
     BOOST_TEST(reg.channels[0].width == 3);
     BOOST_TEST(reg.isBitRange == true);
-    BOOST_REQUIRE(reg.channels[0].selectedBy);
-    BOOST_TEST(reg.channels[0].selectedBy->regPath == "/DAQ/MUX_SEL");
-    BOOST_TEST(reg.channels[0].selectedBy->val == 2);
+    BOOST_REQUIRE(reg.channels[0].gatedBy);
+    BOOST_TEST(reg.channels[0].gatedBy->regPath == "/DAQ/MUX_SEL");
+    BOOST_TEST(reg.channels[0].gatedBy->val == 2);
   }
 }
 
@@ -1023,9 +1023,9 @@ BOOST_AUTO_TEST_CASE(TestDoubleBufferDiffBarThrows) {
 
 /**********************************************************************************************************************/
 
-// ChannelInfo::operator== (and !=) must include the selectedByRegister/selectedByValue members. Two channel infos
-// that differ only in their selector must compare unequal.
-BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
+// ChannelInfo::operator== (and !=) must include the gatedByRegister/gatedByValue members. Two channel infos
+// that differ only in their gating must compare unequal.
+BOOST_AUTO_TEST_CASE(TestChannelInfoEqualityGatedBy) {
   NumericAddressedRegisterInfo::ChannelInfo a;
   NumericAddressedRegisterInfo::ChannelInfo b;
 
@@ -1038,96 +1038,104 @@ BOOST_AUTO_TEST_CASE(TestChannelInfoEqualitySelectedBy) {
     c.nFractionalBits = 0;
     c.signedFlag = true;
     c.rawType = ChimeraTK::DataType(ChimeraTK::DataType::int16);
-    c.selectedBy = std::nullopt;
+    c.gatedBy = std::nullopt;
   };
   initChannelInfo(a);
   initChannelInfo(b);
 
-  // Two identically initialized infos are equal (both unconditional: empty register, default value).
+  // Two identically initialized infos are equal (both ungated: empty register, default value).
   BOOST_CHECK(a == b);
   BOOST_CHECK(!(a != b));
 
-  BOOST_REQUIRE(!a.selectedBy);
-  BOOST_REQUIRE(!b.selectedBy);
+  BOOST_REQUIRE(!a.gatedBy);
+  BOOST_REQUIRE(!b.gatedBy);
 
-  // Differing only in selectedByRegister -> unequal.
-  b.selectedBy.emplace(RegisterPath("/DAQ/MUX_SEL"), 0);
+  // Differing only in gatedByRegister -> unequal.
+  b.gatedBy.emplace(RegisterPath("/DAQ/MUX_SEL"), 0);
   BOOST_CHECK(a != b);
   BOOST_CHECK(!(a == b));
 
   // Same register again -> equal.
-  a.selectedBy.emplace(RegisterPath("/DAQ/MUX_SEL"), 0);
+  a.gatedBy.emplace(RegisterPath("/DAQ/MUX_SEL"), 0);
   BOOST_CHECK(a == b);
 
-  // Differing only in selectedByValue -> unequal.
-  b.selectedBy->val = 1;
+  // Differing only in gatedByValue -> unequal.
+  b.gatedBy->val = 1;
   BOOST_CHECK(a != b);
   BOOST_CHECK(!(a == b));
 }
 
 /**********************************************************************************************************************/
 
-// selectedBy with only 'register', no 'value'. Desired semantics (documented): both fields are required, so the
+// gatedBy with only 'register', no 'value'. Desired semantics (documented): both fields are required, so the
 // parser must reject the map with std::logic_error (a missing 'value' must not silently default). NOTE: the current
 // lax deserializer does not yet enforce this; this test documents the desired behaviour.
-BOOST_AUTO_TEST_CASE(TestSelectedByMissingValue) {
+BOOST_AUTO_TEST_CASE(TestGatedByMissingValue) {
   nlohmann::json sel{{"register", "COLLISION.MUX"}}; // missing 'value'
-  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingValue.jmap", sel), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseInjectedGatedByFault("gatedByMissingValue.jmap", sel), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
 
-// selectedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
+// gatedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
 // because both fields are required. NOTE: expected std::logic_error, not guaranteed by the current lax deserializer.
-BOOST_AUTO_TEST_CASE(TestSelectedByMissingRegister) {
+BOOST_AUTO_TEST_CASE(TestGatedByMissingRegister) {
   nlohmann::json sel{{"value", 0}}; // missing 'register'
-  BOOST_CHECK_THROW(parseInjectedSelectedByFault("selectedByMissingRegister.jmap", sel), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseInjectedGatedByFault("gatedByMissingRegister.jmap", sel), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
 
-// S1: 'selectedBy' referencing a selector register that does not exist in the catalogue must be rejected.
-BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotFound) {
+// The gate value is unsigned: a negative 'value' must be rejected by the parser.
+BOOST_AUTO_TEST_CASE(TestGatedByNegativeValue) {
+  nlohmann::json sel{{"register", "COLLISION.MUX"}, {"value", -1}};
+  BOOST_CHECK_THROW(parseInjectedGatedByFault("gatedByNegativeValue.jmap", sel), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+// S1: 'gatedBy' referencing a gating register that does not exist in the catalogue must be rejected.
+BOOST_AUTO_TEST_CASE(TestGatedByGatingNotFound) {
   nlohmann::json map;
   map["mapFormatVersion"] = "1.0";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
-  // APP.DATA gates on a selector register 'APP.NONEXISTENT' that is never declared.
+  // APP.DATA gates on a gating register 'APP.NONEXISTENT' that is never declared.
   map["addressSpace"]["APP"]["children"]["DATA"] = {{"numberOfElements", 1}, {"access", "RO"},
-      {"selectedBy", {{"register", "APP.NONEXISTENT"}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 4}}},
+      {"gatedBy", {{"register", "APP.NONEXISTENT"}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 4}}},
       {"representation", {{"width", 32}}}};
-  std::string tmpFile = "selectedBySelectorNotFound_" + std::to_string(getpid()) + ".jmap";
+  std::string tmpFile = "gatedByGatingNotFound_" + std::to_string(getpid()) + ".jmap";
   std::ofstream(tmpFile) << map.dump(2);
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
 }
 
-// S2: a selector register that is itself conditionally enabled by a 'selectedBy' of its own must be rejected: a
-// selector drives the gate of another register and must therefore be readable unconditionally.
-BOOST_AUTO_TEST_CASE(TestSelectedBySelectorItselfGated) {
+// S2: a gating register that is itself gated by a 'gatedBy' of its own must be rejected: a
+// gating drives the gate of another register and must therefore be readable unconditionally.
+BOOST_AUTO_TEST_CASE(TestGatedByGatingItselfGated) {
   nlohmann::json map;
   map["mapFormatVersion"] = "1.0";
   map["interruptHandler"] = nlohmann::json::object();
   map["metadata"] = nlohmann::json::object();
-  // APP.SEL is itself gated by APP.MASTER_SEL, and APP.DATA gates on APP.SEL. The selector APP.SEL must not be gated.
+  // APP.SEL is itself gated by APP.MASTER_SEL, and APP.DATA gates on APP.SEL. The gating APP.SEL must not be gated.
   map["addressSpace"]["APP"]["children"]["SEL"] = {{"numberOfElements", 1}, {"access", "RO"},
-      {"selectedBy", {{"register", "APP.MASTER_SEL"}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 0}}},
+      {"gatedBy", {{"register", "APP.MASTER_SEL"}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 0}}},
       {"representation", {{"width", 32}}}};
   map["addressSpace"]["APP"]["children"]["MASTER_SEL"] = {{"numberOfElements", 1}, {"access", "RO"},
       {"address", {{"channel", 0}, {"offset", 8}}}, {"representation", {{"width", 32}}}};
   map["addressSpace"]["APP"]["children"]["DATA"] = {{"numberOfElements", 1}, {"access", "RO"},
-      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 4}}},
+      {"gatedBy", {{"register", "APP.SEL"}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 4}}},
       {"representation", {{"width", 32}}}};
-  std::string tmpFile = "selectedBySelectorItselfGated_" + std::to_string(getpid()) + ".jmap";
+  std::string tmpFile = "gatedByGatingItselfGated_" + std::to_string(getpid()) + ".jmap";
   std::ofstream(tmpFile) << map.dump(2);
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
-// Helper used by the selectedBy read-only restriction tests (PR1-PR5): build a minimal map in a temp file and parse
-// it. The map carries a selector register APP.SEL and a register APP.DATA whose 'selectedBy' points to it; the
+// Helper used by the gatedBy read-only restriction tests (PR1-PR5): build a minimal map in a temp file and parse
+// it. The map carries a gating register APP.SEL and a register APP.DATA whose 'gatedBy' points to it; the
 // register's access is controlled by the caller. If 'access' is empty the 'access' member is omitted, defaulting to
 // READ_WRITE at parse time.
-static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture(
+static ChimeraTK::NumericAddressedRegisterCatalogue parseGatedByAccessFixture(
     const std::string& access, const nlohmann::json& dataExtra = nlohmann::json::object()) {
   nlohmann::json map;
   map["mapFormatVersion"] = "1.0";
@@ -1135,7 +1143,7 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture
   map["metadata"] = nlohmann::json::object();
   map["addressSpace"]["APP"]["children"]["SEL"] = {
       {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
-  nlohmann::json reg = {{"numberOfElements", 1}, {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}},
+  nlohmann::json reg = {{"numberOfElements", 1}, {"gatedBy", {{"register", "APP.SEL"}, {"value", 1}}},
       {"address", {{"channel", 0}, {"offset", 4}}}, {"representation", {{"width", 32}}}};
   if(!access.empty()) {
     reg["access"] = access;
@@ -1144,46 +1152,46 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByAccessFixture
     reg[it.key()] = it.value();
   }
   map["addressSpace"]["APP"]["children"]["DATA"] = reg;
-  std::string tmpFile = "selectedByAccess_" + std::to_string(getpid()) + ".jmap";
+  std::string tmpFile = "gatedByAccess_" + std::to_string(getpid()) + ".jmap";
   std::ofstream(tmpFile) << map.dump(2);
   return ChimeraTK::MapFileParser::parse(tmpFile).first;
 }
 
 /**********************************************************************************************************************/
 
-// PR1: 'selectedBy' on a register with Access::READ_WRITE must be rejected as a parsing error.
-BOOST_AUTO_TEST_CASE(TestSelectedByReadWriteRejected) {
-  BOOST_CHECK_THROW(parseSelectedByAccessFixture("RW"), ChimeraTK::logic_error);
+// PR1: 'gatedBy' on a register with Access::READ_WRITE must be rejected as a parsing error.
+BOOST_AUTO_TEST_CASE(TestGatedByReadWriteRejected) {
+  BOOST_CHECK_THROW(parseGatedByAccessFixture("RW"), ChimeraTK::logic_error);
 }
 
-// PR2: 'selectedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
-BOOST_AUTO_TEST_CASE(TestSelectedByWriteOnlyRejected) {
-  BOOST_CHECK_THROW(parseSelectedByAccessFixture("WO"), ChimeraTK::logic_error);
+// PR2: 'gatedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
+BOOST_AUTO_TEST_CASE(TestGatedByWriteOnlyRejected) {
+  BOOST_CHECK_THROW(parseGatedByAccessFixture("WO"), ChimeraTK::logic_error);
 }
 
-// PR3: 'selectedBy' on a register with Access::READ_ONLY is accepted.
-BOOST_AUTO_TEST_CASE(TestSelectedByReadOnlyAccepted) {
-  auto regs = parseSelectedByAccessFixture("RO");
+// PR3: 'gatedBy' on a register with Access::READ_ONLY is accepted.
+BOOST_AUTO_TEST_CASE(TestGatedByReadOnlyAccepted) {
+  auto regs = parseGatedByAccessFixture("RO");
   auto reg = regs.getBackendRegister("/APP/DATA");
-  BOOST_REQUIRE(reg.channels[0].selectedBy);
-  BOOST_TEST(reg.channels[0].selectedBy->regPath == "/APP/SEL");
-  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+  BOOST_REQUIRE(reg.channels[0].gatedBy);
+  BOOST_TEST(reg.channels[0].gatedBy->regPath == "/APP/SEL");
+  BOOST_TEST(reg.channels[0].gatedBy->val == 1);
 }
 
-// PR4: 'selectedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
+// PR4: 'gatedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
 // 'triggeredByInterrupt' (which implies read-only) instead of 'access'.
-BOOST_AUTO_TEST_CASE(TestSelectedByInterruptAccepted) {
-  auto regs = parseSelectedByAccessFixture("", {{"triggeredByInterrupt", nlohmann::json::array({0})}});
+BOOST_AUTO_TEST_CASE(TestGatedByInterruptAccepted) {
+  auto regs = parseGatedByAccessFixture("", {{"triggeredByInterrupt", nlohmann::json::array({0})}});
   auto reg = regs.getBackendRegister("/APP/DATA");
-  BOOST_REQUIRE(reg.channels[0].selectedBy);
-  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+  BOOST_REQUIRE(reg.channels[0].gatedBy);
+  BOOST_TEST(reg.channels[0].gatedBy->val == 1);
 }
 
 /**********************************************************************************************************************/
 
-// Helper used by PR5: build a map with a module 'MOD' that declares 'selectedBy', and a single descendant register
+// Helper used by PR5: build a map with a module 'MOD' that declares 'gatedBy', and a single descendant register
 // '<childName>' under it. The child's access is controlled by 'childAccess' (empty => READ_WRITE default).
-static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByInheritedAccessFixture(
+static ChimeraTK::NumericAddressedRegisterCatalogue parseGatedByInheritedAccessFixture(
     const std::string& childAccess, const std::string& childName) {
   nlohmann::json map;
   map["mapFormatVersion"] = "1.0";
@@ -1197,46 +1205,125 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByInheritedAcce
     child["access"] = childAccess;
   }
   map["addressSpace"]["APP"]["children"]["MOD"] = {
-      {"selectedBy", {{"register", "APP.SEL"}, {"value", 1}}}, {"children", {{childName, child}}}};
-  std::string tmpFile = "selectedByInheritedAccess_" + std::to_string(getpid()) + ".jmap";
+      {"gatedBy", {{"register", "APP.SEL"}, {"value", 1}}}, {"children", {{childName, child}}}};
+  std::string tmpFile = "gatedByInheritedAccess_" + std::to_string(getpid()) + ".jmap";
   std::ofstream(tmpFile) << map.dump(2);
   return ChimeraTK::MapFileParser::parse(tmpFile).first;
 }
 
-// PR5: a module/parent declaring 'selectedBy' must be rejected if any descendant register inheriting it is writable;
+// PR5: a module/parent declaring 'gatedBy' must be rejected if any descendant register inheriting it is writable;
 // the error points to the parent declaration, not the child.
-BOOST_AUTO_TEST_CASE(TestSelectedByInheritedWritableDescendantRejected) {
-  // A writable (default READ_WRITE) descendant inheriting the module's selectedBy is rejected.
-  BOOST_CHECK_THROW(parseSelectedByInheritedAccessFixture("", "CHILD"), ChimeraTK::logic_error);
+BOOST_AUTO_TEST_CASE(TestGatedByInheritedWritableDescendantRejected) {
+  // A writable (default READ_WRITE) descendant inheriting the module's gatedBy is rejected.
+  BOOST_CHECK_THROW(parseGatedByInheritedAccessFixture("", "CHILD"), ChimeraTK::logic_error);
   // An explicitly writable descendant is rejected as well.
-  BOOST_CHECK_THROW(parseSelectedByInheritedAccessFixture("WO", "CHILD"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(parseGatedByInheritedAccessFixture("WO", "CHILD"), ChimeraTK::logic_error);
   // A read-only descendant satisfies the constraint.
-  auto regs = parseSelectedByInheritedAccessFixture("RO", "CHILD");
+  auto regs = parseGatedByInheritedAccessFixture("RO", "CHILD");
   auto reg = regs.getBackendRegister("/APP/MOD/CHILD");
-  BOOST_REQUIRE(reg.channels[0].selectedBy);
-  BOOST_TEST(reg.channels[0].selectedBy->val == 1);
+  BOOST_REQUIRE(reg.channels[0].gatedBy);
+  BOOST_TEST(reg.channels[0].gatedBy->val == 1);
 }
 
 /**********************************************************************************************************************/
 
-// selectedBy on a non-2D (scalar) register is supported: it makes the single register conditional, so the
-// register's single channel must carry the selector.
-BOOST_AUTO_TEST_CASE(TestSelectedByOnScalar) {
+// The extended selector checks must also apply to a register-level 'gatedBy' on a 2D register, which is stored
+// separately in NumericAddressedRegisterInfo::registerGatedBy. Build a 2D register (with a single channel) that
+// carries a register-level gate on 'gatingRegister' and parse it. The gating register is declared by the caller.
+static void parse2DRegisterGatedByFixture(const std::string& gatingRegisterPath, bool declareGatingRegister,
+    bool gatingRegisterItselfGated, const std::string& registerAccess = "RO") {
+  nlohmann::json map;
+  map["mapFormatVersion"] = "1.0";
+  map["interruptHandler"] = nlohmann::json::object();
+  map["metadata"] = nlohmann::json::object();
+  if(declareGatingRegister) {
+    nlohmann::json gating = {
+        {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 0}}}, {"representation", {{"width", 32}}}};
+    if(gatingRegisterItselfGated) {
+      gating["gatedBy"] = {{"register", "APP.MASTER_SEL"}, {"value", 1}};
+      map["addressSpace"]["APP"]["children"]["MASTER_SEL"] = {
+          {"numberOfElements", 1}, {"address", {{"channel", 0}, {"offset", 8}}}, {"representation", {{"width", 32}}}};
+    }
+    // A 'gatedBy' may only sit on a read-only register, and the gating register itself must be readable.
+    gating["access"] = "RO";
+    map["addressSpace"]["APP"]["children"]["GATING"] = gating;
+  }
+  map["addressSpace"]["APP"]["children"]["REG2D"] = {{"access", registerAccess},
+      {"gatedBy", {{"register", gatingRegisterPath}, {"value", 1}}}, {"address", {{"channel", 0}, {"offset", 16}}},
+      {"numberOfElements", 4}, {"pitch", 4},
+      {"channels",
+          {{"C0",
+              {{"bytesPerElement", 2}, {"offset", 0}, {"representation", {{"type", "fixedPoint"}, {"width", 16}}}}}}}};
+  std::string tmpFile = "gatedBy2DRegisterLevel_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  ChimeraTK::MapFileParser::parse(tmpFile);
+}
+
+// A register-level 'gatedBy' on a 2D register referencing an undefined gating register is rejected.
+BOOST_AUTO_TEST_CASE(TestGatedByRegisterLevelGatingNotFound) {
+  BOOST_CHECK_THROW(parse2DRegisterGatedByFixture("APP.NONEXISTENT", /*declareGatingRegister=*/false,
+                        /*gatingRegisterItselfGated=*/false),
+      ChimeraTK::logic_error);
+}
+
+// A register-level 'gatedBy' on a 2D register whose gating register is itself gated is rejected.
+BOOST_AUTO_TEST_CASE(TestGatedByRegisterLevelGatingItselfGated) {
+  BOOST_CHECK_THROW(parse2DRegisterGatedByFixture("APP.GATING", /*declareGatingRegister=*/true,
+                        /*gatingRegisterItselfGated=*/true),
+      ChimeraTK::logic_error);
+}
+
+// A register-level 'gatedBy' on a 2D register that is writable is rejected.
+BOOST_AUTO_TEST_CASE(TestGatedByRegisterLevelWritableRejected) {
+  BOOST_CHECK_THROW(parse2DRegisterGatedByFixture("APP.GATING", /*declareGatingRegister=*/true,
+                        /*gatingRegisterItselfGated=*/false, /*registerAccess=*/"RW"),
+      ChimeraTK::logic_error);
+}
+
+// A valid register-level 'gatedBy' on a 2D register is accepted and recorded in registerGatedBy, independent of the
+// per-channel gates.
+BOOST_AUTO_TEST_CASE(TestGatedByRegisterLevelAccepted) {
+  parse2DRegisterGatedByFixture("APP.GATING", /*declareGatingRegister=*/true, /*gatingRegisterItselfGated=*/false);
+  auto regs = ChimeraTK::MapFileParser::parse("gatedBy2DRegisterLevel_" + std::to_string(getpid()) + ".jmap").first;
+  auto reg = regs.getBackendRegister("/APP/REG2D");
+  BOOST_REQUIRE(reg.registerGatedBy);
+  BOOST_TEST(reg.registerGatedBy->regPath == "/APP/GATING");
+  BOOST_TEST(reg.registerGatedBy->val == 1);
+  // The register-level gate is not inherited by the channel slice.
+  auto slice = regs.getBackendRegister("/APP/REG2D/C0");
+  BOOST_REQUIRE(slice.channels.size() == 1);
+  BOOST_CHECK(!slice.channels[0].gatedBy);
+}
+
+/**********************************************************************************************************************/
+
+// gatedBy on a non-2D (scalar) register is supported: it makes the single register valid, so the
+// register's single channel must carry the gate.
+BOOST_AUTO_TEST_CASE(TestGatedByOnScalar) {
   auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+  auto reg = regs.getBackendRegister("/DAQ/SINGLE_MUXED");
+  BOOST_REQUIRE(reg.channels.size() == 1);
+  BOOST_REQUIRE(reg.channels[0].gatedBy);
+  BOOST_TEST(reg.channels[0].gatedBy->regPath == "/DAQ/MUX_SEL");
+  BOOST_TEST(reg.channels[0].gatedBy->val == 0);
+  // A register without a gatedBy reports no gate (regression).
+  const auto& ungated = regs.getBackendRegister("/DAQ/MACRO_PULSE_NUMBER");
+  BOOST_REQUIRE(ungated.channels.size() == 1);
+  BOOST_CHECK(!ungated.channels[0].gatedBy);
 }
 
 /**********************************************************************************************************************/
 
-// A 'selectedBy' declared on a module or parent register is inherited by all descendant registers/channels that lack
+// A 'gatedBy' declared on a module or parent register is inherited by all descendant registers/channels that lack
 // their own declaration; the nearest ancestor's declaration wins for a node that has its own.
-BOOST_AUTO_TEST_CASE(TestSelectedByInheritance) {
-  auto [regs, metas] = ChimeraTK::MapFileParser::parse("selectedByInheritance.jmap");
+BOOST_AUTO_TEST_CASE(TestGatedByInheritance) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("gatedByInheritance.jmap");
 
-  // Helpers: assert the single channel of a scalar/1D register carries the given selector (or none).
-  auto checkRegSelectedBy = [](const NumericAddressedRegisterInfo& reg, const std::string& expectedReg,
-                                std::optional<int64_t> expectedVal) {
+  // Helpers: assert the single channel of a scalar/1D register carries the given gate (or none).
+  auto checkRegGatedBy = [](const NumericAddressedRegisterInfo& reg, const std::string& expectedReg,
+                             std::optional<uint64_t> expectedVal) {
     BOOST_REQUIRE(reg.channels.size() == 1);
-    const auto& sb = reg.channels[0].selectedBy;
+    const auto& sb = reg.channels[0].gatedBy;
     if(expectedVal.has_value()) {
       BOOST_REQUIRE(sb.has_value());
       BOOST_TEST(sb->regPath == expectedReg);
@@ -1247,12 +1334,12 @@ BOOST_AUTO_TEST_CASE(TestSelectedByInheritance) {
     }
   };
   // Helpers: assert each channel of a 2D register, in natural (byte-offset) order.
-  auto check2DChannelsSelectedBy = [](const NumericAddressedRegisterInfo& reg,
-                                       std::initializer_list<std::pair<std::string, int64_t>> expected) {
+  auto check2DChannelsGatedBy = [](const NumericAddressedRegisterInfo& reg,
+                                    std::initializer_list<std::pair<std::string, uint64_t>> expected) {
     BOOST_REQUIRE(reg.channels.size() == expected.size());
     size_t i = 0;
     for(const auto& [expectedReg, expectedVal] : expected) {
-      const auto& sb = reg.channels[i].selectedBy;
+      const auto& sb = reg.channels[i].gatedBy;
       BOOST_REQUIRE(sb.has_value());
       BOOST_TEST(sb->regPath == expectedReg);
       BOOST_TEST(sb->val == expectedVal);
@@ -1261,34 +1348,44 @@ BOOST_AUTO_TEST_CASE(TestSelectedByInheritance) {
   };
 
   // Module inheritance. REG_A inherits the module default; REG_B keeps its own (override).
-  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG_A"), "/APP/OUTPUT_SELECT", 3);
-  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG_B"), "/CTRL/MODE", 9);
+  checkRegGatedBy(regs.getBackendRegister("/INHERIT/REG_A"), "/APP/OUTPUT_SELECT", 3);
+  checkRegGatedBy(regs.getBackendRegister("/INHERIT/REG_B"), "/CTRL/MODE", 9);
 
-  // Nested inheritance (module -> submodule -> leaf). SUB carries no selectedBy, so LEAF inherits from INHERIT.
-  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/SUB/LEAF"), "/APP/OUTPUT_SELECT", 3);
+  // Nested inheritance (module -> submodule -> leaf). SUB carries no gatedBy, so LEAF inherits from INHERIT.
+  checkRegGatedBy(regs.getBackendRegister("/INHERIT/SUB/LEAF"), "/APP/OUTPUT_SELECT", 3);
 
   // 2D module default. All channels of a contained 2D register without own declarations inherit the module default.
-  check2DChannelsSelectedBy(
+  check2DChannelsGatedBy(
       regs.getBackendRegister("/INHERIT/CHANA"), {{"/APP/OUTPUT_SELECT", 3}, {"/APP/OUTPUT_SELECT", 3}});
 
-  // Channel override. D1 has its own per-channel selectedBy; D0 inherits the module default.
-  check2DChannelsSelectedBy(
-      regs.getBackendRegister("/INHERIT/CHANB"), {{"/APP/OUTPUT_SELECT", 3}, {"/CTRL/CHAN_SEL", 7}});
+  // Channel override. D1 has its own per-channel gatedBy; D0 inherits the module default.
+  check2DChannelsGatedBy(regs.getBackendRegister("/INHERIT/CHANB"), {{"/APP/OUTPUT_SELECT", 3}, {"/CTRL/CHAN_SEL", 7}});
 
-  // Register-module dual role. Its selectedBy applies to its own register AND to its descendant.
-  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN"), "/CTRL/DUAL", 5);
-  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN/CHILD"), "/CTRL/DUAL", 5);
+  // Register-module dual role. Its gatedBy applies to its own register AND to its descendant.
+  checkRegGatedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN"), "/CTRL/DUAL", 5);
+  checkRegGatedBy(regs.getBackendRegister("/INHERIT/REG2D_OWN/CHILD"), "/CTRL/DUAL", 5);
 
-  // Register-level selectedBy directly on a 2D register (no module) is valid and becomes the default for all channels.
-  check2DChannelsSelectedBy(regs.getBackendRegister("/REG2D_TOP"), {{"/APP/TOP_SEL", 11}, {"/APP/TOP_SEL", 11}});
+  // Register-level gatedBy directly on a 2D register (no module) is valid: it is recorded in the register's
+  // registerGatedBy and is NOT inherited by the channels, which stay ungated.
+  {
+    const auto& reg2dTop = regs.getBackendRegister("/REG2D_TOP");
+    BOOST_REQUIRE(reg2dTop.registerGatedBy.has_value());
+    BOOST_TEST(reg2dTop.registerGatedBy->regPath == "/APP/TOP_SEL");
+    BOOST_TEST(reg2dTop.registerGatedBy->val == 11);
+    for(const auto& channel : reg2dTop.channels) {
+      BOOST_CHECK(!channel.gatedBy);
+    }
+  }
 
-  // A leaf with no ancestor carrying selectedBy stays unconditional (no inheritance).
-  checkRegSelectedBy(regs.getBackendRegister("/LEAF_TOP"), "", std::nullopt);
+  // A leaf with no ancestor carrying gatedBy stays ungated (no inheritance).
+  checkRegGatedBy(regs.getBackendRegister("/LEAF_TOP"), "", std::nullopt);
 
-  // The 1D channel slices of an inherited 2D register also carry the effective selector.
-  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C0"), "/APP/OUTPUT_SELECT", 3);
-  checkRegSelectedBy(regs.getBackendRegister("/INHERIT/CHANA/C1"), "/APP/OUTPUT_SELECT", 3);
-  checkRegSelectedBy(regs.getBackendRegister("/REG2D_TOP/E0"), "/APP/TOP_SEL", 11);
+  // The 1D channel slices of an inherited 2D register also carry the effective gate.
+  checkRegGatedBy(regs.getBackendRegister("/INHERIT/CHANA/C0"), "/APP/OUTPUT_SELECT", 3);
+  checkRegGatedBy(regs.getBackendRegister("/INHERIT/CHANA/C1"), "/APP/OUTPUT_SELECT", 3);
+  // The channel slices of a 2D register with a register-level gate do NOT inherit it.
+  checkRegGatedBy(regs.getBackendRegister("/REG2D_TOP/E0"), "", std::nullopt);
+  checkRegGatedBy(regs.getBackendRegister("/REG2D_TOP/E1"), "", std::nullopt);
 }
 
 /**********************************************************************************************************************/

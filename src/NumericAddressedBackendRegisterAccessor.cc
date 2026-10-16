@@ -77,6 +77,22 @@ namespace ChimeraTK {
     _registerInfo.address += wordOffsetInRegister * _registerInfo.elementPitchBits / 8;
     _registerInfo.nElements = numberOfWords;
 
+    // Build the gate of this read consumer, if the register carries one (a scalar/1D register or a channel slice of a
+    // 2D register; a register-level gate on a 2D register is enforced by the full-register accessor instead). The
+    // gating register's accessor is obtained through the public entry point, so a backend override stays in play, and
+    // without wait_for_new_data, so it is synchronous for any correct backend. The gating register must be scalar; the
+    // parser already rejects a gating register that is itself gated, so no gate chain and hence no recursion occurs.
+    if(_registerInfo.channels.front().gatedBy.has_value()) {
+      const auto& gatedBy = *_registerInfo.channels.front().gatedBy;
+      auto gateInfo = _dev->getRegisterInfo(gatedBy.regPath);
+      if(gateInfo.getNumberOfChannels() != 1 || gateInfo.nElements > 1) {
+        throw ChimeraTK::logic_error("gatedBy: the gating register '" + gatedBy.regPath + "' of register '" +
+            registerPathName + "' must be a scalar register.");
+      }
+      _gateAccessor = _dev->getRegisterAccessor<uint64_t>(gatedBy.regPath, 0, 0, {});
+      _gateValue = gatedBy.val;
+    }
+
     // create low-level transfer element handling the actual data transfer to the hardware with raw data
     assert(_registerInfo.elementPitchBits % 8 == 0);
     _rawAccessor = boost::make_shared<NumericAddressedLowLevelTransferElement>(
@@ -143,15 +159,16 @@ namespace ChimeraTK {
     }
 
     // The conversion has already been performed by the raw element's read coordinator into the staging buffer; swap it
-    // into the application buffer. Data and meta data are updated together below, and the buffers stay unchanged when
-    // hasNewData is false.
+    // into the application buffer. The validity is the consumer's own, computed by the coordinator (faulty while the
+    // gate is closed). Data and meta data are updated together below, and the buffers stay unchanged when hasNewData is
+    // false.
     buffer_2D[0].swap(_readRegistration.staging());
+    this->_dataValidity = _readRegistration.validity();
 
     // we don't put the setting of the version number into the PrePostActionImplementor
     // because it does not need template specialisation, and the implementer does not
     // know about _versionNumber. It's just easier here.
     this->_versionNumber = _rawAccessor->getVersionNumber();
-    this->_dataValidity = _rawAccessor->dataValidity();
   }
 
   /********************************************************************************************************************/
@@ -328,7 +345,7 @@ namespace ChimeraTK {
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::registerWithReadCoordinator() {
     _readRegistration = detail::ReadCoordinator::Registration<UserType>(&_rawAccessor->_readCoordinator, _registerInfo,
         isRaw, _registerInfo.address - _rawAccessor->_startAddress, _registerInfo.elementPitchBits / 8,
-        _registerInfo.nElements);
+        _registerInfo.nElements, _gateAccessor, _gateValue);
   }
 
   /********************************************************************************************************************/

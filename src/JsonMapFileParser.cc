@@ -193,24 +193,37 @@ namespace ChimeraTK::detail {
     } representation{RepresentationType::representationNotSet};
 
     // 'register' is a C++ keyword, so the JSON member is deserialized manually into 'regPath'.
-    struct SelectedBy {
-      std::string regPath; ///< path of the register selecting this channel
-      int64_t value{0};    ///< active when the 'register' equals this value
+    struct GatedBy {
+      std::string regPath; ///< path of the register gating this channel
+      uint64_t value{0};   ///< gate open when the 'register' equals this value
 
       // NOLINTNEXTLINE(readability-identifier-naming)
-      friend void from_json(const nlohmann::json& j, SelectedBy& s) {
+      friend void from_json(const nlohmann::json& j, GatedBy& s) {
         if(!j.contains("register")) {
-          throw ChimeraTK::logic_error("'selectedBy' requires a 'register' member.");
+          throw ChimeraTK::logic_error("'gatedBy' requires a 'register' member.");
         }
         if(!j.contains("value")) {
-          throw ChimeraTK::logic_error("'selectedBy' requires a 'value' member.");
+          throw ChimeraTK::logic_error("'gatedBy' requires a 'value' member.");
         }
         j.at("register").get_to(s.regPath);
-        j.at("value").get_to(s.value);
+        const auto& valueJson = j.at("value");
+        if(valueJson.is_number_unsigned()) {
+          valueJson.get_to(s.value);
+        }
+        else if(valueJson.is_number_integer()) {
+          const auto v = valueJson.get<int64_t>();
+          if(v < 0) {
+            throw ChimeraTK::logic_error("'gatedBy' requires a non-negative 'value' (the gate value is unsigned).");
+          }
+          s.value = static_cast<uint64_t>(v);
+        }
+        else {
+          throw ChimeraTK::logic_error("'gatedBy' requires an integer 'value'.");
+        }
       }
 
       // NOLINTNEXTLINE(readability-identifier-naming)
-      friend void to_json(nlohmann::json& j, const SelectedBy& s) {
+      friend void to_json(nlohmann::json& j, const GatedBy& s) {
         j = nlohmann::json{{"register", s.regPath}, {"value", s.value}};
       }
     };
@@ -223,21 +236,21 @@ namespace ChimeraTK::detail {
       size_t offset;
       size_t bytesPerElement{4};
       Representation representation;
-      std::optional<SelectedBy> selectedBy;
+      std::optional<GatedBy> gatedBy;
       std::map<std::string, ChannelChild> children;
 
-      void fill(NumericAddressedRegisterInfo& info, const std::optional<SelectedBy>& inheritedSelectedBy) const {
+      void fill(NumericAddressedRegisterInfo& info, const std::optional<GatedBy>& inheritedGatedBy) const {
         representation.fill(info, offset, bytesPerElement);
-        if(selectedBy || inheritedSelectedBy) {
-          const auto& selected = selectedBy ? *selectedBy : *inheritedSelectedBy;
-          RegisterPath selReg(selected.regPath);
-          selReg.setAltSeparator(".");
-          info.channels.back().selectedBy.emplace(selReg, selected.value);
+        if(gatedBy || inheritedGatedBy) {
+          const auto& gate = gatedBy ? *gatedBy : *inheritedGatedBy;
+          RegisterPath gateReg(gate.regPath);
+          gateReg.setAltSeparator(".");
+          info.channels.back().gatedBy.emplace(gateReg, gate.value);
         }
       }
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-          Channel, engineeringUnit, description, offset, bytesPerElement, representation, selectedBy, children)
+          Channel, engineeringUnit, description, offset, bytesPerElement, representation, gatedBy, children)
     };
 
     // A bit-field child of a named channel of a 2D register. Works like the top-level bit-field mechanism of a 1D
@@ -267,14 +280,14 @@ namespace ChimeraTK::detail {
     size_t pitch{0}; ///< byte pitch between two samples of the same channel in the 2D register
     std::map<std::string, Channel> channels;
 
-    // Register-level selectedBy for scalar/1D (non-2D, non-channels) registers: makes the whole register conditional
-    // on a selector. For 2D registers the per-channel `Channel::selectedBy` is used instead; having both set is a map
-    // authoring error.
-    std::optional<SelectedBy> selectedBy;
+    // Register-level gatedBy. For scalar/1D (non-2D, non-channels) registers it makes the whole register conditional
+    // on a gating register. For 2D registers it is recorded separately in NumericAddressedRegisterInfo::registerGatedBy
+    // and gates only the full-register accessor; it is not inherited by the channels.
+    std::optional<GatedBy> gatedBy;
 
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy,
-        const std::string& selectedBySource) const {
+        bool addressSetByParent, const std::optional<GatedBy>& inheritedGatedBy,
+        const std::string& gatedBySource) const {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
 
@@ -303,16 +316,24 @@ namespace ChimeraTK::detail {
             info.elementPitchBits = bPerElem * 8;
             info.nElements = numberOfElements;
             representation.fill(info, 0, bPerElem);
-            applyRegisterSelectedBy(info, inheritedSelectedBy);
+            applyRegisterGatedBy(info, inheritedGatedBy);
           }
           else {
             info.elementPitchBits = pitch * 8;
             info.nElements = numberOfElements;
+            // A register-level gate declared on the 2D register itself is recorded separately and gates only the
+            // full-register accessor. It is not inherited by the channels, which carry only their own per-channel
+            // gate or the gate inherited from an enclosing module.
+            // A register-level gate declared on the 2D register itself is recorded separately and gates only the
+            // full-register accessor; it is not inherited by the channels. The gate inherited from an enclosing
+            // module (passed in when there is no local gate) reaches the channels through the unchanged per-channel
+            // inheritance rules.
+            apply2DRegisterGatedBy(info);
             // Iterate the channels sorted by byte offset (see channelsInOffsetOrder) so the per-channel information
             // (and hence the channel index of the 2D accessor) stays in the natural memory order.
             for(const auto& [channelName, channel] : channelsInOffsetOrder()) {
               (void)channelName; // the channel name is the map key; the channel data carries its own offset
-              channel->fill(info, inheritedSelectedBy);
+              channel->fill(info, inheritedGatedBy);
             }
           }
         }
@@ -324,7 +345,7 @@ namespace ChimeraTK::detail {
             }
             // If bytesPerElement has not been set in the json file, take it from parent info
             representation.fill(info, 0, (bytesPerElement != 0 ? bytesPerElement : info.elementPitchBits / 8));
-            applyRegisterSelectedBy(info, inheritedSelectedBy);
+            applyRegisterGatedBy(info, inheritedGatedBy);
           }
           else {
             throw ChimeraTK::logic_error("Address must be set for entries with channels: register " + info.pathName);
@@ -362,32 +383,51 @@ namespace ChimeraTK::detail {
       info.description = description;
       info.engineeringUnit = engineeringUnit;
 
-      // 'selectedBy' describes when data is valid to read, so it may only be applied to read-only registers.
-      // A writable register (READ_WRITE or WRITE_ONLY) carrying a 'selectedBy' (own, per-channel or inherited)
-      // is rejected here; the error points to the entry declaring the 'selectedBy' (the parent for inherited ones).
+      // 'gatedBy' describes when data is valid to read, so it may only be applied to read-only registers.
+      // A writable register (READ_WRITE or WRITE_ONLY) carrying a 'gatedBy' (own, per-channel, register-level or
+      // inherited) is rejected here; the error points to the entry declaring the 'gatedBy' (the parent for inherited
+      // ones).
       if((info.registerAccess != NumericAddressedRegisterInfo::Access::READ_ONLY) &&
           (info.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT)) {
+        if(info.registerGatedBy) {
+          throw ChimeraTK::logic_error("Register " + info.pathName +
+              ": 'gatedBy' may only be used on read-only registers (Access::READ_ONLY or Access::INTERRUPT). "
+              "The offending 'gatedBy' is declared at '" +
+              gatedBySource + "'.");
+        }
         for(const auto& channel : info.channels) {
-          if(channel.selectedBy) {
+          if(channel.gatedBy) {
             throw ChimeraTK::logic_error("Register " + info.pathName +
-                ": 'selectedBy' may only be used on read-only registers (Access::READ_ONLY or Access::INTERRUPT). "
-                "The offending 'selectedBy' is declared at '" +
-                selectedBySource + "'.");
+                ": 'gatedBy' may only be used on read-only registers (Access::READ_ONLY or Access::INTERRUPT). "
+                "The offending 'gatedBy' is declared at '" +
+                gatedBySource + "'.");
           }
         }
       }
     }
 
-    // Apply a register-level 'selectedBy' (scalar/1D registers) to the register's single channel. Must only be called
-    // after 'representation.fill' created exactly one channel. A local 'selectedBy' overrides an inherited one.
-    void applyRegisterSelectedBy(
-        NumericAddressedRegisterInfo& info, const std::optional<SelectedBy>& inheritedSelectedBy) const {
-      if(selectedBy || inheritedSelectedBy) {
-        const auto& selected = selectedBy ? *selectedBy : *inheritedSelectedBy;
-        RegisterPath selReg(selected.regPath);
-        selReg.setAltSeparator(".");
-        info.channels.back().selectedBy.emplace(selReg, selected.value);
+    // Apply a register-level 'gatedBy' of a scalar/1D register to the register's single channel. Must only be called
+    // after 'representation.fill' created exactly one channel. A local 'gatedBy' overrides an inherited one.
+    void applyRegisterGatedBy(
+        NumericAddressedRegisterInfo& info, const std::optional<GatedBy>& inheritedGatedBy) const {
+      if(gatedBy || inheritedGatedBy) {
+        const auto& gate = gatedBy ? *gatedBy : *inheritedGatedBy;
+        RegisterPath gateReg(gate.regPath);
+        gateReg.setAltSeparator(".");
+        info.channels.back().gatedBy.emplace(gateReg, gate.value);
       }
+    }
+
+    // Record the register-level 'gatedBy' of a 2D register separately in NumericAddressedRegisterInfo::registerGatedBy.
+    // A local 'gatedBy' overrides an inherited one. The channels are not touched: a register-level gate is not
+    // inherited by them.
+    void apply2DRegisterGatedBy(NumericAddressedRegisterInfo& info) const {
+      if(!gatedBy) {
+        return;
+      }
+      RegisterPath gateReg(gatedBy->regPath);
+      gateReg.setAltSeparator(".");
+      info.registerGatedBy.emplace(gateReg, gatedBy->value);
     }
 
     // Build the ChannelInfo of a channel or bit-field child slice from its 'representation'. The raw type always
@@ -395,10 +435,10 @@ namespace ChimeraTK::detail {
     // underlying transport and extracts the range via the bit offset/width. Shared by the parent channel slice and
     // the bit-field child slice creation.
     static NumericAddressedRegisterInfo::ChannelInfo makeChannelInfo(const Representation& rep, size_t wordBits,
-        const std::optional<NumericAddressedRegisterInfo::SelectedBy>& selectedBy) {
+        const std::optional<NumericAddressedRegisterInfo::GatedBy>& gatedBy) {
       return {rep.bitShift, NumericAddressedRegisterInfo::Type(rep.type), rep.width, rep.fractionalBits,
           rep.type != RepresentationType::IEEE754 ? rep.isSigned : true, DataType("int" + std::to_string(wordBits)),
-          selectedBy};
+          gatedBy};
     }
 
     // Add a slice register to the catalogue and, for a double-buffered register, its two buffer-view registers
@@ -429,23 +469,23 @@ namespace ChimeraTK::detail {
     std::map<std::string, JsonAddressSpaceEntry> children;
 
     void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
-        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt,
-        const std::string& inheritedSelectedBySource = "") const {
+        bool addressSetByParent, const std::optional<GatedBy>& inheritedGatedBy = std::nullopt,
+        const std::string& inheritedGatedBySource = "") const {
       if(name.empty()) {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
       }
-      // The effective selector for this subtree: a local 'selectedBy' overrides an inherited one.
-      const auto& effectiveSelectedBy = selectedBy ? selectedBy : inheritedSelectedBy;
-      // The entry declaring the effective selector: a local 'selectedBy' is declared at this entry's path, otherwise
+      // The effective gate for this subtree: a local 'gatedBy' overrides an inherited one.
+      const auto& effectiveGatedBy = gatedBy ? gatedBy : inheritedGatedBy;
+      // The entry declaring the effective gate: a local 'gatedBy' is declared at this entry's path, otherwise
       // it is inherited from the entry that declared it further up (used for error messages pointing to the parent).
       RegisterPath thisPath = parentName / name;
       thisPath.setAltSeparator(".");
-      const std::string effectiveSelectedBySource = selectedBy ? std::string(thisPath) : inheritedSelectedBySource;
+      const std::string effectiveGatedBySource = gatedBy ? std::string(thisPath) : inheritedGatedBySource;
       if(address.type != AddressType::addressTypeNotSet) {
         // New address entry. Don't use parent information
         NumericAddressedRegisterInfo my;
         my.channels.clear(); // default constructor already creates a channel with default settings...
-        fill(my, name, parentName, addressSetByParent, effectiveSelectedBy, effectiveSelectedBySource);
+        fill(my, name, parentName, addressSetByParent, inheritedGatedBy, effectiveGatedBySource);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
         if(!channels.empty()) {
@@ -463,12 +503,16 @@ namespace ChimeraTK::detail {
             }
             const auto& rep = channel->representation;
 
-            std::optional<NumericAddressedRegisterInfo::SelectedBy> channelSelectedBy = std::nullopt;
-            if(channel->selectedBy || effectiveSelectedBy) {
-              const auto& sb = channel->selectedBy ? *channel->selectedBy : *effectiveSelectedBy;
-              auto selReg = RegisterPath(sb.regPath);
-              selReg.setAltSeparator(".");
-              channelSelectedBy.emplace(selReg, sb.value);
+            std::optional<NumericAddressedRegisterInfo::GatedBy> channelGatedBy = std::nullopt;
+            // A channel slice carries its own per-channel gate, or the gate inherited from an enclosing module. A
+            // register-level gate declared on the 2D register itself ('effectiveGatedBy' when it is local) is not
+            // inherited by the slices.
+            const auto& sliceGatedBy = channel->gatedBy ? channel->gatedBy : inheritedGatedBy;
+            if(sliceGatedBy) {
+              const auto& sb = *sliceGatedBy;
+              auto gateReg = RegisterPath(sb.regPath);
+              gateReg.setAltSeparator(".");
+              channelGatedBy.emplace(gateReg, sb.value);
             }
 
             auto wordBits = channel->bytesPerElement * 8;
@@ -480,8 +524,8 @@ namespace ChimeraTK::detail {
                 NumericAddressedRegisterInfo::Access::INTERRUPT :
                 NumericAddressedRegisterInfo::Access::READ_ONLY;
             NumericAddressedRegisterInfo slice(slicePath, my.bar, my.address + channel->offset, my.nElements,
-                my.elementPitchBits, {makeChannelInfo(rep, wordBits, channelSelectedBy)}, sliceAccessType,
-                my.interruptId, my.doubleBuffer);
+                my.elementPitchBits, {makeChannelInfo(rep, wordBits, channelGatedBy)}, sliceAccessType, my.interruptId,
+                my.doubleBuffer);
             // The slice's double-buffer configuration inherits the parent's, but its secondary buffer address
             // is the parent's shifted by the channel byte offset, matching the slice's own data address and the
             // slice's BUF1 buffer-view register created below.
@@ -513,7 +557,7 @@ namespace ChimeraTK::detail {
               }
               NumericAddressedRegisterInfo childSlice = slice;
               childSlice.pathName = childPath;
-              childSlice.channels = {makeChannelInfo(crep, wordBits, channelSelectedBy)};
+              childSlice.channels = {makeChannelInfo(crep, wordBits, channelGatedBy)};
               childSlice.isBitRange = true;
               childSlice.engineeringUnit = child.engineeringUnit;
               childSlice.description = child.description;
@@ -543,22 +587,21 @@ namespace ChimeraTK::detail {
         // take over parent address (except void interrupt registers which don't have an address)
         auto my = catalogue.getBackendRegister(parentName);
         my.channels.clear(); // will be refilled from representation
-        fill(my, name, parentName, addressSetByParent, effectiveSelectedBy,
-            effectiveSelectedBySource); // only updates the name and the representation
+        fill(my, name, parentName, addressSetByParent, effectiveGatedBy, effectiveGatedBySource);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
       }
 
       for(const auto& [childName, child] : children) {
         child.addInfos(catalogue, childName, parentName / name,
-            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effectiveSelectedBy,
-            effectiveSelectedBySource);
+            addressSetByParent || (address.type != AddressType::addressTypeNotSet), effectiveGatedBy,
+            effectiveGatedBySource);
       }
     }
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonAddressSpaceEntry, engineeringUnit, description, access,
         triggeredByInterrupt, numberOfElements, bytesPerElement, pitch, address, representation, children, channels,
-        doubleBuffering, selectedBy)
+        doubleBuffering, gatedBy)
   };
 
   /********************************************************************************************************************/
@@ -692,31 +735,43 @@ namespace ChimeraTK::detail {
         }
       }
 
-      // Validate every 'selectedBy' selector register referenced by any channel: (a) the referenced selector
-      // register must exist in the catalogue, and (b) it must not itself be conditionally enabled by a 'selectedBy'
-      // (a selector must be unconditionally readable, otherwise gating would depend on another gate).
+      // Validate every 'gatedBy' gating register referenced by any channel or by a register-level gate: (a) the
+      // referenced gating register must exist in the catalogue, and (b) it must not itself be gated by a 'gatedBy'
+      // (a gating register must be unconditionally readable, otherwise gating would depend on another gate).
+      //
+      // A gating register is itself gated when its own register-level gate is set, or when any of its channels carries
+      // a 'gatedBy'; the latter covers a scalar/1D register (whose gate lives on its single channel) as well as a 2D
+      // register with per-channel gates.
+      auto isGated = [](const NumericAddressedRegisterInfo& reg) {
+        if(reg.registerGatedBy) {
+          return true;
+        }
+        return std::ranges::any_of(reg.channels, [](const auto& channel) { return channel.gatedBy.has_value(); });
+      };
+      auto validateGatedBy = [&](const NumericAddressedRegisterInfo::GatedBy& gatedBy, const std::string& gatedName) {
+        std::string regPath = gatedBy.regPath;
+        // (a) The gating register must exist in the catalogue.
+        if(!catalogue.hasRegister(gatedBy.regPath)) {
+          throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': '" + gatedName +
+              "' is gated by 'gatedBy' referencing undefined register '" + regPath + "'.");
+        }
+        // (b) The gating register must not itself be gated, since it must be readable unconditionally to evaluate the
+        // gate.
+        if(isGated(catalogue.getBackendRegister(gatedBy.regPath))) {
+          throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': gating register '" + regPath +
+              "' of '" + gatedName + "' is itself gated by 'gatedBy'; a gating register must not be gated.");
+        }
+      };
       for(const auto& reg : catalogue) {
+        std::string regName = reg.getRegisterName();
+        if(reg.registerGatedBy) {
+          validateGatedBy(*reg.registerGatedBy, "register '" + regName + "'");
+        }
         for(const auto& channel : reg.channels) {
-          if(!channel.selectedBy) {
+          if(!channel.gatedBy) {
             continue;
           }
-          std::string regPath = channel.selectedBy->regPath;
-          std::string channelName = reg.getRegisterName();
-          // (a) The selector register must exist in the catalogue.
-          if(!catalogue.hasRegister(channel.selectedBy->regPath)) {
-            throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': channel '" + channelName +
-                "' is gated by 'selectedBy' referencing undefined register '" + regPath + "'.");
-          }
-          // (b) The selector register must not itself be conditionally enabled by a 'selectedBy' of its own,
-          // since the gate it drives must be readable unconditionally to evaluate the selection.
-          auto selectorReg = catalogue.getBackendRegister(channel.selectedBy->regPath);
-          for(const auto& selectorChannel : selectorReg.channels) {
-            if(selectorChannel.selectedBy) {
-              throw ChimeraTK::logic_error("Error parsing JSON map file '" + fileName + "': selector register '" +
-                  regPath + "' of channel '" + channelName +
-                  "' is itself conditionally enabled by 'selectedBy'; a selector register must not be gated.");
-            }
-          }
+          validateGatedBy(*channel.gatedBy, "channel '" + regName + "'");
         }
       }
 

@@ -73,6 +73,12 @@ namespace ChimeraTK {
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override;
 
+    /**
+     * Get the read consumer's registration with the read coordinator of its raw element. The gate result of this
+     * consumer (see Registration::gateClosed()) can therefore be read from outside, e.g. by a GatedByDecorator.
+     */
+    [[nodiscard]] detail::ReadCoordinator::Registration<UserType>& readRegistration() { return _readRegistration; }
+
    protected:
     /** Address, size and fixed-point representation information of the register
      * from the map file */
@@ -83,6 +89,16 @@ namespace ChimeraTK {
 
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
+
+    /**
+     * The gating register accessor of this consumer, obtained once at construction from the register's gatedBy
+     * metadata, or null when the register has no gate. Shared with the registration and the low-level element's gate
+     * group. Kept here so its lifetime is tied to the accessor.
+     */
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> _gateAccessor;
+
+    /** The expected value of the gating register which opens the gate. Only meaningful when _gateAccessor is set. */
+    uint64_t _gateValue{0};
 
     /**
      * Registration of this read consumer with the read coordinator of its raw element. The handle owns the staging

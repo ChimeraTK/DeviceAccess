@@ -5,6 +5,9 @@
 #include "NumericAddressedBackend.h"
 #include "ReadCoordinator.h"
 #include "TransferElement.h"
+#include "TransferGroup.h"
+
+#include <set>
 
 namespace ChimeraTK {
 
@@ -35,11 +38,29 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(errorMessage.str());
       }
       setAddress(startAddress, numberOfBytes);
+      // Collect the gate accessors of all read consumers in a transfer group of our own, so one gating register is read
+      // once per transfer however many consumers it gates. Consumers hand their gate accessor in through the sink when
+      // they register with the read coordinator.
+      _readCoordinator.setGateGroupSink([this](const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor) {
+        if(!gateAccessor) {
+          return;
+        }
+        // The group is add-only: a gate accessor already held is skipped, so the re-registration of a transfer-group
+        // merge adds nothing. The high-level accessor objects are stable, so identity comparison is exact.
+        if(_gateAccessorSet.insert(gateAccessor.get()).second) {
+          _gateGroup.addAccessor(gateAccessor);
+        }
+      });
     }
 
     ~NumericAddressedLowLevelTransferElement() override = default;
 
     void doReadTransferSynchronously() override {
+      // Read the gate group first, so all hardware access happens in the transfer phase (TransferElement.h) and every
+      // gating register is fresh before the read coordinator evaluates the gates in doPostRead.
+      if(!_gateAccessorSet.empty()) {
+        _gateGroup.read();
+      }
       // There is nothing we can do about reinterpet_casting with the C-style interface
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       _dev->read(_bar, _startAddress, reinterpret_cast<int32_t*>(rawDataBuffer.data()), _numberOfBytes);
@@ -194,6 +215,17 @@ namespace ChimeraTK {
      * strided channel slices of a muxed 2D register). Inert when no consumers are registered.
      */
     detail::ReadCoordinator _readCoordinator;
+
+    /**
+     * Transfer group holding the gate accessors of all read consumers of this element. Read once per transfer in
+     * doReadTransferSynchronously(); it is independent of (and nested in) any transfer group the caller may have put
+     * the accessors into. The group is add-only: a gate accessor is handed in by the read coordinator when a gated
+     * consumer registers, and never removed (teardown discards the element and the group together).
+     */
+    TransferGroup _gateGroup;
+
+    /** Identity of the gate accessors already held by _gateGroup, so a re-registration adds nothing. */
+    std::set<const NDRegisterAccessor<uint64_t>*> _gateAccessorSet;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};

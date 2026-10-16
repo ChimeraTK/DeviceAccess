@@ -9,6 +9,7 @@
 #include "BitRangeAccessorDecorator.h"
 #include "DoubleBufferAccessor.h"
 #include "Exception.h"
+#include "GatedByDecorator.h"
 #include "MapFileParser.h"
 #include "NumericAddress.h"
 #include "NumericAddressedBackendASCIIAccessor.h"
@@ -201,6 +202,12 @@ namespace ChimeraTK {
             accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
                 new NumericAddressedBackendRegisterAccessor<UserType, false>(
                     shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+          }
+          // Wrap the synchronous accessor of a gated register in the gate decorator, so the accessor the caller (and
+          // the asynchronous distributor) receives is the outermost object and the gate result can be queried from it.
+          // The gate itself is enforced by the read coordinator of the low-level element.
+          if(registerInfo.channels.front().gatedBy.has_value()) {
+            accessor = boost::make_shared<GatedByDecorator<UserType>>(accessor);
           }
         }
         else if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::ASCII) {

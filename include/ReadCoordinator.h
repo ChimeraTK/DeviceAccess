@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "NDRegisterAccessor.h"
 #include "NumericAddressedRegisterCatalogue.h"
 #include "RawConverter.h"
 #include "SupportedUserTypes.h"
 
 #include <cstring>
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
@@ -46,12 +48,21 @@ namespace ChimeraTK::detail {
      */
     template<typename UserType>
     struct Consumer {
-      Consumer(size_t offset, size_t pitch, size_t count, std::vector<UserType>& stagingBuffer);
+      Consumer(size_t offset, size_t pitch, size_t count, std::vector<UserType>& stagingBuffer, DataValidity& validity,
+          bool& gateClosed, const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor, uint64_t gateValue);
 
       size_t byteOffset{}; // offset of first sample within the raw buffer
       size_t stride{};     // elementPitchBits / 8 (equal to the element data width for a non-strided consumer)
       size_t nSamples{};
       std::vector<UserType>& staging;
+      DataValidity& validity; // the consumer's data validity, written by the coordinator
+      bool& gateClosed;       // the consumer's gate result, written by the coordinator
+      // The gate of this consumer: the gating register accessor (null when the consumer is ungated) and the expected
+      // value. The accessor shares its ownership with the registration and the element's gate group.
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> gateAccessor;
+      uint64_t gateValue{};
+
+      [[nodiscard]] bool hasGate() const { return static_cast<bool>(gateAccessor); }
     };
 
     /**
@@ -87,6 +98,19 @@ namespace ChimeraTK::detail {
     };
 
     /**
+     * Per-consumer state owned by the registration: the staging buffer the coordinator fills plus the two pieces of
+     * per-consumer outcome the coordinator reports back through the registration - the data validity and the gate
+     * result. Heap-allocated behind the registration (see Registration) so the registered Consumer's references stay
+     * valid when the registration handle is moved, e.g. on a transfer-group merge.
+     */
+    template<typename UserType>
+    struct ConsumerState {
+      std::vector<UserType> staging;
+      DataValidity validity{DataValidity::ok};
+      bool gateClosed{false};
+    };
+
+    /**
      * Per-consumer registration handle (owned by the high-level accessor): it ties one read consumer to its group in
      * the coordinator's registry and owns the staging buffer into which the group's conversion loop writes the
      * consumer's samples. Destroying or resetting the handle deregisters the consumer. It is movable (so a consumer can
@@ -101,10 +125,13 @@ namespace ChimeraTK::detail {
        * Register the given read consumer with the owner.
        *
        * The full register info (including the register name) is kept so RawConverter error messages stay informative;
-       * isRaw marks a raw-mode consumer, which forms a separate raw-copy group.
+       * isRaw marks a raw-mode consumer, which forms a separate raw-copy group. A non-null gateAccessor together with
+       * gateValue attaches a gate to the consumer: the coordinator opens or closes it by comparing the gating
+       * register's value with gateValue.
        */
       Registration(ReadCoordinator* owner, const NumericAddressedRegisterInfo& info, bool isRaw, size_t byteOffset,
-          size_t stride, size_t nSamples);
+          size_t stride, size_t nSamples, const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor = nullptr,
+          uint64_t gateValue = 0);
 
       ~Registration();
 
@@ -120,6 +147,18 @@ namespace ChimeraTK::detail {
       /** Get the staging buffer the coordinator fills. */
       [[nodiscard]] std::vector<UserType>& staging();
 
+      /** The consumer's data validity, as last written by the coordinator. */
+      [[nodiscard]] DataValidity validity() const;
+
+      /** The consumer's gate result, as last written by the coordinator. True while the gate is closed. */
+      [[nodiscard]] bool gateClosed() const;
+
+      /** Whether this consumer carries a gate. */
+      [[nodiscard]] bool hasGate() const;
+
+      /** The gating register accessor of this consumer, or null when it has no gate. */
+      [[nodiscard]] const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor() const;
+
      private:
       friend class ReadCoordinator;
 
@@ -129,7 +168,12 @@ namespace ChimeraTK::detail {
 
       // Heap-allocated so its address (which the registered Consumer references) stays stable when the registration is
       // moved; the moveable handle owns it, the buffer's data pointer changes on each swap, never its address.
-      std::unique_ptr<std::vector<UserType>> _staging;
+      std::unique_ptr<ConsumerState<UserType>> _state;
+
+      // The gating register accessor and expected value of this consumer, or null/0 when it has no gate. The consumer
+      // references this accessor only through the ReadCoordinator's gate group; the registration shares its ownership.
+      boost::shared_ptr<NDRegisterAccessor<uint64_t>> _gateAccessor;
+      uint64_t _gateValue{0};
     };
 
     ReadCoordinator() = default;
@@ -167,9 +211,23 @@ namespace ChimeraTK::detail {
         bool isSigned>
     void doPreWriteImpl(RawConverter::Converter<UserType, RawType, sc, fc, isSigned> converter, size_t groupId);
 
+    /**
+     * Set the sink through which the coordinator hands every newly registered gate accessor to the owning low-level
+     * element, which collects them in its gate transfer group. The element sets this to its own add-if-absent routine.
+     */
+    void setGateGroupSink(std::function<void(const boost::shared_ptr<NDRegisterAccessor<uint64_t>>&)> sink);
+
    private:
     template<typename>
     friend class Registration;
+
+    /**
+     * The gate result of one consumer: true while the gating register's freshly read value differs from the consumer's
+     * expected value. Preconditions (the accessor exists, is readable and its register is scalar) are checked when the
+     * gated accessor is created, so no check is repeated here.
+     */
+    template<typename UserType>
+    [[nodiscard]] static bool evaluateGateClosed(const Consumer<UserType>& consumer);
 
     // _groups stores the type-erased groups keyed by their stable, monotonically increasing groupId; _groupIndex maps
     // each group key to that groupId. The groupId is a non-positional identity handed to the group's
@@ -181,14 +239,27 @@ namespace ChimeraTK::detail {
     size_t _nextGroupId{};
     // the current read's raw buffer, set only while run() iterates the groups; null between reads
     const std::vector<uint8_t>* _rawBuffer{nullptr};
+    // sink handing new gate accessors to the owning element's gate group, see setGateGroupSink()
+    std::function<void(const boost::shared_ptr<NDRegisterAccessor<uint64_t>>&)> _gateGroupSink;
   };
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  inline ReadCoordinator::Consumer<UserType>::Consumer(
-      size_t offset, size_t pitch, size_t count, std::vector<UserType>& stagingBuffer)
-  : byteOffset(offset), stride(pitch), nSamples(count), staging(stagingBuffer) {}
+  inline ReadCoordinator::Consumer<UserType>::Consumer(size_t offset, size_t pitch, size_t count,
+      std::vector<UserType>& stagingBuffer, DataValidity& consumerValidity, bool& consumerGateClosed,
+      const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& consumerGateAccessor, uint64_t consumerGateValue)
+  : byteOffset(offset), stride(pitch), nSamples(count), staging(stagingBuffer), validity(consumerValidity),
+    gateClosed(consumerGateClosed), gateAccessor(consumerGateAccessor), gateValue(consumerGateValue) {}
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  inline bool ReadCoordinator::evaluateGateClosed(const Consumer<UserType>& consumer) {
+    // A single read of the gating register per evaluation; its value has just been filled by the element's gate group,
+    // which is read in the transfer phase before this consumer's group is converted.
+    return consumer.gateAccessor->accessData(0) != consumer.gateValue;
+  }
 
   /********************************************************************************************************************/
 
@@ -202,6 +273,16 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   inline void ReadCoordinator::Group<UserType>::rawCopy(const std::vector<uint8_t>& rawBuffer) {
     for(const auto& consumer : consumers) {
+      // Evaluate and record the gate while the group is processed, exactly as the converting path does.
+      if(consumer.hasGate()) {
+        consumer.gateClosed = evaluateGateClosed(consumer);
+        if(consumer.gateClosed) {
+          consumer.validity = DataValidity::faulty;
+          continue;
+        }
+      }
+      consumer.gateClosed = false;
+      consumer.validity = DataValidity::ok;
       if(consumer.nSamples == 0) {
         continue;
       }
