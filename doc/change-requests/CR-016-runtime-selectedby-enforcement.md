@@ -204,17 +204,22 @@ gating register, the type `getRegisterAccessor<uint64_t>` returns
 of its own.
 - The element keys them by the gating register they read, not by the accessor
 object.
-- A registration for a gating register the element already holds adds nothing
-to the group: the element's sink returns the accessor the element holds, the
-registration stores that one as the consumer's gate accessor, and the freshly
-built accessor is released. All consumers of one gating register therefore
-share one accessor, which is the one that is read.
-- The group is add-only and holds only accessors its own element created: a
-re-registration on a transfer-group merge is handed the element's own
-accessor, so no other element's accessor is ever offered to the group.
-`TransferGroup` marks a member once and never clears the mark
-(src/TransferGroup.cc:191-203) and has no removal API, so a foreign accessor
-would be rejected.
+- The element owns the gate accessors. The registration hands it the gating
+register's path and the expected value; the element builds the accessor itself
+with `getRegisterAccessor<uint64_t>(gatingRegisterPath, 0, 0, {})` for a gating
+register it does not yet hold, and hands that accessor back. The registration
+stores the accessor it is handed as the consumer's gate accessor. All consumers
+of one gating register within one element therefore share the accessor the
+element holds, which is the one that is read.
+- Every accessor in the group is built by the element that owns it, so
+`TransferGroup`'s once-and-never-cleared membership mark
+(src/TransferGroup.cc:191-203) never meets a foreign accessor. A
+re-registration on a transfer-group merge adds an accessor only for a gating
+register the surviving element does not hold, so merged gated consumers are
+served whatever their gating registers are.
+- The gated accessor itself builds no gate accessor. The scalar precondition of
+the gating register stays checked when the gated accessor is created (see
+"Accessor construction").
 - Gate accessors merge through the existing `replaceTransferElement()`
 mechanism when their gating register is the same or adjacent. One gating
 register is therefore read once per transfer, however many consumers it
@@ -246,7 +251,8 @@ its register is scalar. No `logic_error` is thrown during the transfer.
 ### Accessor construction
 
 - The gating register's accessor is obtained with
-`getRegisterAccessor<uint64_t>(gatingRegisterPath, 0, 0, {})`.
+`getRegisterAccessor<uint64_t>(gatingRegisterPath, 0, 0, {})`, by the low-level
+element that owns it (see "Gate in the low-level element").
 - Without `wait_for_new_data` the accessor is synchronous for any correct
 backend, so no subscription is created.
 - The public entry point is used so a backend's override stays in play, the
@@ -258,9 +264,10 @@ register is rejected when the gated accessor is created.
 range included. A bit-range gate is the backend's bit-range accessor for that
 register (`src/NumericAddressedBackend.cc:164-191`) and needs no special
 handling.
-- The gate is built into the registration of:
-- a gated scalar/1D accessor
-- every gated channel slice of a 2D register
+- The registration of every gated consumer carries the gate: the gating
+register's path and the expected value. It covers a gated scalar/1D accessor
+and every gated channel slice of a 2D register. The element resolves the
+accessor for that path.
 - The full-register accessor of a 2D register with a register-level `gatedBy`
 is not a registration consumer. It enforces the gate itself (see "2D
 register-level gate").
@@ -389,8 +396,8 @@ Once a newer value has been sent, the gate result is consulted again.
 - The gate group uses the existing `TransferGroup` API unchanged:
 - `addAccessor()`
 - `read()`
-- It needs no member removal, because the element keys its gate set by the
-gating register and hands its held accessor back to a re-registering consumer.
+- It needs no member removal, because the element builds and keys its own gate
+accessors by the gating register.
 - No gate-specific member or behaviour is added to the class.
 - The gate result, the `ClosedGateQuery` mixin and the registration getter are
 backend-internal:
@@ -567,9 +574,10 @@ version number or data validity, so the expectations after a suppression are
 those of the last delivered value, not of the initial one
 - a change of the gating register while the consumer is pending
 - the consumer never observes the data of a closed alternative
-- two gated registers at one address are obtained as `wait_for_new_data`
-consumers together and are served by the merged element without a
-TransferGroup error, each honouring its own gate
+- Merged gated consumers whose gating registers differ: two gated registers at
+one address gated by different gating registers are obtained as
+`wait_for_new_data` consumers together and are served by the merged element
+without a TransferGroup error, each honouring its own gate
 - Merged gate reads: consumers whose gating register is the same are served by
 one group member, so the gating register is accessed once per transfer
 (counted on the backend). This also holds after a transfer-group merge of
@@ -643,8 +651,13 @@ version number: rejected.
 the (re)open.
 - `DeviceBackend::getVersionOnOpen()` marks it reliably.
 - Rejecting the old `selectedBy` key explicitly: not needed. The feature was
-only ever recorded, so no map content carrying the old key is in use. The
-format version therefore stays `"1.0"`.
+only ever recorded, never enforced. It did ship in the release 03.31.00, where
+`doc/jmapFormat.dox` documents the key and `schemas/jmap.schema.json` defines
+it as part of format `"1.0"`. A map carrying the old key still loads, because
+the parser reads only the keys it knows and ignores the rest, so its gate
+metadata is silently dropped and the register stays ungated; the schema rejects
+such a file. The format version therefore stays `"1.0"` and no compatibility
+shim is added.
 - Gate lookup on the backend-agnostic base catalogue
 (`BackendRegisterCatalogueBase::getGatedBy`): not needed. Only the
 `NumericAddressedBackend` consults the gate, and it looks the metadata up in
@@ -673,9 +686,11 @@ not skip a backend's override.
 - DI-10 [IMPLEMENTED] Minor editorial inconsistency: 'Renamed format' (CR-016:162-165) says the three fixtures selectedByInheritance.jmap, simpleJsonFile.jmap and muxedPolled.jmap are 'renamed and rewritten', but only selectedByInheritance.jmap is actually renamed (to gatedByInheritance.jmap, Test plan CR-016:506); the other two keep their names and are only rewritten.
 - DI-11 [IMPLEMENTED] Async gate enforcement is bypassed: PolledAsyncVariable<UserType>::send() (include/async/TriggeredPollDistributor.h:127-136) computes isInitialValue from its own _lastSentVersion, but sets it with '_lastSentVersion = this->_sendBuffer.versionNumber;' AFTER the base AsyncVariableImpl::send() (include/async/AsyncAccessorManager.h:228-240) has already destructively moved the buffer via subscriber->sendDestructively(_sendBuffer). The buffer's versionNumber is reset to v0 by tha...
 - DI-12 [NEW] Two gated registers that share a hardware address cannot be obtained as wait_for_new_data consumers: obtaining the second gated accessor throws 'ChimeraTK::logic_error: The given accessor is already in a TransferGroup and cannot be added to another.' (thrown in TransferGroup::addAccessorImpl, src/TransferGroup.cc:189-193). Cause: each gated payload accessor builds its own gate accessor (src/NumericAddressedBackendRegisterAccessor.cc:92) and hands it to its raw element's gate group ...
-- DI-13 [FOLDED-IN] DI-12 is a specification defect, not just an implementation bug. CR-016:201-220 (spec) mandates that the low-level element collect its consumers' gate accessors in a TransferGroup of its own, and claims at CR-016:209-210 that 'the re-registration of a transfer-group merge adds nothing' because the group 'is add-only' and 'skips one the group already holds'. That claim only holds for identity dedup within one element: a transfer-group merge moves a *different* gate accessor into the...
-- DI-14 [FOLDED-IN] testAsyncReadGatedBy (new test, tests/executables_src/testAsyncRead.cpp) has residual failures that are test-expectation bugs, not implementation defects: line 826 compares gated.getVersionNumber() against versionAfterInitial captured after the *first* delivery, but a second open-gate interrupt (0x5678) legitimately advanced the version (line 807 only asserts '>' versionAfterInitial); line 827 expects dataValidity()==faulty although the accessor was last updated by a valid delivery...
+- DI-13 [FOLDED-IN] DI-12 is a specification defect, not just an implementation bug. CR-016:201-220 (spec) mandates that the low-level element collect its consumers' gate accessors in a TransferGroup of its own, and claims at CR-016:209-210 that 'the re-registration of a transfer-group merge adds nothing' because the group 'is add-only' and 'skips one the group already holds'. That claim only holds for identity dedup within one element: a transfer-group merge moves a *different* gate accessor in...
+- DI-14 [FOLDED-IN] testAsyncReadGatedBy (new test, tests/executables_src/testAsyncRead.cpp) has residual failures that are test-expectation bugs, not implementation defects: line 826 compares gated.getVersionNumber() against versionAfterInitial captured after the *first* delivery, but a second open-gate interrupt (0x5678) legitimately advanced the version (line 807 only asserts '>' versionAfterInitial); line 827 expects dataValidity()==faulty although the accessor was last updated by a valid de...
 - DI-15 [FOLDED-IN] Specifications, 'Gate in the low-level element' (CR-016:201-215): the plan makes the low-level element collect its consumers' gate accessors in a `TransferGroup` of its own, deduplicated on the accessor object, and claims the re-registration of a transfer-group merge 'adds nothing'. That claim is wrong. After the merge of two gated payload elements at one address (include/async/TriggeredPollDistributor.h:104 via replaceTransferElement, src/NumericAddressedBackendRegisterAcces...
 - DI-16 [FOLDED-IN] Internal inconsistency: 'Alternatives considered' (CR-016:573-578) rejects 'an inner TransferGroup in the low-level element owning the gate accessors' and names 'the registration owns the gate accessor instead' as the choice, while the Specifications (CR-016:201-215) mandate exactly that inner TransferGroup. The rejected alternative must be restated as the accessor-identity-based dedup, which is what actually fails.
 - DI-17 [FOLDED-IN] Specifications, '2D register-level gate' (CR-016:269-295): the plan never states that a register-level `gatedBy` on a scalar or 1D register stays the register's own gate. src/JsonMapFileParser.cc:409-417 stores it in the register's single channel and tests/simpleJsonFile.jmap:589-593 documents that case, so a re-implementation could route a scalar register's gate into `registerGatedBy` and lose the gate on the scalar accessor.
 - DI-18 [FOLDED-IN] DI-14: the plan nowhere states that a suppressed (closed-gate) delivery leaves the consumer's value, version number and data validity as of its last delivered value; the async test bullets (CR-016:548-550) leave the opposite expectation open, and tests/executables_src/testAsyncRead.cpp:825-827 expresses it (version compared against the initial delivery, validity expected faulty although the last delivery was valid).
+- DI-19 [NEW] Specifications 'Gate in the low-level element' still breaks on merged gated consumers with different gating registers. The folded rule (element keys its gate accessors by the gating register and hands the held accessor back) only avoids the TransferGroup conflict when the surviving element already holds the same gating register. Two gated payload accessors at one address with different gating registers (legal input: two read-only registers at one offset, as in tests/gatedByScalar.jmap but gated by e.g. CTRL.SEL and CTRL.MODE) re-register the second consumer on the surviving element (src/NumericAddressedBackendRegisterAccessor.cc:370-386 via TransferGroup::addAccessorImpl, src/TransferGroup.cc:213-222); that element holds no accessor for the second gating register, so its sink tries to add the fresh gate accessor that the abandoned element's own gate group already added and marked at registration time (src/NumericAddressedBackendRegisterAccessor.cc:92+113 -> TransferGroup::addAccessorImpl _isInTransferGroup, src/TransferGroup.cc:191-203), and the DI-12 throw ('already in a TransferGroup') returns. Hence the claims 'the group ... holds only accessors its own element created' and 'no other element's accessor is ever offered to the group' are false, and the Test plan bullet 'two gated registers at one address ... served by the merged element without a TransferGroup error' holds only for a shared gating register. Agreed correction (user decision): the low-level element owns the gate accessors; a registration hands it the gating register path and expected value and never offers an accessor another element already holds.
+- DI-20 [NEW] The format-version decision in 'Alternatives considered' rests on a justification the repository contradicts in part: 'the feature was only ever recorded, never enforced, so no map content carrying the old key is in use'. `selectedBy` did ship in the release tag 03.31.00 (2026-10-13), where doc/jmapFormat.dox documents it and schemas/jmap.schema.json defines it as part of format 1.0. After the rename such a map still loads, because src/JsonMapFileParser.cc reads only the keys it knows and ignores unknown ones, so its gate metadata is silently dropped and the register stays ungated now that gating is enforced; the schema rejects the file (additionalProperties is false). Agreed correction (user decision): record the released fact in the Alternatives bullet, no behaviour change.
