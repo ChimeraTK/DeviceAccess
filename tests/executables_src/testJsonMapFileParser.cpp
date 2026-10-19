@@ -1043,7 +1043,7 @@ BOOST_AUTO_TEST_CASE(TestChannelInfoEqualityGatedBy) {
   initChannelInfo(a);
   initChannelInfo(b);
 
-  // Two identically initialized infos are equal (both ungated: empty register, default value).
+  // Two identically initialised infos are equal (both ungated: empty register, default value).
   BOOST_CHECK(a == b);
   BOOST_CHECK(!(a != b));
 

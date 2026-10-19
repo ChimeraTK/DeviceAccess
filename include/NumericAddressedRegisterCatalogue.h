@@ -39,14 +39,15 @@ namespace ChimeraTK {
     /**
      * Gate metadata: a pair of register and value. While the gating register holds the value, the gate is open and
      * the gated register, channel slice or consumer reports valid data; otherwise the gate is closed and its data is
-     * faultied.
+     * faulty.
      */
 
     /* Unfortunately, register is a reserved keyword so we use regPath.
      * And since this is used as a std::optional, which has a value() method would make "value" a weird name
      */
     struct GatedBy {
-      RegisterPath regPath; /**< Path of the gating register that determines if a Channel/Register is gate open */
+      RegisterPath regPath; /**< Path of the gating register that determines whether the gate of a Channel/Register is
+                               open */
       uint64_t val;         /**< Value of that register that opens the gate of that Channel/Register */
     };
 

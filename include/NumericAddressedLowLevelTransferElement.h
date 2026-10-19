@@ -8,7 +8,6 @@
 #include "TransferGroup.h"
 
 #include <map>
-#include <set>
 
 namespace ChimeraTK {
 
