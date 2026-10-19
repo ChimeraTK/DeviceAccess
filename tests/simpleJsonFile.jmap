@@ -243,7 +243,7 @@
             "index": 0,
             "_": "Index inside control registers"
           },
-          "__": "The channels below are the layout of this 2D DAQ register. For registers whose layout is selected by a register value (multiple DAQ tabs), a 'gatedBy' dict is added as shown in the FD example below.",
+          "__": "The channels below are the layout of this 2D DAQ register. For registers whose layout is gated by a register value (multiple DAQ tabs), a 'gatedBy' dict is added as shown in the FD example below.",
           "numberOfElements": 16384,
           "pitch": 64,
           "channels": {

@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(testGatedByBothLevels2DPolled) {
   BOOST_TEST(ch0.dataValidity() == ChimeraTK::DataValidity::ok);
   BOOST_TEST(ch1.dataValidity() == ChimeraTK::DataValidity::faulty);
 
-  // Reopen the register-level gate but change the channel selection: the two gates move independently.
+  // Reopen the register-level gate but change the channel gate: the two gates move independently.
   blockSel = 7;
   blockSel.write();
   chSel = 1;

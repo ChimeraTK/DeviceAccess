@@ -1226,7 +1226,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByInheritedWritableDescendantRejected) {
 
 /**********************************************************************************************************************/
 
-// The extended selector checks must also apply to a register-level 'gatedBy' on a 2D register, which is stored
+// The extended gating-register checks must also apply to a register-level 'gatedBy' on a 2D register, which is stored
 // separately in NumericAddressedRegisterInfo::registerGatedBy. Build a 2D register (with a single channel) that
 // carries a register-level gate on 'gatingRegister' and parse it. The gating register is declared by the caller.
 static void parse2DRegisterGatedByFixture(const std::string& gatingRegisterPath, bool declareGatingRegister,
