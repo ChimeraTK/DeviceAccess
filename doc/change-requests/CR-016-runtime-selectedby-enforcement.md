@@ -46,6 +46,8 @@ gates
 - It must not observe a value while its gate is closed.
 - Such a value is discarded, so the consumer neither wakes nor sees a new
 version number.
+- A suppressed delivery leaves the consumer's own state untouched: its value,
+version number and data validity are those of its last delivered value.
 - The initial value of a (re)started subscription is exempt:
 - it is always delivered
 - it is marked `DataValidity::faulty` while the gate is closed
@@ -200,16 +202,24 @@ gating register, the type `getRegisterAccessor<uint64_t>` returns
 - the gate result
 - The element collects the gate accessors of its consumers in a `TransferGroup`
 of its own.
+- The element keys them by the gating register they read, not by the accessor
+object.
+- A registration for a gating register the element already holds adds nothing
+to the group: the element's sink returns the accessor the element holds, the
+registration stores that one as the consumer's gate accessor, and the freshly
+built accessor is released. All consumers of one gating register therefore
+share one accessor, which is the one that is read.
+- The group is add-only and holds only accessors its own element created: a
+re-registration on a transfer-group merge is handed the element's own
+accessor, so no other element's accessor is ever offered to the group.
+`TransferGroup` marks a member once and never clears the mark
+(src/TransferGroup.cc:191-203) and has no removal API, so a foreign accessor
+would be rejected.
 - Gate accessors merge through the existing `replaceTransferElement()`
 mechanism when their gating register is the same or adjacent. One gating
 register is therefore read once per transfer, however many consumers it
 gates.
-- The group is add-only:
-- the element hands a gate accessor to the group when its registration is
-created
-- it skips one the group already holds, so the re-registration of a
-transfer-group merge adds nothing
-- the group shares the ownership of the accessors with the registrations
+- The group shares the ownership of the accessors with the registrations:
 - a teardown discards the element, its registrations and its group together,
 so nothing has to be removed from the group
 - `TransferGroup` offers no removal anyway
@@ -268,6 +278,10 @@ result of its consumer can therefore be read from outside.
 
 ### 2D register-level gate
 
+- A register-level `gatedBy` on a scalar or 1D register stays the register's own
+gate, as today: the parser records it in the register's single channel and the
+accessor's gate is attached to its registration. `registerGatedBy` is used
+only by a 2D register.
 - The parser records a register-level `gatedBy` on a 2D register in
 `NumericAddressedRegisterInfo::registerGatedBy`. It is separate from the
 per-channel `gatedBy` its channels carry, and it is not inherited by them.
@@ -375,6 +389,8 @@ Once a newer value has been sent, the gate result is consulted again.
 - The gate group uses the existing `TransferGroup` API unchanged:
 - `addAccessor()`
 - `read()`
+- It needs no member removal, because the element keys its gate set by the
+gating register and hands its held accessor back to a re-registering consumer.
 - No gate-specific member or behaviour is added to the class.
 - The gate result, the `ClosedGateQuery` mixin and the registration getter are
 backend-internal:
@@ -545,11 +561,15 @@ clear error when the gated accessor is created
 in `NumericAddressedBackendMuxedRegisterAccessor`
 - independence of the two gates on a register that uses both
 - Async (`testAsyncRead.cpp`, new fixture `tests/gatedByInterrupt.jmap`):
-- open-gate interrupts deliver a new value
-- an interrupt through a closed gate does not wake the consumer and
-publishes no new version number
+- an open-gate interrupt delivers a new value and advances the version number
+- a closed-gate interrupt neither wakes the consumer nor changes its value,
+version number or data validity, so the expectations after a suppression are
+those of the last delivered value, not of the initial one
 - a change of the gating register while the consumer is pending
 - the consumer never observes the data of a closed alternative
+- two gated registers at one address are obtained as `wait_for_new_data`
+consumers together and are served by the merged element without a
+TransferGroup error, each honouring its own gate
 - Merged gate reads: consumers whose gating register is the same are served by
 one group member, so the gating register is accessed once per transfer
 (counted on the backend). This also holds after a transfer-group merge of
@@ -570,12 +590,14 @@ the payload accessor.
 - Preparing payload and validity there is one implementation instead of two.
 - It removes the shared-state handshake as well.
 - The new `GatedByDecorator` only reads the result; it enforces nothing.
-- An inner `TransferGroup` in the low-level element owning the gate accessors:
-rejected.
-- `TransferGroup` has no removal API.
-- The element re-registers its consumers on a merge, so members could be
-neither moved nor removed.
-- The registration owns the gate accessor instead.
+- An inner `TransferGroup` in the low-level element deduplicating on the
+accessor object: rejected.
+- `TransferGroup` marks a member once and never clears it
+(src/TransferGroup.cc:191-203) and has no removal API, so after a
+transfer-group merge the surviving element's group would be handed the
+abandoned element's gate accessor for the same gating register and reject it.
+- The element keys its gate set by the gating register and hands its held
+accessor back to the registration instead.
 - Gate query and transfer-skip API on `NDRegisterAccessor`
 (`setSkipOnClosedGate()`, `isGateOpen()`): rejected.
 - Only the async path of one backend needs it.
@@ -649,7 +671,11 @@ not skip a backend's override.
 - DI-8 [IMPLEMENTED] Same 'selection' survivor class in the schema: schemas/jmap.schema.json:326 ('Selects this channel by writing a value to a selection/mux register'), :397 and :401 ('selection/mux register') keep the word 'selection'/'Selects'. The schema bullet (CR-016:134-138) only says 'rename the key and the type' and 'reword the diagnostics'; the description strings are not covered.
 - DI-9 [IMPLEMENTED] Gate accessor type is stated inconsistently: 'Gate in the low-level element' (CR-016:189) types the gate as 'std::shared_ptr<ScalarRegisterAccessor<uint64_t>>', but the plan obtains it with getRegisterAccessor<uint64_t> (CR-016:231), which returns boost::shared_ptr<NDRegisterAccessor<uint64_t>> in this codebase (src/NumericAddressedBackend.cc:156-158). ScalarRegisterAccessor is the user-facing abstractor returned by Device::getScalarRegisterAccessor, not by getRegisterAccess...
 - DI-10 [IMPLEMENTED] Minor editorial inconsistency: 'Renamed format' (CR-016:162-165) says the three fixtures selectedByInheritance.jmap, simpleJsonFile.jmap and muxedPolled.jmap are 'renamed and rewritten', but only selectedByInheritance.jmap is actually renamed (to gatedByInheritance.jmap, Test plan CR-016:506); the other two keep their names and are only rewritten.
-- DI-11 [IMPLEMENTED] Async gate enforcement is bypassed: PolledAsyncVariable<UserType>::send() (include/async/TriggeredPollDistributor.h:127-136) computes isInitialValue from its own _lastSentVersion, but sets it with '_lastSentVersion = this->_sendBuffer.versionNumber;' AFTER the base AsyncVariableImpl::send() (include/async/AsyncAccessorManager.h:228-240) has already destructively moved the buffer via subscriber->sendDestructively(_sendBuffer). The buffer's versionNumber is reset to v0 by that move, ...
+- DI-11 [IMPLEMENTED] Async gate enforcement is bypassed: PolledAsyncVariable<UserType>::send() (include/async/TriggeredPollDistributor.h:127-136) computes isInitialValue from its own _lastSentVersion, but sets it with '_lastSentVersion = this->_sendBuffer.versionNumber;' AFTER the base AsyncVariableImpl::send() (include/async/AsyncAccessorManager.h:228-240) has already destructively moved the buffer via subscriber->sendDestructively(_sendBuffer). The buffer's versionNumber is reset to v0 by tha...
 - DI-12 [NEW] Two gated registers that share a hardware address cannot be obtained as wait_for_new_data consumers: obtaining the second gated accessor throws 'ChimeraTK::logic_error: The given accessor is already in a TransferGroup and cannot be added to another.' (thrown in TransferGroup::addAccessorImpl, src/TransferGroup.cc:189-193). Cause: each gated payload accessor builds its own gate accessor (src/NumericAddressedBackendRegisterAccessor.cc:92) and hands it to its raw element's gate group ...
 - DI-13 [NEW] DI-12 is a specification defect, not just an implementation bug. CR-016:201-220 (spec) mandates that the low-level element collect its consumers' gate accessors in a TransferGroup of its own, and claims at CR-016:209-210 that 'the re-registration of a transfer-group merge adds nothing' because the group 'is add-only' and 'skips one the group already holds'. That claim only holds for identity dedup within one element: a transfer-group merge moves a *different* gate accessor into the...
 - DI-14 [NEW] testAsyncReadGatedBy (new test, tests/executables_src/testAsyncRead.cpp) has residual failures that are test-expectation bugs, not implementation defects: line 826 compares gated.getVersionNumber() against versionAfterInitial captured after the *first* delivery, but a second open-gate interrupt (0x5678) legitimately advanced the version (line 807 only asserts '>' versionAfterInitial); line 827 expects dataValidity()==faulty although the accessor was last updated by a valid delivery...
+- DI-15 [NEW] Specifications, 'Gate in the low-level element' (CR-016:201-215): the plan makes the low-level element collect its consumers' gate accessors in a `TransferGroup` of its own, deduplicated on the accessor object, and claims the re-registration of a transfer-group merge 'adds nothing'. That claim is wrong. After the merge of two gated payload elements at one address (include/async/TriggeredPollDistributor.h:104 via replaceTransferElement, src/NumericAddressedBackendRegisterAccessor.cc:367-386) the re-registering consumer hands a different accessor object for the same gating register, so the element's identity set does not match; `TransferGroup` marks a member once and never clears the mark (src/TransferGroup.cc:191-203) and has no removal API, so the merged element's group rejects the accessor with a `logic_error` (DI-12). The group must be keyed by the gating register and the element must hand its held accessor back to the registration (user decision: option A, 'update the set').
+- DI-16 [NEW] Internal inconsistency: 'Alternatives considered' (CR-016:573-578) rejects 'an inner TransferGroup in the low-level element owning the gate accessors' and names 'the registration owns the gate accessor instead' as the choice, while the Specifications (CR-016:201-215) mandate exactly that inner TransferGroup. The rejected alternative must be restated as the accessor-identity-based dedup, which is what actually fails.
+- DI-17 [NEW] Specifications, '2D register-level gate' (CR-016:269-295): the plan never states that a register-level `gatedBy` on a scalar or 1D register stays the register's own gate. src/JsonMapFileParser.cc:409-417 stores it in the register's single channel and tests/simpleJsonFile.jmap:589-593 documents that case, so a re-implementation could route a scalar register's gate into `registerGatedBy` and lose the gate on the scalar accessor.
+- DI-18 [NEW] DI-14: the plan nowhere states that a suppressed (closed-gate) delivery leaves the consumer's value, version number and data validity as of its last delivered value; the async test bullets (CR-016:548-550) leave the opposite expectation open, and tests/executables_src/testAsyncRead.cpp:825-827 expresses it (version compared against the initial delivery, validity expected faulty although the last delivery was valid).
