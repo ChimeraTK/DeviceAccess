@@ -811,10 +811,10 @@ BOOST_AUTO_TEST_CASE(TestGatedByNonScalarGatingRegisterRejected) {
   ChimeraTK::Device device;
   device.open("(dummy?map=gatedByScalar.jmap)");
 
-  BOOST_CHECK_THROW(std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_ARR"),
-      ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_2D"),
-      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_ARR"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_2D"), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
