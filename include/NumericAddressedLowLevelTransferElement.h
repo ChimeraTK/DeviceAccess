@@ -7,6 +7,7 @@
 #include "TransferElement.h"
 #include "TransferGroup.h"
 
+#include <map>
 #include <set>
 
 namespace ChimeraTK {
@@ -38,19 +39,14 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(errorMessage.str());
       }
       setAddress(startAddress, numberOfBytes);
-      // Collect the gate accessors of all read consumers in a transfer group of our own, so one gating register is read
-      // once per transfer however many consumers it gates. Consumers hand their gate accessor in through the sink when
-      // they register with the read coordinator.
-      _readCoordinator.setGateGroupSink([this](const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor) {
-        if(!gateAccessor) {
-          return;
-        }
-        // The group is add-only: a gate accessor already held is skipped, so the re-registration of a transfer-group
-        // merge adds nothing. The high-level accessor objects are stable, so identity comparison is exact.
-        if(_gateAccessorSet.insert(gateAccessor.get()).second) {
-          _gateGroup.addAccessor(gateAccessor);
-        }
-      });
+      // Own the gate accessors of all read consumers, so one gating register is read once per transfer however many
+      // consumers it gates. A registration does not hold a gate accessor: it hands the element the gating register path
+      // and expected value, and the element builds the accessor itself for a path it does not yet hold and hands the
+      // accessor it holds back. Every accessor in the group is therefore built by the element that owns it, so
+      // TransferGroup's once-and-never-cleared membership mark never meets a foreign accessor even after a
+      // transfer-group merge moved a consumer to this element.
+      _readCoordinator.setGateAccessorSink(
+          [this](const RegisterPath& gatingRegisterPath) { return gateAccessorFor(gatingRegisterPath); });
     }
 
     ~NumericAddressedLowLevelTransferElement() override = default;
@@ -58,7 +54,7 @@ namespace ChimeraTK {
     void doReadTransferSynchronously() override {
       // Read the gate group first, so all hardware access happens in the transfer phase (TransferElement.h) and every
       // gating register is fresh before the read coordinator evaluates the gates in doPostRead.
-      if(!_gateAccessorSet.empty()) {
+      if(!_gateGroupIsEmpty) {
         _gateGroup.read();
       }
       // There is nothing we can do about reinterpet_casting with the C-style interface
@@ -217,15 +213,38 @@ namespace ChimeraTK {
     detail::ReadCoordinator _readCoordinator;
 
     /**
-     * Transfer group holding the gate accessors of all read consumers of this element. Read once per transfer in
-     * doReadTransferSynchronously(); it is independent of (and nested in) any transfer group the caller may have put
-     * the accessors into. The group is add-only: a gate accessor is handed in by the read coordinator when a gated
-     * consumer registers, and never removed (teardown discards the element and the group together).
+     * Transfer group holding the gate accessors owned by this element, one per gating register read by its consumers.
+     * Read once per transfer in doReadTransferSynchronously(); it is independent of (and nested in) any transfer group
+     * the caller may have put the accessors into. The group is add-only: a gate accessor is built by gateAccessorFor()
+     * for a gating register the element does not yet hold, and never removed (teardown discards the element and the
+     * group together).
      */
     TransferGroup _gateGroup;
 
-    /** Identity of the gate accessors already held by _gateGroup, so a re-registration adds nothing. */
-    std::set<const NDRegisterAccessor<uint64_t>*> _gateAccessorSet;
+    /** The gate accessors held by _gateGroup, keyed by the gating register they read, plus the flag the group is not
+     * empty. Keying by register (not by the accessor object) means every accessor in the group is built and owned by
+     * this element, so a re-registration on a transfer-group merge only ever offers an accessor this element built. */
+    std::map<RegisterPath, boost::shared_ptr<NDRegisterAccessor<uint64_t>>> _gateAccessors;
+    bool _gateGroupIsEmpty{true};
+
+    /**
+     * Resolve the gate accessor for a gating register, building and holding it (in the element's gate group) when the
+     * element does not yet hold it. Called by the read coordinator's sink when a consumer registers and on each gate
+     * evaluation. Obtained through the public entry point so a backend override stays in play, and without
+     * wait_for_new_data, so it is synchronous for any correct backend. The accessor is registered in the gate group
+     * only on first creation, so a later lookup adds nothing.
+     */
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> gateAccessorFor(const RegisterPath& gatingRegisterPath) {
+      auto it = _gateAccessors.find(gatingRegisterPath);
+      if(it != _gateAccessors.end()) {
+        return it->second;
+      }
+      auto accessor = _dev->getRegisterAccessor<uint64_t>(gatingRegisterPath, 0, 0, {});
+      _gateAccessors.emplace(gatingRegisterPath, accessor);
+      _gateGroup.addAccessor(accessor);
+      _gateGroupIsEmpty = false;
+      return accessor;
+    }
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};

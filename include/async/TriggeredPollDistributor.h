@@ -131,8 +131,10 @@ namespace ChimeraTK::async {
     if(!isInitialValue && _gateQuery != nullptr && _gateQuery->isGateClosed()) {
       return;
     }
+    // Snapshot the version before the base send, which moves (and hence resets) the send buffer.
+    const VersionNumber sentVersion = this->_sendBuffer.versionNumber;
     AsyncVariableImpl<UserType>::send();
-    _lastSentVersion = this->_sendBuffer.versionNumber;
+    _lastSentVersion = sentVersion;
   }
 
 } // namespace ChimeraTK::async

@@ -1,0 +1,98 @@
+{
+  "mapFormatVersion": "1.0",
+  "interruptHandler": {},
+  "metadata": {},
+  "addressSpace": {
+    "CTRL": {
+      "_": "Gating registers used by the gatedBy conditions below.",
+      "children": {
+        "SEL": {
+          "_": "Plain writable scalar gating register.",
+          "address": { "offset": 0 },
+          "representation": { "width": 32, "isSigned": false }
+        },
+        "BR_SEL": {
+          "_": "Writable gating register declared as a bit range (bits 0..3).",
+          "address": { "offset": 4 },
+          "representation": { "bitShift": 0, "width": 4 }
+        },
+        "TOP": {
+          "_": "Writable 32-bit unsigned gating register; its top bit can be set.",
+          "address": { "offset": 8 },
+          "representation": { "width": 32, "isSigned": false }
+        },
+        "ARR": {
+          "_": "Multi-element scalar-size register; not a valid gating register.",
+          "address": { "offset": 16 },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "REG2D": {
+          "_": "2D register; not a valid gating register.",
+          "address": { "offset": 32 },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "C0": { "bytesPerElement": 2, "offset": 0, "representation": { "type": "fixedPoint", "width": 16 } },
+            "C1": { "bytesPerElement": 2, "offset": 2, "representation": { "type": "fixedPoint", "width": 16 } }
+          }
+        }
+      }
+    },
+    "DATA": {
+      "_": "Read-only payload registers carrying gatedBy conditions.",
+      "children": {
+        "PLAIN": {
+          "_": "Gated by CTRL.SEL == 1.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "offset": "0x100" },
+          "representation": { "width": 32 }
+        },
+        "PLAIN_ALT": {
+          "_": "Alternative of PLAIN at the same address, gated by CTRL.SEL == 2.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.SEL", "value": 2 },
+          "address": { "offset": "0x100" },
+          "representation": { "width": 32 }
+        },
+        "ARRAY": {
+          "_": "1D register gated by CTRL.SEL == 1.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "offset": "0x110" },
+          "numberOfElements": 3,
+          "representation": { "width": 32 }
+        },
+        "GATED_BY_ARR": {
+          "_": "Gated by a multi-element register: must be rejected at accessor creation.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.ARR", "value": 0 },
+          "address": { "offset": "0x120" },
+          "representation": { "width": 32 }
+        },
+        "GATED_BY_2D": {
+          "_": "Gated by a 2D register: must be rejected at accessor creation.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.REG2D", "value": 0 },
+          "address": { "offset": "0x124" },
+          "representation": { "width": 32 }
+        },
+        "GATED_BY_BR": {
+          "_": "Gated by the bit-range register CTRL.BR_SEL == 3.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.BR_SEL", "value": 3 },
+          "address": { "offset": "0x128" },
+          "representation": { "width": 32 }
+        },
+        "GATED_BY_TOP": {
+          "_": "Gated by the top bit of CTRL.TOP: value 2147483648.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.TOP", "value": 2147483648 },
+          "address": { "offset": "0x12C" },
+          "representation": { "width": 32 }
+        }
+      }
+    }
+  }
+}

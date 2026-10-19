@@ -725,6 +725,143 @@ BOOST_AUTO_TEST_CASE(TestMergeStridedChannelSlices) {
   }
 }
 
+BOOST_AUTO_TEST_CASE(TestGatedByScalarPolled) {
+  // A scalar register with a gatedBy reports valid data while its gating register holds the configured value and
+  // faulty data while it does not. The payload through a closed gate is unspecified and not asserted.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
+
+  // Open gate: CTRL.SEL == 1 is the configured value.
+  sel = 1;
+  sel.write();
+  plain.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  // Closed gate: any other value of the gating register.
+  sel = 0;
+  sel.write();
+  plain.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Reopening restores good data.
+  sel = 1;
+  sel.write();
+  plain.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByAlternativesPolled) {
+  // Two registers share the same address and differ only in their gatedBy value, so changing the gating register
+  // returns the other alternative.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
+  auto plainAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN_ALT");
+
+  // CTRL.SEL == 1 opens PLAIN and closes PLAIN_ALT.
+  sel = 1;
+  sel.write();
+  plain.read();
+  plainAlt.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(plainAlt.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // CTRL.SEL == 2 swaps the roles.
+  sel = 2;
+  sel.write();
+  plain.read();
+  plainAlt.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_TEST(plainAlt.dataValidity() == ChimeraTK::DataValidity::ok);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByOneDArrayPolled) {
+  // A 1D register carries the same whole-register gate as a scalar one.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto array = device.getOneDRegisterAccessor<uint32_t>("DATA/ARRAY");
+
+  sel = 1;
+  sel.write();
+  array.read();
+  BOOST_TEST(array.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  sel = 0;
+  sel.write();
+  array.read();
+  BOOST_TEST(array.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByNonScalarGatingRegisterRejected) {
+  // A gating register that is not scalar (multi-element or 2D) is rejected with a clear error when the gated
+  // accessor is created.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  BOOST_CHECK_THROW(std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_ARR"),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_2D"),
+      ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByBitRangeGatingRegisterPolled) {
+  // A bit-range gating register is accepted and gates correctly.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto brSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/BR_SEL");
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_BR");
+
+  // CTRL.BR_SEL == 3 is the configured value.
+  brSel = 3;
+  brSel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  brSel = 1;
+  brSel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
+  // An unsigned gate value with the top bit set gates correctly.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto top = device.getScalarRegisterAccessor<uint32_t>("CTRL/TOP");
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_TOP");
+
+  // The configured value is 2^31, i.e. only the top bit set.
+  top = 0x80000000u;
+  top.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  // The same register value with the top bit cleared closes the gate.
+  top = 0x7fffffffu;
+  top.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()

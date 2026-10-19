@@ -49,7 +49,7 @@ namespace ChimeraTK::detail {
     template<typename UserType>
     struct Consumer {
       Consumer(size_t offset, size_t pitch, size_t count, std::vector<UserType>& stagingBuffer, DataValidity& validity,
-          bool& gateClosed, const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor, uint64_t gateValue);
+          bool& gateClosed, bool& hasGate, RegisterPath gatePath, uint64_t gateValue);
 
       size_t byteOffset{}; // offset of first sample within the raw buffer
       size_t stride{};     // elementPitchBits / 8 (equal to the element data width for a non-strided consumer)
@@ -57,12 +57,11 @@ namespace ChimeraTK::detail {
       std::vector<UserType>& staging;
       DataValidity& validity; // the consumer's data validity, written by the coordinator
       bool& gateClosed;       // the consumer's gate result, written by the coordinator
-      // The gate of this consumer: the gating register accessor (null when the consumer is ungated) and the expected
-      // value. The accessor shares its ownership with the registration and the element's gate group.
-      boost::shared_ptr<NDRegisterAccessor<uint64_t>> gateAccessor;
+      bool& hasGate;          // whether this consumer carries a gate
+      // The gating register accessor itself lives in the element's gate registry, keyed by this path; the coordinator
+      // resolves it through the sink on each gate evaluation. gateValue is the expected value that opens the gate.
+      RegisterPath gatePath;
       uint64_t gateValue{};
-
-      [[nodiscard]] bool hasGate() const { return static_cast<bool>(gateAccessor); }
     };
 
     /**
@@ -78,6 +77,9 @@ namespace ChimeraTK::detail {
       virtual void rawCopy(const std::vector<uint8_t>& rawBuffer) = 0;
 
       virtual ~GroupBase() = default;
+
+      /** The owning coordinator, so a group can evaluate its consumers' gates through the coordinator's sink. */
+      ReadCoordinator* owner{nullptr};
 
       bool isRaw{};
       std::unique_ptr<RawConverter::ConverterLoopHelper> converterLoopHelper;
@@ -108,6 +110,8 @@ namespace ChimeraTK::detail {
       std::vector<UserType> staging;
       DataValidity validity{DataValidity::ok};
       bool gateClosed{false};
+      bool hasGate{false};
+      RegisterPath gatePath;
     };
 
     /**
@@ -124,14 +128,14 @@ namespace ChimeraTK::detail {
       /**
        * Register the given read consumer with the owner.
        *
-       * The full register info (including the register name) is kept so RawConverter error messages stay informative;
-       * isRaw marks a raw-mode consumer, which forms a separate raw-copy group. A non-null gateAccessor together with
+       * The full register info (including the register name and the path) is kept so RawConverter error messages stay
+       * informative and so the consumer's gate accessor can be resolved from the element's gate registry. isRaw marks a
+       * raw-mode consumer, which forms a separate raw-copy group. hasGate together with the register info's gatedBy and
        * gateValue attaches a gate to the consumer: the coordinator opens or closes it by comparing the gating
        * register's value with gateValue.
        */
       Registration(ReadCoordinator* owner, const NumericAddressedRegisterInfo& info, bool isRaw, size_t byteOffset,
-          size_t stride, size_t nSamples, const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor = nullptr,
-          uint64_t gateValue = 0);
+          size_t stride, size_t nSamples, bool hasGate = false, uint64_t gateValue = 0);
 
       ~Registration();
 
@@ -156,8 +160,9 @@ namespace ChimeraTK::detail {
       /** Whether this consumer carries a gate. */
       [[nodiscard]] bool hasGate() const;
 
-      /** The gating register accessor of this consumer, or null when it has no gate. */
-      [[nodiscard]] const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor() const;
+      /** The gating register accessor of this consumer, or null when it has no gate. Short for the element's
+       * registry lookup by the consumer's gating register path. */
+      [[nodiscard]] boost::shared_ptr<NDRegisterAccessor<uint64_t>> gateAccessor() const;
 
      private:
       friend class ReadCoordinator;
@@ -170,9 +175,6 @@ namespace ChimeraTK::detail {
       // moved; the moveable handle owns it, the buffer's data pointer changes on each swap, never its address.
       std::unique_ptr<ConsumerState<UserType>> _state;
 
-      // The gating register accessor and expected value of this consumer, or null/0 when it has no gate. The consumer
-      // references this accessor only through the ReadCoordinator's gate group; the registration shares its ownership.
-      boost::shared_ptr<NDRegisterAccessor<uint64_t>> _gateAccessor;
       uint64_t _gateValue{0};
     };
 
@@ -212,10 +214,14 @@ namespace ChimeraTK::detail {
     void doPreWriteImpl(RawConverter::Converter<UserType, RawType, sc, fc, isSigned> converter, size_t groupId);
 
     /**
-     * Set the sink through which the coordinator hands every newly registered gate accessor to the owning low-level
-     * element, which collects them in its gate transfer group. The element sets this to its own add-if-absent routine.
+     * Set the sink through which the coordinator asks the owning low-level element for the gate accessor of a gating
+     * register. The element owns the gate accessors (keyed by gating register path, so one gating register is read once
+     * per transfer however many consumers it gates); the registration hands it the gating register path and the
+     * element builds the accessor itself for a path it does not yet hold, handing back the accessor it holds. The
+     * accessor is looked up lazily on each gate evaluation, so a re-registration on a transfer-group merge (which moves
+     * a consumer to a different element) resolves against the new owner.
      */
-    void setGateGroupSink(std::function<void(const boost::shared_ptr<NDRegisterAccessor<uint64_t>>&)> sink);
+    void setGateAccessorSink(std::function<boost::shared_ptr<NDRegisterAccessor<uint64_t>>(const RegisterPath&)> sink);
 
    private:
     template<typename>
@@ -227,7 +233,7 @@ namespace ChimeraTK::detail {
      * gated accessor is created, so no check is repeated here.
      */
     template<typename UserType>
-    [[nodiscard]] static bool evaluateGateClosed(const Consumer<UserType>& consumer);
+    [[nodiscard]] bool evaluateGateClosed(const Consumer<UserType>& consumer) const;
 
     // _groups stores the type-erased groups keyed by their stable, monotonically increasing groupId; _groupIndex maps
     // each group key to that groupId. The groupId is a non-positional identity handed to the group's
@@ -239,8 +245,8 @@ namespace ChimeraTK::detail {
     size_t _nextGroupId{};
     // the current read's raw buffer, set only while run() iterates the groups; null between reads
     const std::vector<uint8_t>* _rawBuffer{nullptr};
-    // sink handing new gate accessors to the owning element's gate group, see setGateGroupSink()
-    std::function<void(const boost::shared_ptr<NDRegisterAccessor<uint64_t>>&)> _gateGroupSink;
+    // sink asking the owning element for the gate accessor of a gating register, see setGateAccessorSink()
+    std::function<boost::shared_ptr<NDRegisterAccessor<uint64_t>>(const RegisterPath&)> _gateAccessorSink;
   };
 
   /********************************************************************************************************************/
@@ -248,17 +254,21 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   inline ReadCoordinator::Consumer<UserType>::Consumer(size_t offset, size_t pitch, size_t count,
       std::vector<UserType>& stagingBuffer, DataValidity& consumerValidity, bool& consumerGateClosed,
-      const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& consumerGateAccessor, uint64_t consumerGateValue)
+      bool& consumerHasGate, RegisterPath consumerGatePath, uint64_t consumerGateValue)
   : byteOffset(offset), stride(pitch), nSamples(count), staging(stagingBuffer), validity(consumerValidity),
-    gateClosed(consumerGateClosed), gateAccessor(consumerGateAccessor), gateValue(consumerGateValue) {}
+    gateClosed(consumerGateClosed), hasGate(consumerHasGate), gatePath(std::move(consumerGatePath)),
+    gateValue(consumerGateValue) {}
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  inline bool ReadCoordinator::evaluateGateClosed(const Consumer<UserType>& consumer) {
-    // A single read of the gating register per evaluation; its value has just been filled by the element's gate group,
-    // which is read in the transfer phase before this consumer's group is converted.
-    return consumer.gateAccessor->accessData(0) != consumer.gateValue;
+  inline bool ReadCoordinator::evaluateGateClosed(const Consumer<UserType>& consumer) const {
+    // Resolve the consumer's gating register accessor from the owning element on each evaluation, so the lookup stays
+    // correct after a transfer-group merge moved the consumer to another element. The accessor's value has just been
+    // filled by the element's gate group, which is read in the transfer phase before this consumer's group is
+    // converted. A single read of the gating register per evaluation.
+    auto gateAccessor = _gateAccessorSink(consumer.gatePath);
+    return gateAccessor->accessData(0) != consumer.gateValue;
   }
 
   /********************************************************************************************************************/
@@ -274,8 +284,8 @@ namespace ChimeraTK::detail {
   inline void ReadCoordinator::Group<UserType>::rawCopy(const std::vector<uint8_t>& rawBuffer) {
     for(const auto& consumer : consumers) {
       // Evaluate and record the gate while the group is processed, exactly as the converting path does.
-      if(consumer.hasGate()) {
-        consumer.gateClosed = evaluateGateClosed(consumer);
+      if(consumer.hasGate) {
+        consumer.gateClosed = owner->evaluateGateClosed(consumer);
         if(consumer.gateClosed) {
           consumer.validity = DataValidity::faulty;
           continue;

@@ -9,6 +9,7 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "DeviceAccessVersion.h"
 #include "DeviceBackendImpl.h"
+#include "DummyBackend.h"
 #include "ReadAnyGroup.h"
 
 #include <boost/thread.hpp>
@@ -760,6 +761,143 @@ BOOST_AUTO_TEST_CASE(testReadAnyInvalid) {
     // direct read on accessor in ReadAnyGroup is not allowed and should issue exception.
     BOOST_CHECK_THROW(a1.read(), ChimeraTK::logic_error);
   }
+
+  device.close();
+}
+
+// A gated register read with 'wait_for_new_data' is served by the triggered-poll path. While its gate is open an
+// interrupt delivers a new value; while the gate is closed the interrupt does not wake the consumer and publishes no
+// new version number.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedBy) {
+  std::cout << "testAsyncReadGatedBy" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the payload address lets the test place the raw value that an interrupt reads.
+  auto payload = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH");
+
+  // Open the gate for INT_GATED and write the value the accessor must pick up as its initial value.
+  sel = 1;
+  sel.write();
+  payload = 0x1234;
+  payload.write();
+
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED", 0, {AccessMode::wait_for_new_data});
+  // The closed alternative at the same address is observed through a plain polled accessor, which does not join the
+  // asynchronous transfer group and therefore does not merge with the gated accessor's payload element.
+  auto gatedAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED_ALT");
+
+  // The mandatory initial value after activation is delivered even before the first interrupt.
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1234u);
+  auto versionAfterInitial = gated.getVersionNumber();
+
+  // An interrupt through the open gate delivers a new value and advances the version number.
+  payload = 0x5678;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678u);
+  BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
+
+  // The alternative register is closed (CTRL.SEL == 1 opens INT_GATED, not INT_GATED_ALT).
+  gatedAlt.read();
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Close the gate: an interrupt must not wake the consumer and must not publish a new version number.
+  sel = 0;
+  sel.write();
+
+  auto waitForRead = std::async(std::launch::async, [&gated] { gated.read(); });
+  BOOST_CHECK(waitForRead.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
+
+  payload = 0x9999;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_CHECK(waitForRead.wait_for(std::chrono::seconds(1)) == std::future_status::timeout); // no wake
+  BOOST_TEST(!gated.readNonBlocking());                                                     // no new version
+  BOOST_TEST(gated.getVersionNumber() == versionAfterInitial); // version number unchanged
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty); // gate stays closed
+
+  // Reopen the gate while the consumer is pending: the next interrupt wakes it and delivers the fresh value.
+  sel = 1;
+  sel.write();
+  payload = 0xabcd;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_CHECK(waitForRead.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
+  waitForRead.wait();
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0xabcdu);
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// Two gated alternatives at the same address are served by the triggered-poll path at once. Their payload elements
+// merge in the transfer group, so the second gate accessor is re-registered with the merged element's gate group. A
+// change of the gating register while the consumer is pending picks the matching alternative; the other one stays
+// closed and is never delivered.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByAlternative) {
+  std::cout << "testAsyncReadGatedByAlternative" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto payload = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH");
+
+  // Start with the alternative's gate open (CTRL.SEL == 2) and write a value for it.
+  sel = 2;
+  sel.write();
+  payload = 0x2222;
+  payload.write();
+
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED", 0, {AccessMode::wait_for_new_data});
+  auto gatedAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED_ALT", 0, {AccessMode::wait_for_new_data});
+
+  gatedAlt.read();
+  gated.read();
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_TEST(static_cast<uint32_t>(gatedAlt) == 0x2222u);
+
+  // While the alternative is pending, switch the gate to the first register and place a value for it.
+  auto waitForAlt = std::async(std::launch::async, [&gatedAlt] { gatedAlt.read(); });
+  BOOST_CHECK(waitForAlt.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
+
+  sel = 1;
+  sel.write();
+  payload = 0x1111;
+  payload.write();
+
+  // The interrupt now goes through the first register's gate; the alternative stays closed and is not woken.
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1111u);
+  BOOST_CHECK(waitForAlt.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Reopen the alternative's gate so the pending read can finish before the device is closed.
+  sel = 2;
+  sel.write();
+  backend->triggerInterrupt(1);
+  BOOST_CHECK(waitForAlt.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
+  waitForAlt.wait();
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::ok);
 
   device.close();
 }

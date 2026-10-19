@@ -39,9 +39,9 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  void ReadCoordinator::setGateGroupSink(
-      std::function<void(const boost::shared_ptr<NDRegisterAccessor<uint64_t>>&)> sink) {
-    _gateGroupSink = std::move(sink);
+  void ReadCoordinator::setGateAccessorSink(
+      std::function<boost::shared_ptr<NDRegisterAccessor<uint64_t>>(const RegisterPath&)> sink) {
+    _gateAccessorSink = std::move(sink);
   }
 
   /********************************************************************************************************************/
@@ -63,7 +63,7 @@ namespace ChimeraTK::detail {
       for(auto& consumer : group.consumers) {
         // Evaluate and record the gate while the group is processed. A closed-gate consumer keeps its (unspecified)
         // payload unconverted and is marked faulty; the gate result is recorded separately from the validity.
-        if(consumer.hasGate()) {
+        if(consumer.hasGate) {
           consumer.gateClosed = evaluateGateClosed(consumer);
           if(consumer.gateClosed) {
             consumer.validity = DataValidity::faulty;
@@ -100,10 +100,20 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   ReadCoordinator::Registration<UserType>::Registration(ReadCoordinator* owner,
       const NumericAddressedRegisterInfo& info, bool isRaw, size_t byteOffset, size_t stride, size_t nSamples,
-      const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& gateAccessor, uint64_t gateValue)
-  : _owner(owner), _state(std::make_unique<ConsumerState<UserType>>()), _gateAccessor(gateAccessor),
-    _gateValue(gateValue) {
+      bool hasGate, uint64_t gateValue)
+  : _owner(owner), _state(std::make_unique<ConsumerState<UserType>>()), _gateValue(gateValue) {
     _state->staging.resize(nSamples);
+    _state->hasGate = hasGate;
+    if(hasGate && info.channels.front().gatedBy.has_value()) {
+      _state->gatePath = info.channels.front().gatedBy->regPath;
+      // Resolve the gating register accessor now, so the owning element builds and holds it (and reads it in the
+      // transfer phase) before the first read. The accessor itself is not kept by the registration: the element owns
+      // it, keyed by the gating register path, and hands it back on each evaluation. This keeps every gate accessor
+      // owned by the element that reads it, so a transfer-group merge never offers a foreign accessor to a group.
+      if(_owner->_gateAccessorSink) {
+        _owner->_gateAccessorSink(_state->gatePath);
+      }
+    }
     // Same grouping as the 2D accessor: converter information plus UserType; raw-mode consumers are grouped separately
     // by their UserType and copied without conversion. A consumer's gate does not take part in the grouping: the same
     // register read by ungated and gated consumers still shares one group, and the gate is evaluated per consumer.
@@ -121,6 +131,7 @@ namespace ChimeraTK::detail {
       _groupId = _owner->_nextGroupId++;
       groupIt->second = _groupId;
       auto group = std::make_unique<Group<UserType>>();
+      group->owner = owner;
       group->isRaw = isRaw;
       if(!group->isRaw) {
         // The group's typed conversion loop: one ConverterLoopHelper, cloned from the 2D accessor's pattern.
@@ -145,14 +156,8 @@ namespace ChimeraTK::detail {
     }
     auto& group = static_cast<Group<UserType>&>(*_owner->_groups.at(_groupId));
     group.consumers.push_back(Consumer<UserType>(byteOffset, stride, nSamples, _state->staging, _state->validity,
-        _state->gateClosed, _gateAccessor, _gateValue));
+        _state->gateClosed, _state->hasGate, _state->gatePath, _gateValue));
     _it = std::prev(group.consumers.end());
-
-    if(_gateAccessor && _owner->_gateGroupSink) {
-      // Hand the gate accessor to the element's gate group. The group is add-only; the element skips an accessor it
-      // already holds, so a re-registration on a transfer-group merge adds nothing.
-      _owner->_gateGroupSink(_gateAccessor);
-    }
   }
 
   /********************************************************************************************************************/
@@ -168,7 +173,7 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   ReadCoordinator::Registration<UserType>::Registration(Registration&& other) noexcept
   : _owner(other._owner), _groupId(other._groupId), _it(other._it), _state(std::move(other._state)),
-    _gateAccessor(std::move(other._gateAccessor)), _gateValue(other._gateValue) {
+    _gateValue(other._gateValue) {
     other._owner = nullptr;
   }
 
@@ -185,7 +190,6 @@ namespace ChimeraTK::detail {
     _groupId = other._groupId;
     _it = other._it;
     _state = std::move(other._state);
-    _gateAccessor = std::move(other._gateAccessor);
     _gateValue = other._gateValue;
     other._owner = nullptr;
     return *this;
@@ -204,7 +208,6 @@ namespace ChimeraTK::detail {
     group.consumers.erase(_it);
     _owner = nullptr;
     _state.reset();
-    _gateAccessor.reset();
   }
 
   /********************************************************************************************************************/
@@ -232,14 +235,17 @@ namespace ChimeraTK::detail {
 
   template<typename UserType>
   bool ReadCoordinator::Registration<UserType>::hasGate() const {
-    return static_cast<bool>(_gateAccessor);
+    return _state && _state->hasGate;
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  const boost::shared_ptr<NDRegisterAccessor<uint64_t>>& ReadCoordinator::Registration<UserType>::gateAccessor() const {
-    return _gateAccessor;
+  boost::shared_ptr<NDRegisterAccessor<uint64_t>> ReadCoordinator::Registration<UserType>::gateAccessor() const {
+    if(!_state || !_state->hasGate || !_owner || !_owner->_gateAccessorSink) {
+      return nullptr;
+    }
+    return _owner->_gateAccessorSink(_state->gatePath);
   }
 
   /********************************************************************************************************************/

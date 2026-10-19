@@ -1,0 +1,48 @@
+{
+  "mapFormatVersion": "1.0",
+  "interruptHandler": {
+    "1": {
+      "INTC": {
+        "path": "DAQ",
+        "version": 1
+      }
+    }
+  },
+  "metadata": {},
+  "addressSpace": {
+    "CTRL": {
+      "_": "Gating register used by the gatedBy conditions below.",
+      "children": {
+        "SEL": {
+          "_": "Plain writable scalar gating register.",
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "DATA": {
+      "_": "Interrupt-triggered payload registers carrying gatedBy conditions.",
+      "children": {
+        "SCRATCH": {
+          "_": "Plain writable register at the payload address: lets the test place the raw value that an interrupt reads.",
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        },
+        "INT_GATED": {
+          "_": "Gated by CTRL.SEL == 1; a new value is delivered on interrupt 1 while the gate is open.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        },
+        "INT_GATED_ALT": {
+          "_": "Alternative of INT_GATED at the same address, gated by CTRL.SEL == 2 and triggered by the same interrupt.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL", "value": 2 },
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        }
+      }
+    }
+  }
+}

@@ -91,13 +91,10 @@ namespace ChimeraTK {
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
 
     /**
-     * The gating register accessor of this consumer, obtained once at construction from the register's gatedBy
-     * metadata, or null when the register has no gate. Shared with the registration and the low-level element's gate
-     * group. Kept here so its lifetime is tied to the accessor.
+     * The expected value of this consumer's gating register, which opens the gate. Only meaningful when the register
+     * carries a gatedBy (see _registerInfo). The gating register accessor itself is owned by the low-level element's
+     * gate group, keyed by the gating register path; this accessor does not hold it.
      */
-    boost::shared_ptr<NDRegisterAccessor<uint64_t>> _gateAccessor;
-
-    /** The expected value of the gating register which opens the gate. Only meaningful when _gateAccessor is set. */
     uint64_t _gateValue{0};
 
     /**
