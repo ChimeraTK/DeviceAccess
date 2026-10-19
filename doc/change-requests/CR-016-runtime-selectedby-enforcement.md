@@ -330,6 +330,42 @@ the value, the validity and the version number of its target unchanged.
 with the single query `isGateClosed()`. The distributor can ask it without
 knowing the `UserType` or the concrete accessor.
 
+### Bit-range gated accessor
+
+- A gated accessor can itself be a bit range (`registerInfo.isBitRange`):
+- a scalar/1D register whose own representation has a non-zero `bitShift` and
+carries a `gatedBy`
+- a bit-field child slice of a gated channel (`doc/jmapFormat.dox:356-358`),
+which carries `isBitRange` and the channel's `gatedBy`
+- The plain (non-bit-range) scalar/1D accessor and the plain channel slice are
+not bit ranges and are handled by the registration path above.
+- A bit-range accessor needs its own handling:
+- the `isBitRange` branch of `getSyncRegisterAccessor()`
+(`src/NumericAddressedBackend.cc:165-191`) returns the
+`BitRangeAccessorDecorator` before the plain-accessor gate wrap (`:209`), so
+it is wrapped in `GatedByDecorator<UserType>` on that branch too, which keeps
+the decorator outermost
+- the bit-range target is built from a numeric-address path (`:184`), whose
+register info carries no `gatedBy`
+(`src/NumericAddressedRegisterCatalogue.cc:270-271`), so the gate is attached
+to the target's base accessor explicitly instead of being read from its
+register info
+- the base accessor of a bit-range target is a
+`NumericAddressedBackendRegisterAccessor<uint64_t, false>`
+(`include/BitRangeAccessorDecorator.h:46`), whatever the accessor's `UserType`,
+so the decorator cannot resolve the registration by `UserType`
+- The gate is attached by re-registering the base accessor's consumer with the
+gate: the gating register's path and the expected value. The base accessor
+exposes an internal hook for this, so the gate reaches the coordinator without
+a new core API.
+- The decorator reads the gate result through a pointer to the consumer's gate
+result flag. That flag lives in the heap-allocated consumer state, so the
+pointer stays valid across a transfer-group merge. The plain path resolves it
+from the base accessor's registration, the bit-range path from the `uint64_t`
+base accessor it attached the gate to.
+- A bit-range gating register is unaffected: the gating register never carries
+a gate itself, so its accessor is not wrapped.
+
 ### Gate result
 
 - A forwarded value is `DataValidity::faulty` for two unrelated reasons:
@@ -344,10 +380,11 @@ consumer, so:
 - the full-register accessor of a 2D register with a register-level gate
 determines its own result directly, not through a registration
 - the result is never shared
-- `GatedByDecorator` reads the result through the registration it resolved at
-construction. A transfer-group merge re-seats the registration in place when
-it replaces the low-level element, so the reference stays valid while the
-accessor lives.
+- `GatedByDecorator` reads the result through a pointer to the consumer's gate
+result flag, resolved once at construction (the bit-range case is described in
+"Bit-range gated accessor"). A transfer-group merge re-seats the registration
+in place when it replaces the low-level element, so the pointer stays valid
+while the accessor lives.
 - The result reaches the distributor because the decorator is the accessor the
 distributor polls. The distributor resolves `ClosedGateQuery` once and reads
 the gate result through it.
@@ -559,9 +596,19 @@ address
 that supports `wait_for_new_data` gets no subscription
 - a non-scalar (multi-element or 2D) gating register is rejected with a
 clear error when the gated accessor is created
-- a bit-range gating register is accepted and gates correctly
+- a gating register that is itself a bit range (its representation has a
+non-zero `bitShift`) is accepted and gates correctly; the fixture declares a
+genuine bit range, so the test exercises a bit-range gating register
 - an unsigned gate value with the top bit set gates correctly
 - the parser rejects a negative `value`
+- Gated bit-range accessors:
+- a scalar/1D register whose own representation has a non-zero `bitShift` and a
+`gatedBy` reports `DataValidity::faulty` while its gate is closed and the data
+while it is open
+- a bit-field child slice of a gated channel reports `DataValidity::faulty`
+while the channel's gate is closed
+- the async path of a gated bit-range accessor neither wakes nor advances the
+version number while its gate is closed
 - Polled 2D (`testMultiplexedDataAccesor.cpp`):
 - per-channel gating of the slices within one read
 - register-level whole-block gate on the full-register accessor, enforced
@@ -705,3 +752,5 @@ not skip a backend's override.
 - DI-29 [DONE] tests/executables_src/testJsonMapFileParser.cpp:1046 (new comment) - American spelling 'initialized' ('Two identically initialized infos are equal...') against the project's British-English rule; the codebase predominantly uses 'initialise'/'initialised' (incl. the isInitialised() identifiers). Use 'initialised'.
 - DI-30 [DONE] tests/executables_src/testMultiplexedDataAccesor.cpp:567 - the comment added by this CR ('// Reopen the register-level gate but change the channel selection: the two gates move independently.') uses the word 'selection'. CR-016 requires the selection wording to disappear (Requirements: 'The word "selection" is gone', 'no `selection` wording survives', CR-016:92-94 and :142-143). Reword to the gate terminology, e.g. '...but change the channel gate: ...'.
 - DI-31 [DONE] tests/simpleJsonFile.jmap:246 - the fixture description rewritten by this CR still reads 'For registers whose layout is selected by a register value (multiple DAQ tabs), a \'gatedBy\' dict is added...'. This CR changes that very line (it renames the key inside it) and requires the selection wording to be gone, so the sentence must use the gate wording, e.g. 'For registers whose layout is gated by a register value ...'. Same survivor class as resolved deferred issue DI-7/DI-...
+- DI-32 [NEW] A gated accessor whose registerInfo.isBitRange is true is never gated at runtime. src/NumericAddressedBackend.cc:165 takes the isBitRange branch and returns the BitRangeAccessorDecorator (src/NumericAddressedBackend.cc:187/190) before the GatedByDecorator wrap at :209; its target is built from a numeric-address path at :184, whose register info (src/NumericAddressedRegisterCatalogue.cc:270) carries no gatedBy, so the gate is dropped. This affects (a) a gated 2D channel that is itself a bit range (doc/jmapFormat.dox:356 allows setting bitShift+width on a channel), (b) a bit-field child slice of a gated channel (doc/jmapFormat.dox:358; testJsonMapFileParser.cpp:991-1011 shows such a slice has isBitRange==true and a gatedBy), and (c) a scalar/1D register whose own representation has bitShift != 0 with a register-level gatedBy. CR-016 requires such a register/slice to report DataValidity::faulty while its gate is closed (requirements lines 4, 25-34), and lists no exclusion in 'Out of scope' (:64-69), so the gate is silently not enforced. Note the plain (non-bit-range) channel slice and scalar/1D paths are handled correctly.
+- DI-33 [NEW] tests/gatedByScalar.jmap:14-18 declares CTRL.BR_SEL 'as a bit range (bits 0..3)' with bitShift: 0, which does not make it a bit range: src/JsonMapFileParser.cc:183 sets isBitRange only for bitShift != 0, and :723-731 reclassifies only a register that shares its address with a bit range. No register in the fixture is a bit range, so TestGatedByBitRangeGatingRegisterPolled (tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp:822) does not exercise a bit-range gating register, leaving the test-plan bullet (CR-016:562 'a bit-range gating register is accepted and gates correctly') uncovered.
