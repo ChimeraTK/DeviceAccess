@@ -1023,7 +1023,7 @@ BOOST_AUTO_TEST_CASE(TestDoubleBufferDiffBarThrows) {
 
 /**********************************************************************************************************************/
 
-// ChannelInfo::operator== (and !=) must include the gatedByRegister/gatedByValue members. Two channel infos
+// ChannelInfo::operator== (and !=) must include the gatedBy member. Two channel infos
 // that differ only in their gating must compare unequal.
 BOOST_AUTO_TEST_CASE(TestChannelInfoEqualityGatedBy) {
   NumericAddressedRegisterInfo::ChannelInfo a;
@@ -1067,9 +1067,8 @@ BOOST_AUTO_TEST_CASE(TestChannelInfoEqualityGatedBy) {
 
 /**********************************************************************************************************************/
 
-// gatedBy with only 'register', no 'value'. Desired semantics (documented): both fields are required, so the
-// parser must reject the map with std::logic_error (a missing 'value' must not silently default). NOTE: the current
-// lax deserializer does not yet enforce this; this test documents the desired behaviour.
+// gatedBy with only 'register', no 'value': both fields are required, so the parser rejects the map with a
+// std::logic_error. A missing 'value' must not silently default.
 BOOST_AUTO_TEST_CASE(TestGatedByMissingValue) {
   nlohmann::json sel{{"register", "COLLISION.MUX"}}; // missing 'value'
   BOOST_CHECK_THROW(parseInjectedGatedByFault("gatedByMissingValue.jmap", sel), ChimeraTK::logic_error);
@@ -1077,8 +1076,8 @@ BOOST_AUTO_TEST_CASE(TestGatedByMissingValue) {
 
 /**********************************************************************************************************************/
 
-// gatedBy with only 'value', no 'register'. Desired semantics (documented): the parser must reject the map
-// because both fields are required. NOTE: expected std::logic_error, not guaranteed by the current lax deserializer.
+// gatedBy with only 'value', no 'register': both fields are required, so the parser rejects the map with a
+// std::logic_error.
 BOOST_AUTO_TEST_CASE(TestGatedByMissingRegister) {
   nlohmann::json sel{{"value", 0}}; // missing 'register'
   BOOST_CHECK_THROW(parseInjectedGatedByFault("gatedByMissingRegister.jmap", sel), ChimeraTK::logic_error);

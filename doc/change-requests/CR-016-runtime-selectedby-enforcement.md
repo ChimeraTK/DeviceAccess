@@ -9,7 +9,7 @@ change also unifies the wording on "gate": the jmap key `selectedBy` becomes
 
 Depends on: CR-011
 
-Status: IMPLEMENTED (from TESTS PASSED)
+Status: READY TO TEST (from TESTS PASSED)
 
 ## Requirements
 
@@ -699,7 +699,7 @@ not skip a backend's override.
 - DI-23 [DONE] tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp:889: the new private member `readCount` lacks the leading underscore required by `readability-identifier-naming.PrivateMemberPrefix` (compare `_registerer` in the same class); clang-tidy reports `readability-identifier-naming` on this new line. Fix: rename to `_readCount`.
 - DI-24 [DONE] include/ReadCoordinator.h:257 and :259: the new `Consumer` constructor parameters produce clang-tidy findings: `performance-unnecessary-value-param` on `RegisterPath consumerGatePath` (:257) and `performance-move-const-arg` on `gatePath(std::move(consumerGatePath))` (:259, 'passing result of std::move() as a const reference argument; no move will actually happen'). Take `RegisterPath` by value only if moved into a value member, otherwise by const reference, and drop the ine...
 - DI-25 [DONE] src/JsonMapFileParser.cc:318-330: the 2D-register branch carries a duplicated comment block - two consecutive comments state the same rule ('a register-level gate is recorded separately and gates only the full-register accessor; it is not inherited by the channels') with slightly different wording. Collapse them into one comment.
-- DI-26 [IMPLEMENTED] include/NumericAddressedRegisterCatalogue.h:42 (new doxygen comment) - typo 'faultied' in '...the gate is closed and its data is faultied.'; should be 'faulty'. It is the only occurrence of 'faultied' in the tree.
-- DI-27 [IMPLEMENTED] include/NumericAddressedRegisterCatalogue.h:48 (new doxygen comment on GatedBy::regPath) - broken grammar 'that determines if a Channel/Register is gate open'; should read e.g. '...that determines whether the gate of a Channel/Register is open'.
-- DI-28 [IMPLEMENTED] include/NumericAddressedLowLevelTransferElement.h:11 - the CR adds '#include <set>', but <set> is unused (the header uses only std::map, _gateAccessors; no std::set anywhere in the file). Remove it (include-what-you-use; clang-tidy's misc-include-cleaner does not report unused includes in headers, so this was found by inspection).
-- DI-29 [IMPLEMENTED] tests/executables_src/testJsonMapFileParser.cpp:1046 (new comment) - American spelling 'initialized' ('Two identically initialized infos are equal...') against the project's British-English rule; the codebase predominantly uses 'initialise'/'initialised' (incl. the isInitialised() identifiers). Use 'initialised'.
+- DI-26 [DONE] include/NumericAddressedRegisterCatalogue.h:42 (new doxygen comment) - typo 'faultied' in '...the gate is closed and its data is faultied.'; should be 'faulty'. It is the only occurrence of 'faultied' in the tree.
+- DI-27 [DONE] include/NumericAddressedRegisterCatalogue.h:48 (new doxygen comment on GatedBy::regPath) - broken grammar 'that determines if a Channel/Register is gate open'; should read e.g. '...that determines whether the gate of a Channel/Register is open'.
+- DI-28 [DONE] include/NumericAddressedLowLevelTransferElement.h:11 - the CR adds '#include <set>', but <set> is unused (the header uses only std::map, _gateAccessors; no std::set anywhere in the file). Remove it (include-what-you-use; clang-tidy's misc-include-cleaner does not report unused includes in headers, so this was found by inspection).
+- DI-29 [DONE] tests/executables_src/testJsonMapFileParser.cpp:1046 (new comment) - American spelling 'initialized' ('Two identically initialized infos are equal...') against the project's British-English rule; the codebase predominantly uses 'initialise'/'initialised' (incl. the isInitialised() identifiers). Use 'initialised'.
