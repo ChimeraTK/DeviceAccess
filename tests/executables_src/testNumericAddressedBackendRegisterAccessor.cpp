@@ -864,4 +864,73 @@ BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
 
 /**********************************************************************************************************************/
 
+// A backend that counts the reads of each hardware address, so a test can check that one gating register is read once
+// per transfer however many consumers it gates.
+class GatedReadCountBackend : public DummyBackend {
+ public:
+  explicit GatedReadCountBackend(const std::string& mapFileName) : DummyBackend(mapFileName) {}
+
+  void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
+    ++readCount[address];
+    DummyBackend::read(bar, address, data, sizeInBytes);
+  }
+
+  /** Number of reads of the given hardware address since construction. */
+  size_t readsOf(uint64_t address) const {
+    auto it = readCount.find(address);
+    return it == readCount.end() ? 0 : it->second;
+  }
+
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return boost::make_shared<GatedReadCountBackend>(parameters.at("map"));
+  }
+
+ private:
+  std::map<uint64_t, size_t> readCount;
+
+  struct Registerer {
+    Registerer() {
+      ChimeraTK::BackendFactory::getInstance().registerBackendType(
+          "GatedReadCountBackend", &GatedReadCountBackend::createInstance, {"map"});
+    }
+  };
+  static Registerer _registerer;
+};
+
+GatedReadCountBackend::Registerer GatedReadCountBackend::_registerer;
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByGatingRegisterReadOncePerTransfer) {
+  // Two gated consumers share one gating register. The gate accessors merge, so the gating register is read exactly
+  // once per transfer even though two gated consumers are served. This also holds after a transfer-group merge of the
+  // payload accessors.
+  ChimeraTK::Device device;
+  device.open("(GatedReadCountBackend?map=gatedByScalar.jmap)");
+
+  auto backend = boost::dynamic_pointer_cast<GatedReadCountBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  sel = 1;
+  sel.write();
+
+  // DATA/PLAIN and DATA/PLAIN_ALT share the gating register CTRL.SEL but sit at one address, so their payload
+  // elements merge in the transfer group.
+  auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
+  auto plainAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN_ALT");
+
+  ChimeraTK::TransferGroup group;
+  group.addAccessor(plain);
+  group.addAccessor(plainAlt);
+
+  const uint64_t selAddress = 0; // CTRL.SEL is the gating register at offset 0.
+  auto before = backend->readsOf(selAddress);
+  group.read();
+  // One gating register read for the whole transfer, however many consumers it gates.
+  BOOST_TEST(backend->readsOf(selAddress) == before + 1);
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
