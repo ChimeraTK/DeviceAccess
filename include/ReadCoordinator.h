@@ -49,7 +49,7 @@ namespace ChimeraTK::detail {
     template<typename UserType>
     struct Consumer {
       Consumer(size_t offset, size_t pitch, size_t count, std::vector<UserType>& stagingBuffer, DataValidity& validity,
-          bool& gateClosed, bool& hasGate, RegisterPath gatePath, uint64_t gateValue);
+          bool& gateClosed, bool& hasGate, const RegisterPath& gatePath, uint64_t gateValue);
 
       size_t byteOffset{}; // offset of first sample within the raw buffer
       size_t stride{};     // elementPitchBits / 8 (equal to the element data width for a non-strided consumer)
@@ -254,10 +254,10 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   inline ReadCoordinator::Consumer<UserType>::Consumer(size_t offset, size_t pitch, size_t count,
       std::vector<UserType>& stagingBuffer, DataValidity& consumerValidity, bool& consumerGateClosed,
-      bool& consumerHasGate, RegisterPath consumerGatePath, uint64_t consumerGateValue)
+      bool& consumerHasGate, const RegisterPath& consumerGatePath, uint64_t consumerGateValue)
   : byteOffset(offset), stride(pitch), nSamples(count), staging(stagingBuffer), validity(consumerValidity),
-    gateClosed(consumerGateClosed), hasGate(consumerHasGate), gatePath(std::move(consumerGatePath)),
-    gateValue(consumerGateValue) {}
+    gateClosed(consumerGateClosed), hasGate(consumerHasGate), gatePath(consumerGatePath), gateValue(consumerGateValue) {
+  }
 
   /********************************************************************************************************************/
 

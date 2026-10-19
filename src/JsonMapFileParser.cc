@@ -323,11 +323,7 @@ namespace ChimeraTK::detail {
             info.nElements = numberOfElements;
             // A register-level gate declared on the 2D register itself is recorded separately and gates only the
             // full-register accessor. It is not inherited by the channels, which carry only their own per-channel
-            // gate or the gate inherited from an enclosing module.
-            // A register-level gate declared on the 2D register itself is recorded separately and gates only the
-            // full-register accessor; it is not inherited by the channels. The gate inherited from an enclosing
-            // module (passed in when there is no local gate) reaches the channels through the unchanged per-channel
-            // inheritance rules.
+            // gate or the gate inherited from an enclosing module (passed in when there is no local gate).
             apply2DRegisterGatedBy(info);
             // Iterate the channels sorted by byte offset (see channelsInOffsetOrder) so the per-channel information
             // (and hence the channel index of the 2D accessor) stays in the natural memory order.

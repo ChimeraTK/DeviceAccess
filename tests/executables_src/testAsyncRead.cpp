@@ -796,7 +796,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedBy) {
   // The mandatory initial value after activation is delivered even before the first interrupt.
   gated.read();
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
-  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1234u);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1234U);
   auto versionAfterInitial = gated.getVersionNumber();
 
   // An interrupt through the open gate delivers a new value and advances the version number.
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedBy) {
   payload.write();
   backend->triggerInterrupt(1);
   BOOST_TEST(gated.readNonBlocking());
-  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678u);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678U);
   BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
   auto versionAfter5678 = gated.getVersionNumber();
 
@@ -827,7 +827,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedBy) {
   // last delivered value.
   BOOST_TEST(gated.getVersionNumber() == versionAfter5678);        // version number unchanged
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok); // validity of the last delivered value
-  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678u);             // value of the last delivered value
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678U);             // value of the last delivered value
 
   // Reopen the gate while the consumer is pending: the next interrupt wakes it and delivers the fresh value.
   sel = 1;
@@ -837,7 +837,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedBy) {
   backend->triggerInterrupt(1);
   BOOST_CHECK(waitForRead.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
   waitForRead.wait();
-  BOOST_TEST(static_cast<uint32_t>(gated) == 0xabcdu);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0xabcdU);
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
   BOOST_TEST(gated.getVersionNumber() > versionAfter5678);
 
@@ -876,7 +876,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByAlternative) {
   gated.read();
   BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::ok);
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
-  BOOST_TEST(static_cast<uint32_t>(gatedAlt) == 0x2222u);
+  BOOST_TEST(static_cast<uint32_t>(gatedAlt) == 0x2222U);
 
   // While the alternative is pending, switch the gate to the first register and place a value for it.
   auto waitForAlt = std::async(std::launch::async, [&gatedAlt] { gatedAlt.read(); });
@@ -890,7 +890,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByAlternative) {
   // The interrupt now goes through the first register's gate; the alternative stays closed and is not woken.
   backend->triggerInterrupt(1);
   BOOST_TEST(gated.readNonBlocking());
-  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1111u);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1111U);
   BOOST_CHECK(waitForAlt.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
   // The suppressed delivery leaves the alternative untouched: its validity stays that of its last delivered value.
   BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::ok);
@@ -932,7 +932,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByGatingRegisterNotSubscribed) {
   auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED", 0, {AccessMode::wait_for_new_data});
 
   gated.read();
-  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1234u);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1234U);
   auto versionAfterInitial = gated.getVersionNumber();
 
   // An interrupt of the gating register itself must not wake the consumer: the gating register is not subscribed.
@@ -945,7 +945,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByGatingRegisterNotSubscribed) {
   payload.write();
   backend->triggerInterrupt(1);
   BOOST_TEST(gated.readNonBlocking());
-  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678u);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678U);
 
   device.close();
 }
@@ -990,7 +990,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByMergedDifferentGatingRegisters) {
   payload.write();
   backend->triggerInterrupt(1);
   BOOST_TEST(a.readNonBlocking());
-  BOOST_TEST(static_cast<uint32_t>(a) == 0x2222u);
+  BOOST_TEST(static_cast<uint32_t>(a) == 0x2222U);
   BOOST_TEST(!b.readNonBlocking());
 
   // Open B's gate instead and interrupt again: now B is served, A is not.
@@ -1002,7 +1002,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByMergedDifferentGatingRegisters) {
   payload.write();
   backend->triggerInterrupt(1);
   BOOST_TEST(b.readNonBlocking());
-  BOOST_TEST(static_cast<uint32_t>(b) == 0x3333u);
+  BOOST_TEST(static_cast<uint32_t>(b) == 0x3333U);
 
   device.close();
 }

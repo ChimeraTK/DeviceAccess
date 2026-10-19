@@ -850,13 +850,13 @@ BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
   auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_TOP");
 
   // The configured value is 2^31, i.e. only the top bit set.
-  top = 0x80000000u;
+  top = 0x80000000U;
   top.write();
   gated.read();
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
 
   // The same register value with the top bit cleared closes the gate.
-  top = 0x7fffffffu;
+  top = 0x7fffffffU;
   top.write();
   gated.read();
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
@@ -871,14 +871,14 @@ class GatedReadCountBackend : public DummyBackend {
   explicit GatedReadCountBackend(const std::string& mapFileName) : DummyBackend(mapFileName) {}
 
   void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
-    ++readCount[address];
+    ++_readCount[address];
     DummyBackend::read(bar, address, data, sizeInBytes);
   }
 
   /** Number of reads of the given hardware address since construction. */
   size_t readsOf(uint64_t address) const {
-    auto it = readCount.find(address);
-    return it == readCount.end() ? 0 : it->second;
+    auto it = _readCount.find(address);
+    return it == _readCount.end() ? 0 : it->second;
   }
 
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
@@ -886,7 +886,7 @@ class GatedReadCountBackend : public DummyBackend {
   }
 
  private:
-  std::map<uint64_t, size_t> readCount;
+  std::map<uint64_t, size_t> _readCount;
 
   struct Registerer {
     Registerer() {
