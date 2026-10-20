@@ -42,6 +42,12 @@ their own per-channel `gatedBy`.
 - the schema accepts it
 - the parser accepts it and records it separately from the per-channel
 gates
+- Double-buffered register:
+- The gate applies the same way as to an undoubled register: a polled read is
+`DataValidity::faulty` while the gate is closed.
+- A closed gate must not wake a `wait_for_new_data` consumer of a
+double-buffered register either. The same rule holds: neither wakes nor sees
+a new version number.
 - `wait_for_new_data` consumer:
 - It must not observe a value while its gate is closed.
 - Such a value is discarded, so the consumer neither wakes nor sees a new
@@ -128,6 +134,9 @@ the synchronous accessor of a gated register in `GatedByDecorator`.
 `src/NumericAddressedBackendMuxedRegisterAccessor.cc`: enforce the
 register-level gate of a 2D register on the full-register accessor, which
 the `GatedByDecorator` path does not reach.
+- `include/DoubleBufferAccessor.h` / `src/DoubleBufferAccessor.cc`: carry the
+gate query for the currently active inner buffer of a double-buffered gated
+register.
 - `include/NumericAddressedRegisterCatalogue.h` /
 `src/NumericAddressedRegisterCatalogue.cc`:
 - new `registerGatedBy` member
@@ -277,8 +286,9 @@ per conversion path.
 - The accessor's `doPostRead()` copies two things into its own buffer:
 - the payload, from the staging buffer
 - the validity, from its registration
-- `DoubleBufferAccessor` is unchanged. It already propagates the inner
-buffer's validity (`src/DoubleBufferAccessor.cc:91-94`).
+- `DoubleBufferAccessor` propagates the inner buffer's validity
+(`src/DoubleBufferAccessor.cc:91-94`) and carries the gate query for a
+double-buffered gated register (see "Gated double-buffered register").
 - The accessor exposes its `_readRegistration` through a getter. The gate
 result of its consumer can therefore be read from outside.
 - `GatedBy` is the metadata type shared by the catalogue and the registration.
@@ -310,9 +320,39 @@ accessors (`getRegisterAccessor<uint64_t>(...)`, scalar check, see
 - a closed gate marks the whole block `DataValidity::faulty` in
 `doPostRead()` instead of `ok`, so the payload is unspecified
 - The channel slices keep using the per-consumer mechanism above.
+- A double-buffered 2D register (e.g. `DAQ.FD`) never reaches this accessor:
+its full-register accessor is a `DoubleBufferAccessor`, whose register-level
+gate is enforced by the double-buffer mechanism (see "Gated double-buffered
+register").
 - `schemas/jmap.schema.json` no longer forbids `gatedBy` on a register with
 `channels`.
 - `doc/jmapFormat.dox` describes the register-level gate.
+
+### Gated double-buffered register
+
+- A register with `registerInfo.doubleBuffer` takes the double-buffer branch of
+`getSyncRegisterAccessor()` (`src/NumericAddressedBackend.cc:234-246`), which
+runs before the muxed branch and is not the plain-accessor gate wrap
+(`src/NumericAddressedBackend.cc:209-211`).
+- That branch attaches the gate query to the accessor it returns, so the gate
+is enforced for a double-buffered register as well.
+- `DoubleBufferAccessor::getInternalElements()` is empty
+(`include/DoubleBufferAccessor.h:45`), so `GatedByDecorator` cannot resolve
+the registration over that chain, and its constructor asserts a non-null
+registration (`include/GatedByDecorator.h:78`).
+- The gate query is therefore carried by the `DoubleBufferAccessor` itself, or
+by an equivalent backend-side object:
+- the `DoubleBufferAccessor` implements `ClosedGateQuery`
+- the query answers for the currently active inner buffer
+- The distributor's `_gateQuery` is non-null, so a closed gate neither wakes
+the consumer nor advances the version number (see "Suppressing the
+delivery").
+- This also covers the full-register accessor of a double-buffered 2D
+register. The guard `if(registerInfo.doubleBuffer == std::nullopt)`
+(`src/NumericAddressedBackend.cc:162`) sends such a register to the
+double-buffer branch, so its full-register accessor is a `DoubleBufferAccessor`
+and never a `NumericAddressedBackendMuxedRegisterAccessor`. Its register-level
+gate is enforced here, not in "2D register-level gate".
 
 ### Gate decorator
 
@@ -438,9 +478,13 @@ accessors by the gating register.
 - No gate-specific member or behaviour is added to the class.
 - The gate result, the `ClosedGateQuery` mixin and the registration getter are
 backend-internal:
-- the mixin is brought in only by `GatedByDecorator`
+- the mixin is brought in only by `GatedByDecorator` and the backend's
+`DoubleBufferAccessor`
 - it is read only by `PolledAsyncVariable`
 - the getter is on `NumericAddressedBackendRegisterAccessor`
+- The gate query of a double-buffered gated register stays backend-internal
+too: only `PolledAsyncVariable` reads it, so it is not a core
+`NDRegisterAccessor`/`TransferElement`/`TransferGroup` change.
 
 ### Layer structure
 
@@ -621,6 +665,15 @@ version number or data validity, so the expectations after a suppression are
 those of the last delivered value, not of the initial one
 - a change of the gating register while the consumer is pending
 - the consumer never observes the data of a closed alternative
+- Gated double-buffered registers:
+- a gated double-buffered scalar/1D reports `DataValidity::faulty` while its
+gate is closed and the data while it is open
+- a gated double-buffered channel slice (e.g. `DAQ.FD.AmplitudeCh0`) reports
+`DataValidity::faulty` while its gate is closed and the data while it is open
+- a closed gate neither wakes the async consumer of a double-buffered register
+nor advances its version number
+- a register-level gate on a double-buffered 2D register faults the
+full-register accessor while the gate is closed
 - Merged gated consumers whose gating registers differ: two gated registers at
 one address gated by different gating registers are obtained as
 `wait_for_new_data` consumers together and are served by the merged element
@@ -637,6 +690,15 @@ the payload accessor.
 - registers without `gatedBy` behave unchanged
 
 ## Alternatives considered
+
+- Wrapping the `DoubleBufferAccessor` in `GatedByDecorator`: rejected.
+- `DoubleBufferAccessor::getInternalElements()` is empty
+(`include/DoubleBufferAccessor.h:45`), so `findBaseRegisterRegistration()`
+(`include/GatedByDecorator.h:60-66`) finds nothing and the decorator's
+constructor asserts a non-null registration (`include/GatedByDecorator.h:78`):
+an assert in debug, a null dereference in release.
+- The double-buffer branch carries the gate query on the accessor itself
+instead (see "Gated double-buffered register").
 
 - Gate enforcement in a decorator on the synchronous accessor, with a shared
 `GatedByState` handshake: rejected.
@@ -756,3 +818,5 @@ not skip a backend's override.
 - DI-33 [NEW] tests/gatedByScalar.jmap:14-18 declares CTRL.BR_SEL 'as a bit range (bits 0..3)' with bitShift: 0, which does not make it a bit range: src/JsonMapFileParser.cc:183 sets isBitRange only for bitShift != 0, and :723-731 reclassifies only a register that shares its address with a bit range. No register in the fixture is a bit range, so TestGatedByBitRangeGatingRegisterPolled (tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp:822) does not exercise a bit-range ...
 - DI-34 [NEW] DI-32 unresolved in code: the isBitRange branch of NumericAddressedBackend::getSyncRegisterAccessor() (src/NumericAddressedBackend.cc:164-192) still returns the BitRangeAccessorDecorator (src/NumericAddressedBackend.cc:187/190) without wrapping it in GatedByDecorator<UserType>, so a gated accessor whose registerInfo.isBitRange is true (a gated scalar/1D register with a non-zero bitShift, or a bit-field child slice of a gated channel) is never gated at runtime. The plain-accessor ga...
 - DI-35 [NEW] DI-33 unresolved in code: tests/gatedByScalar.jmap:14-18 declares CTRL.BR_SEL 'as a bit range (bits 0..3)' with bitShift: 0, which does not make it a bit range (src/JsonMapFileParser.cc:183 sets isBitRange only for bitShift != 0; :723-731 reclassifies only a register sharing its address with a bit range). No register in the fixture is a bit range, so TestGatedByBitRangeGatingRegisterPolled (tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp:822) does not exercise...
+- DI-36 [NEW] Gated registers that are also double-buffered are not covered by the plan, and no async delivery is suppressed for them. NumericAddressedBackend::getSyncRegisterAccessor() takes the double-buffer branch (src/NumericAddressedBackend.cc:234-246) for any register with registerInfo.doubleBuffer set, before the muxed branch and without the GatedByDecorator wrap of the plain branch (:209-211); DoubleBufferAccessor is not a ClosedGateQuery, so PolledAsyncVariable::_gateQuery is null (include/async/TriggeredPollDistributor.h:122, :131) and a closed-gate value is still delivered / the consumer still wakes. This is the CR's own motivating case: tests/simpleJsonFile.jmap:327 (DAQ.FD) is interrupt-driven + doubleBuffering + per-channel gatedBy, and tests/simpleJsonFile.jmap:246 names it as the 'multiple DAQ tabs' example; its channel slices (e.g. DAQ.FD.AmplitudeCh0) are async (src/JsonMapFileParser.cc:519-521 inherits INTERRUPT), double-buffered (:524) and gated. The plan only says 'DoubleBufferAccessor is unchanged. It already propagates the inner buffer's validity' (CR-016:280-281), which covers the polled read (src/DoubleBufferAccessor.cc:90-95) but not the async suppression; the Test plan has no gated double-buffer case. Naively wrapping the DB accessor in GatedByDecorator does not work: DoubleBufferAccessor::getInternalElements() returns {} (include/DoubleBufferAccessor.h:45), so findBaseRegisterRegistration() over getInternalElements() (include/GatedByDecorator.h:60-66) finds nothing and GatedByDecorator's constructor asserts a non-null registration (include/GatedByDecorator.h:78) - assert in debug, null deref in release. A real mechanism is needed (DoubleBufferAccessor implementing ClosedGateQuery for the currently active inner buffer, an exposed active inner accessor, or a backend-side DB gate mixin). The user approved extending the plan to cover this.
+- DI-37 [NEW] A 2D double-buffered register never reaches the plan's 2D register-level gate enforcement point. The guard 'if(registerInfo.doubleBuffer == std::nullopt)' at src/NumericAddressedBackend.cc:162 sends such a register to the double-buffer branch, so its full-register accessor is a DoubleBufferAccessor and never a NumericAddressedBackendMuxedRegisterAccessor; the plan's '2D register-level gate' section (CR-016:286-315) and its Specifications entry (CR-016:127-130) place that enforcement only in NumericAddressedBackendMuxedRegisterAccessor, and the Test plan only tests the register-level whole-block gate on the muxed accessor (CR-016:614-615). The register-level gate on a double-buffered 2D register (e.g. DAQ.FD) must therefore be handled by the same DB mechanism as the first problem.
