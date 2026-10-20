@@ -343,10 +343,25 @@ namespace ChimeraTK {
 
   template<typename UserType, bool isRaw>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::registerWithReadCoordinator() {
-    const bool hasGate = _registerInfo.channels.front().gatedBy.has_value();
+    const bool hasGate =
+        _registerInfo.channels.front().gatedBy.has_value() || !_attachedGatePath.getComponents().empty();
     _readRegistration = detail::ReadCoordinator::Registration<UserType>(&_rawAccessor->_readCoordinator, _registerInfo,
         isRaw, _registerInfo.address - _rawAccessor->_startAddress, _registerInfo.elementPitchBits / 8,
-        _registerInfo.nElements, hasGate, _gateValue);
+        _registerInfo.nElements, hasGate, _gateValue, _attachedGatePath);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, bool isRaw>
+  void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::attachGate(
+      const RegisterPath& gatingRegisterPath, uint64_t gateValue) {
+    // Re-register the consumer with the gate. _rawAccessor is unchanged, so the shift of the address by the element's
+    // start address stays correct. The previous registration is reset first, so the coordinator drops the ungated
+    // consumer before the gated one is added.
+    _readRegistration.reset();
+    _attachedGatePath = gatingRegisterPath;
+    _gateValue = gateValue;
+    registerWithReadCoordinator();
   }
 
   /********************************************************************************************************************/

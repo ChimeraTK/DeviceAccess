@@ -183,12 +183,37 @@ namespace ChimeraTK {
                   std::to_string(wordWidth) + "p" + std::to_string(registerInfo.elementPitchBits));
           auto target = getSyncRegisterAccessor<uint64_t>(targetRegisterPath, nParentElements, 0, {});
 
+          // A bit-range accessor needs its own gate handling: its target is built from a numeric-address path, whose
+          // register info carries no gatedBy, so the gate cannot be read from the target's register info. Attach it to
+          // the target's base accessor explicitly (the base accessor of a bit-range target is always a
+          // NumericAddressedBackendRegisterAccessor<uint64_t, false>, whatever the accessor's UserType) and wrap the
+          // bit-range decorator in GatedByDecorator, so the gate decorator stays outermost.
+          boost::shared_ptr<NDRegisterAccessor<UserType>> bitRangeAccessor;
           if(flags.has(AccessMode::raw)) {
-            return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(
+            bitRangeAccessor = boost::make_shared<detail::BitRangeAccessorDecorator<UserType, true>>(
                 shared_from_this(), targetRegisterPath, target, registerInfo, numberOfWords, wordOffsetInRegister);
           }
-          return boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(
-              shared_from_this(), targetRegisterPath, target, registerInfo, numberOfWords, wordOffsetInRegister);
+          else {
+            bitRangeAccessor = boost::make_shared<detail::BitRangeAccessorDecorator<UserType, false>>(
+                shared_from_this(), targetRegisterPath, target, registerInfo, numberOfWords, wordOffsetInRegister);
+          }
+          if(registerInfo.channels.front().gatedBy.has_value()) {
+            const auto& gatedBy = *registerInfo.channels.front().gatedBy;
+            auto gateInfo = getRegisterInfo(gatedBy.regPath);
+            if(gateInfo.getNumberOfChannels() != 1 || gateInfo.nElements > 1) {
+              throw ChimeraTK::logic_error("gatedBy: the gating register '" + gatedBy.regPath + "' of register '" +
+                  registerPathName + "' must be a scalar register.");
+            }
+            auto baseAccessor =
+                boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<uint64_t, false>>(target);
+            assert(baseAccessor);
+            baseAccessor->attachGate(gatedBy.regPath, gatedBy.val);
+            // The gate result lives in the base accessor's read registration (UserType uint64_t there, whatever this
+            // accessor's UserType), so the query is captured over that registration rather than the decorator's target.
+            return boost::make_shared<GatedByDecorator<UserType>>(
+                bitRangeAccessor, [baseAccessor] { return baseAccessor->readRegistration().gateClosed(); });
+          }
+          return bitRangeAccessor;
         }
         if(registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::FIXED_POINT ||
             registerInfo.channels.front().dataType == NumericAddressedRegisterInfo::Type::VOID ||
@@ -241,8 +266,19 @@ namespace ChimeraTK {
       if(!controlState) {
         controlState = std::make_shared<detail::CountedRecursiveMutex>();
       }
+      // A double-buffered register cannot take the plain-accessor gate wrap (`:231`) or the muxed branch, so its gate
+      // query is carried by the DoubleBufferAccessor itself. The effective gate is the register-level gate for the
+      // full-register accessor of a double-buffered 2D register, otherwise the scalar/1D register's (or double-buffered
+      // channel slice's) own channel gate.
+      std::optional<NumericAddressedRegisterInfo::GatedBy> doubleBufferGate;
+      if(registerInfo.registerGatedBy.has_value()) {
+        doubleBufferGate = registerInfo.registerGatedBy;
+      }
+      else if(registerInfo.channels.front().gatedBy.has_value()) {
+        doubleBufferGate = registerInfo.channels.front().gatedBy;
+      }
       accessor = boost::make_shared<DoubleBufferAccessor<UserType>>(*registerInfo.doubleBuffer, shared_from_this(),
-          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags);
+          controlState, registerPathName, numberOfWords, wordOffsetInRegister, flags, doubleBufferGate);
     }
     accessor->setExceptionBackend(shared_from_this());
     return accessor;

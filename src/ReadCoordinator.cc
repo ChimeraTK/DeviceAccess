@@ -100,12 +100,19 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   ReadCoordinator::Registration<UserType>::Registration(ReadCoordinator* owner,
       const NumericAddressedRegisterInfo& info, bool isRaw, size_t byteOffset, size_t stride, size_t nSamples,
-      bool hasGate, uint64_t gateValue)
+      bool hasGate, uint64_t gateValue, const RegisterPath& explicitGatePath)
   : _owner(owner), _state(std::make_unique<ConsumerState<UserType>>()), _gateValue(gateValue) {
     _state->staging.resize(nSamples);
     _state->hasGate = hasGate;
-    if(hasGate && info.channels.front().gatedBy.has_value()) {
-      _state->gatePath = info.channels.front().gatedBy->regPath;
+    if(hasGate) {
+      // The gate path comes either from the register info's gatedBy or, for a bit-range target whose numeric-address
+      // register info carries none, from the explicit path the caller attached the gate with.
+      if(!explicitGatePath.getComponents().empty()) {
+        _state->gatePath = explicitGatePath;
+      }
+      else if(info.channels.front().gatedBy.has_value()) {
+        _state->gatePath = info.channels.front().gatedBy->regPath;
+      }
       // Resolve the gating register accessor now, so the owning element builds and holds it (and reads it in the
       // transfer phase) before the first read. The accessor itself is not kept by the registration: the element owns
       // it, keyed by the gating register path, and hands it back on each evaluation. This keeps every gate accessor

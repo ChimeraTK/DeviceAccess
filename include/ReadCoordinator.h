@@ -132,10 +132,13 @@ namespace ChimeraTK::detail {
        * informative and so the consumer's gate accessor can be resolved from the element's gate registry. isRaw marks a
        * raw-mode consumer, which forms a separate raw-copy group. hasGate together with the register info's gatedBy and
        * gateValue attaches a gate to the consumer: the coordinator opens or closes it by comparing the gating
-       * register's value with gateValue.
+       * register's value with gateValue. When explicitGatePath is non-empty, it is used as the gate path instead of the
+       * register info's gatedBy, so a gate can be attached to a consumer whose register info carries none (a bit-range
+       * target built from a numeric-address path).
        */
       Registration(ReadCoordinator* owner, const NumericAddressedRegisterInfo& info, bool isRaw, size_t byteOffset,
-          size_t stride, size_t nSamples, bool hasGate = false, uint64_t gateValue = 0);
+          size_t stride, size_t nSamples, bool hasGate = false, uint64_t gateValue = 0,
+          const RegisterPath& explicitGatePath = {});
 
       ~Registration();
 

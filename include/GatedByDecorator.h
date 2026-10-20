@@ -6,6 +6,8 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 
+#include <functional>
+
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
@@ -17,23 +19,35 @@ namespace ChimeraTK {
    * of its target unchanged; it is not an enforcement point (the gate is enforced where the consumer's raw data is
    * converted, see the low-level element).
    *
-   * The decorator resolves the base accessor's read registration once at construction (a dynamic_cast over the
-   * getInternalElements() chain, not on any read path) and reads the consumer's gate result from it. A transfer-group
-   * merge re-seats the registration in place when it replaces the low-level element, so the reference stays valid while
-   * the accessor lives.
+   * The decorator resolves the consumer's gate result query once at construction and reads the result through it on
+   * each isGateClosed(). The query reads the gate result from the base accessor's read registration, whose address is
+   * stable while the accessor lives: a transfer-group merge resets and re-seats the registration in place (it is a
+   * member of the base accessor), so the query always sees the current gate result rather than a stale one.
    */
   template<typename UserType>
   class GatedByDecorator : public NDRegisterAccessorDecorator<UserType, UserType>, public ClosedGateQuery {
    public:
+    /**
+     * Build the decorator on a target whose getInternalElements() chain contains the base accessor of this UserType,
+     * and resolve the gate result query from that base accessor's read registration.
+     */
     explicit GatedByDecorator(const boost::shared_ptr<NDRegisterAccessor<UserType>>& target);
+
+    /**
+     * Build the decorator on a target whose base accessor is not of this UserType (a bit-range target's base accessor
+     * is a NumericAddressedBackendRegisterAccessor<uint64_t, false>): the caller passes the already resolved gate
+     * result query, taken from the base accessor it attached the gate to.
+     */
+    GatedByDecorator(
+        const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, std::function<bool()> gateClosedQuery);
 
     [[nodiscard]] bool isGateClosed() const override;
 
    protected:
     using NDRegisterAccessorDecorator<UserType>::_target;
 
-    /** The read registration of the base accessor, resolved once at construction; never null. */
-    detail::ReadCoordinator::Registration<UserType>* _readRegistration{nullptr};
+    /** The consumer's gate result query, resolved once at construction; never empty. */
+    std::function<bool()> _gateClosedQuery;
   };
 
   /********************************************************************************************************************/
@@ -41,29 +55,28 @@ namespace ChimeraTK {
   namespace detail {
 
     /**
-     * Locate the read registration of the base register accessor of a given UserType anywhere in the
-     * getInternalElements() chain, or return null. Both raw and cooked base accessors are searched, since a gated
+     * Locate the base register accessor of a given UserType anywhere in the getInternalElements() chain and return a
+     * query for its gate result, or an empty function. Both raw and cooked base accessors are searched, since a gated
      * register may be read in either mode.
      */
     template<typename UserType>
-    ReadCoordinator::Registration<UserType>* findBaseRegisterRegistration(
-        const boost::shared_ptr<TransferElement>& element) {
+    std::function<bool()> findBaseRegisterGateQuery(const boost::shared_ptr<TransferElement>& element) {
       if(!element) {
-        return nullptr;
+        return {};
       }
       if(auto cooked = boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, false>>(element)) {
-        return &cooked->readRegistration();
+        return [cooked] { return cooked->readRegistration().gateClosed(); };
       }
       if(auto raw = boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, true>>(element)) {
-        return &raw->readRegistration();
+        return [raw] { return raw->readRegistration().gateClosed(); };
       }
       for(const auto& inner : element->getInternalElements()) {
-        auto found = findBaseRegisterRegistration<UserType>(inner);
+        auto found = findBaseRegisterGateQuery<UserType>(inner);
         if(found) {
           return found;
         }
       }
-      return nullptr;
+      return {};
     }
 
   } // namespace detail
@@ -73,16 +86,25 @@ namespace ChimeraTK {
   template<typename UserType>
   GatedByDecorator<UserType>::GatedByDecorator(const boost::shared_ptr<NDRegisterAccessor<UserType>>& target)
   : NDRegisterAccessorDecorator<UserType, UserType>(target) {
-    // Resolve the base accessor's registration once; this runs only at construction, not on any read path.
-    _readRegistration = detail::findBaseRegisterRegistration<UserType>(_target);
-    assert(_readRegistration);
+    // Resolve the gate result query once; this runs only at construction, not on any read path.
+    _gateClosedQuery = detail::findBaseRegisterGateQuery<UserType>(_target);
+    assert(_gateClosedQuery);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  GatedByDecorator<UserType>::GatedByDecorator(
+      const boost::shared_ptr<NDRegisterAccessor<UserType>>& target, std::function<bool()> gateClosedQuery)
+  : NDRegisterAccessorDecorator<UserType, UserType>(target), _gateClosedQuery(std::move(gateClosedQuery)) {
+    assert(_gateClosedQuery);
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
   bool GatedByDecorator<UserType>::isGateClosed() const {
-    return _readRegistration->gateClosed();
+    return _gateClosedQuery();
   }
 
   /********************************************************************************************************************/

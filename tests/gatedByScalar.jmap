@@ -12,9 +12,9 @@
           "representation": { "width": 32, "isSigned": false }
         },
         "BR_SEL": {
-          "_": "Writable gating register declared as a bit range (bits 0..3).",
+          "_": "Writable gating register whose representation is a genuine bit range (bits 3..6 of the addressed word).",
           "address": { "offset": 4 },
-          "representation": { "bitShift": 0, "width": 4 }
+          "representation": { "bitShift": 3, "width": 4 }
         },
         "TOP": {
           "_": "Writable 32-bit unsigned gating register; its top bit can be set.",
