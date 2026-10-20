@@ -9,7 +9,7 @@ change also unifies the wording on "gate": the jmap key `selectedBy` becomes
 
 Depends on: CR-011
 
-Status: PLANNED (from STYLE REVIEWED)
+Status: READY TO IMPLEMENT (from STYLE REVIEWED)
 
 ## Requirements
 
