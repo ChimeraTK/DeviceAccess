@@ -9,7 +9,7 @@ change also unifies the wording on "gate": the jmap key `selectedBy` becomes
 
 Depends on: CR-011
 
-Status: READY TO IMPLEMENT (from STYLE REVIEWED)
+Status: IMPLEMENTED (from STYLE REVIEWED)
 
 ## Requirements
 
@@ -820,4 +820,4 @@ not skip a backend's override.
 - DI-35 [DONE] DI-33 unresolved in code: tests/gatedByScalar.jmap:14-18 declares CTRL.BR_SEL 'as a bit range (bits 0..3)' with bitShift: 0, which does not make it a bit range (src/JsonMapFileParser.cc:183 sets isBitRange only for bitShift != 0; :723-731 reclassifies only a register sharing its address with a bit range). No register in the fixture is a bit range, so TestGatedByBitRangeGatingRegisterPolled (tests/executables_src/testNumericAddressedBackendRegisterAccessor.cpp:822) does not ...
 - DI-36 [DONE] Gated registers that are also double-buffered are not covered by the plan, and no async delivery is suppressed for them. NumericAddressedBackend::getSyncRegisterAccessor() takes the double-buffer branch (src/NumericAddressedBackend.cc:234-246) for any register with registerInfo.doubleBuffer set, before the muxed branch and without the GatedByDecorator wrap of the plain branch (:209-211); DoubleBufferAccessor is not a ClosedGateQuery, so PolledAsyncVariable::_gateQuery is nu...
 - DI-37 [DONE] A 2D double-buffered register never reaches the plan's 2D register-level gate enforcement point. The guard 'if(registerInfo.doubleBuffer == std::nullopt)' at src/NumericAddressedBackend.cc:162 sends such a register to the double-buffer branch, so its full-register accessor is a DoubleBufferAccessor and never a NumericAddressedBackendMuxedRegisterAccessor; the plan's '2D register-level gate' section (CR-016:286-315) and its Specifications entry (CR-016:127-130) place that en...
-- DI-38 [NEW] src/NumericAddressedBackend.cc:269 - the new comment 'A double-buffered register cannot take the plain-accessor gate wrap (`:231`) or the muxed branch, so its gate ...' embeds a bare line-number cross-reference `(`:231`)`. No pre-CR source comment in the tree uses line-number references (checked at the base commit), the number is brittle (it drifts as the file changes), and it does not even point at the cited construct: the plain-accessor gate wrap sits at src/NumericAddressedBackend.cc:235-237, whereas line 231 is the accessor construction (`shared_from_this(), registerPathName, ...`). Drop the reference or state the wrap in words.
+- DI-38 [IMPLEMENTED] src/NumericAddressedBackend.cc:269 - the new comment 'A double-buffered register cannot take the plain-accessor gate wrap (`:231`) or the muxed branch, so its gate ...' embeds a bare line-number cross-reference `(`:231`)`. No pre-CR source comment in the tree uses line-number references (checked at the base commit), the number is brittle (it drifts as the file changes), and it does not even point at the cited construct: the plain-accessor gate wrap sits at src/NumericAddressedBacke...

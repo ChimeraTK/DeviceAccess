@@ -266,7 +266,7 @@ namespace ChimeraTK {
       if(!controlState) {
         controlState = std::make_shared<detail::CountedRecursiveMutex>();
       }
-      // A double-buffered register cannot take the plain-accessor gate wrap (`:231`) or the muxed branch, so its gate
+      // A double-buffered register cannot take the plain-accessor gate wrap or the muxed branch, so its gate
       // query is carried by the DoubleBufferAccessor itself. The effective gate is the register-level gate for the
       // full-register accessor of a double-buffered 2D register, otherwise the scalar/1D register's (or double-buffered
       // channel slice's) own channel gate.
