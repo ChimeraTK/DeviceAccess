@@ -41,6 +41,18 @@
           "gatedBy": { "register": "CTRL.SEL", "value": 2 },
           "address": { "type": "DMA", "offset": "0x1000" },
           "representation": { "width": 32 }
+        },
+        "INT_GATED_BR": {
+          "_": "Gated register whose own representation is a bit range: its accessor is a bit-range accessor carrying the gate.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "type": "DMA", "offset": "0x2000" },
+          "representation": { "bitShift": 4, "width": 8 }
+        },
+        "SCRATCH_BR": {
+          "_": "Plain writable register at the bit-range payload address: lets the test place the raw value an interrupt reads.",
+          "address": { "type": "DMA", "offset": "0x2000" },
+          "representation": { "width": 32 }
         }
       }
     }

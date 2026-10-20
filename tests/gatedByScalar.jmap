@@ -78,6 +78,13 @@
           "address": { "offset": "0x124" },
           "representation": { "width": 32 }
         },
+        "GATED_BIT_RANGE": {
+          "_": "Gated register that is itself a bit range: its own representation has a non-zero bitShift, so the accessor is a bit-range accessor carrying a gate. Gated by CTRL.SEL == 1.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "offset": "0x124" },
+          "representation": { "bitShift": 4, "width": 8 }
+        },
         "GATED_BY_BR": {
           "_": "Gated by the bit-range register CTRL.BR_SEL == 3.",
           "access": "RO",

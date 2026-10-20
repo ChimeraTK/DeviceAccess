@@ -841,6 +841,59 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeGatingRegisterPolled) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(TestGatedByBitRangeAccessorPolled) {
+  // A gated register whose own representation has a non-zero bitShift is a bit-range accessor itself. It reports
+  // faulty data while its gate is closed and the data while it is open.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BIT_RANGE");
+
+  // CTRL.SEL == 1 is the configured value.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  // Any other value closes the gate.
+  sel = 0;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Reopening restores good data.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByBitRangeChildSlicePolled) {
+  // A bit-field child slice of a gated channel carries the channel's gate. It reports faulty data while the gate is
+  // closed and the data while it is open.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedBy2D.jmap)");
+
+  auto chSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/CH_SEL");
+  auto flag = device.getScalarRegisterAccessor<uint32_t>("DAQ/GATED_STATUS/StatusCh0/Flag");
+
+  // The channel is gated by CTRL.CH_SEL == 1.
+  chSel = 1;
+  chSel.write();
+  flag.read();
+  BOOST_TEST(flag.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  chSel = 0;
+  chSel.write();
+  flag.read();
+  BOOST_TEST(flag.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
   // An unsigned gate value with the top bit set gates correctly.
   ChimeraTK::Device device;

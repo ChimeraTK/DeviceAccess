@@ -846,6 +846,61 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedBy) {
 
 /**********************************************************************************************************************/
 
+// A gated accessor whose own representation is a bit range is a bit-range accessor carrying the gate. Its async path
+// must suppress a closed-gate interrupt just like the plain path: the consumer is neither woken nor does its version
+// number advance while the gate is closed.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByBitRangeAccessor) {
+  std::cout << "testAsyncReadGatedByBitRangeAccessor" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the bit-range payload address lets the test place the raw word that an interrupt reads.
+  auto scratch = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH_BR");
+
+  // Open the gate (CTRL.SEL == 1) and write the raw word whose bits 4..11 are the payload value 0x5.
+  sel = 1;
+  sel.write();
+  scratch = 0x5U << 4;
+  scratch.write();
+
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED_BR", 0, {AccessMode::wait_for_new_data});
+
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
+  auto versionAfterInitial = gated.getVersionNumber();
+
+  // Close the gate: an interrupt must neither wake the consumer nor advance its version number.
+  sel = 0;
+  sel.write();
+  scratch = 0x9U << 4;
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(!gated.readNonBlocking());
+  BOOST_TEST(gated.getVersionNumber() == versionAfterInitial);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
+
+  // Reopen the gate: the next interrupt delivers the fresh value.
+  sel = 1;
+  sel.write();
+  scratch = 0xaU << 4;
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0xaU);
+  BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
 // Two gated alternatives at the same address are served by the triggered-poll path at once. Their payload elements
 // merge in the transfer group, so the second gate accessor is re-registered with the merged element's gate group. A
 // change of the gating register while the consumer is pending picks the matching alternative; the other one stays

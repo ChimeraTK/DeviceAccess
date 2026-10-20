@@ -21,6 +21,25 @@
     "DAQ": {
       "_": "2D payload registers carrying gatedBy conditions.",
       "children": {
+        "GATED_STATUS": {
+          "_": "Gated channel carrying a bit-field child: the child slice inherits the channel's gate, so the bit-range accessor is gated too.",
+          "access": "RO",
+          "address": { "offset": "0x80" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "StatusCh0": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 1 },
+              "bytesPerElement": 4,
+              "offset": 0,
+              "children": {
+                "Flag": {
+                  "representation": { "bitShift": 2, "width": 1 }
+                }
+              }
+            }
+          }
+        },
         "PER_CHANNEL": {
           "_": "Per-channel gates only: each channel slice is valid while CTRL.CH_SEL equals its value.",
           "access": "RO",
