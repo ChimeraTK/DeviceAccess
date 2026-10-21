@@ -122,9 +122,14 @@ per-consumer registration also carries:
 - move payload and validity into the accessor buffer
 - New `include/GatedByDecorator.h`:
 - the decorator the backend puts on the synchronous accessor of a gated
-register
+register, numeric or ASCII
 - the small `ClosedGateQuery` mixin through which the asynchronous
 distributor reads the gate result
+- the registration lookup recognises the ASCII accessor next to the numeric
+base accessor
+- `include/NumericAddressedBackendASCIIAccessor.h` (header-only): register
+the ASCII reader with the low-level element's `ReadCoordinator`, so the gate
+reaches it, and take its data validity from that registration
 - `include/async/TriggeredPollDistributor.h` /
 `src/async/TriggeredPollDistributor.cc`: `PolledAsyncVariable` reads the gate
 result and suppresses the delivery through a closed gate.
@@ -280,9 +285,11 @@ accessor for that path.
 - The full-register accessor of a 2D register with a register-level `gatedBy`
 is not a registration consumer. It enforces the gate itself (see "2D
 register-level gate").
-- CR-011 registers every read consumer of the low-level element, strided or
-not. The gate is therefore attached uniformly instead of being special-cased
-per conversion path.
+- CR-011 registers every numeric read consumer of the low-level element,
+strided or not. The gate is therefore attached through one registration path
+instead of being special-cased per numeric conversion path. The ASCII reader
+is not covered by that path and is gated explicitly (see "Gated ASCII
+register").
 - The accessor's `doPostRead()` copies two things into its own buffer:
 - the payload, from the staging buffer
 - the validity, from its registration
@@ -405,6 +412,39 @@ from the base accessor's registration, the bit-range path from the `uint64_t`
 base accessor it attached the gate to.
 - A bit-range gating register is unaffected: the gating register never carries
 a gate itself, so its accessor is not wrapped.
+
+### Gated ASCII register
+
+- The parser and the schema already accept a `gatedBy` on a register of data
+type ASCII (`"string"`), so such a map declares a real gate. It is enforced.
+- The accessor of such a register is a `NumericAddressedBackendASCIIAccessor`,
+built by the ASCII branch of `getSyncRegisterAccessor()`
+(`src/NumericAddressedBackend.cc:238-246`).
+- That accessor currently bypasses the registration path: it owns a private
+`_rawAccessor` (`include/NumericAddressedBackendASCIIAccessor.h:76`) and never
+registers with the low-level element's `ReadCoordinator`, so the shared
+enforcement point never sees its consumer and the gate is dropped.
+- It therefore registers a read consumer with that coordinator, the same way
+the numeric base accessor does, and the ASCII branch wraps it in
+`GatedByDecorator<std::string>` when the register carries a `gatedBy`, so the
+decorator is outermost as in the numeric branch
+(`src/NumericAddressedBackend.cc:231-236`).
+- The registration carries the gate: the gating register's path and the
+expected value. The ASCII accessor takes its `DataValidity` from the
+registration instead of from `_rawAccessor`, as the numeric accessor does.
+- An equivalent explicit mechanism is acceptable, as long as the gate result
+reaches the decorator and the ASCII accessor faults through it.
+- The resulting behaviour:
+- a polled read reports `DataValidity::faulty` while the gate is closed, with
+an unspecified payload, and the data while the gate is open
+- a `wait_for_new_data` consumer of the register is neither woken nor sees a
+new version number while the gate is closed (the generic rules above)
+- The accessor exposes its registration through the getter the numeric base
+accessor uses. `GatedByDecorator` resolves the gate result from it; its lookup
+recognises the ASCII accessor next to the two numeric `isRaw` instantiations.
+- The creation-time checks are the same as for a numeric accessor: the gating
+register must exist and be scalar (see "Accessor construction").
+- The write path is unchanged. The gate applies to reads.
 
 ### Gate result
 
@@ -653,6 +693,12 @@ while it is open
 while the channel's gate is closed
 - the async path of a gated bit-range accessor neither wakes nor advances the
 version number while its gate is closed
+- Gated ASCII (`string`) register (fixture with a `"string"` register and a
+`gatedBy`):
+- a polled read reports `DataValidity::faulty` while its gate is closed and
+the data while it is open
+- the async path, if supported for ASCII, neither wakes the consumer nor
+advances the version number while the gate is closed
 - Polled 2D (`testMultiplexedDataAccesor.cpp`):
 - per-channel gating of the slices within one read
 - register-level whole-block gate on the full-register accessor, enforced
@@ -821,3 +867,5 @@ not skip a backend's override.
 - DI-36 [DONE] Gated registers that are also double-buffered are not covered by the plan, and no async delivery is suppressed for them. NumericAddressedBackend::getSyncRegisterAccessor() takes the double-buffer branch (src/NumericAddressedBackend.cc:234-246) for any register with registerInfo.doubleBuffer set, before the muxed branch and without the GatedByDecorator wrap of the plain branch (:209-211); DoubleBufferAccessor is not a ClosedGateQuery, so PolledAsyncVariable::_gateQuery is nu...
 - DI-37 [DONE] A 2D double-buffered register never reaches the plan's 2D register-level gate enforcement point. The guard 'if(registerInfo.doubleBuffer == std::nullopt)' at src/NumericAddressedBackend.cc:162 sends such a register to the double-buffer branch, so its full-register accessor is a DoubleBufferAccessor and never a NumericAddressedBackendMuxedRegisterAccessor; the plan's '2D register-level gate' section (CR-016:286-315) and its Specifications entry (CR-016:127-130) place that en...
 - DI-38 [DONE] src/NumericAddressedBackend.cc:269 - the new comment 'A double-buffered register cannot take the plain-accessor gate wrap (`:231`) or the muxed branch, so its gate ...' embeds a bare line-number cross-reference `(`:231`)`. No pre-CR source comment in the tree uses line-number references (checked at the base commit), the number is brittle (it drifts as the file changes), and it does not even point at the cited construct: the plain-accessor gate wrap sits at src/NumericAddres...
+- DI-39 [NEW] A gated ASCII (`"string"`) register is silently left ungated, so the requirement "a polled read of a register with a `gatedBy` is `DataValidity::faulty` while the gate is closed" (Requirements, CR-016:25-31) and the specification's claim that the gate "is attached uniformly instead of being special-cased per conversion path" (CR-016:283-285) hold for numeric registers only. `NumericAddressedBackend::getSyncRegisterAccessor()` has a dedicated ASCII branch (src/NumericAddressedBackend.cc:238-246) that returns `NumericAddressedBackendASCIIAccessor` without wrapping it in `GatedByDecorator` and without attaching any gate; and `NumericAddressedBackendASCIIAccessor` does not register with the low-level element's `ReadCoordinator` (it owns a private `_rawAccessor`, include/NumericAddressedBackendASCIIAccessor.h:76,195, and never calls registerWithReadCoordinator), so crate-011's enforcement point never sees the consumer. The schema (schemas/jmap.schema.json:138-140) and the parser (applyRegisterGatedBy, src/JsonMapFileParser.cc:319/344) accept `gatedBy` on a `string` register, and neither the plan's affected components nor its 'Out of scope' list (CR-016:70-75) mentions ASCII, so a map may declare a gate that is silently dropped. The user decided this is in scope, so the plan must be extended and the implementation corrected.
+- DI-40 [NEW] No other deviations found: the implemented gate mechanism matches the plan for numeric scalar/1D, bit-range, 2D register-level and per-channel, double-buffered and async paths (verified in src/NumericAddressedBackend.cc:156-285, include/NumericAddressedLowLevelTransferElement.h, include/ReadCoordinator.h:238-319, src/NumericAddressedBackendRegisterAccessor.cc:80-114/344-402, src/NumericAddressedBackendMuxedRegisterAccessor.cc:137-189, src/DoubleBufferAccessor.cc:21-126, include/async/TriggeredPollDistributor.h:109-138, src/JsonMapFileParser.cc:283-427/735-772). All 38 deferred issues are marked [DONE] and none is left with an outstanding problem, so none is switched back to NEW.
