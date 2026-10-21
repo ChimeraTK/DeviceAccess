@@ -1063,3 +1063,74 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByMergedDifferentGatingRegisters) {
 }
 
 /**********************************************************************************************************************/
+
+// The async path of a gated ASCII ("string") register behaves like the numeric one: while its gate is open an
+// interrupt delivers a new value and advances the version number; while it is closed the interrupt neither wakes the
+// consumer nor advances the version number, and the consumer keeps the value of its last delivered update.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByAscii) {
+  std::cout << "testAsyncReadGatedByAscii" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // Writable registers at the ASCII payload address let the test place the raw bytes an interrupt reads.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH_STR");
+  scratch[0] = 0x4241U; // "AB"
+  scratch[1] = 0x4443U; // "CD"
+  scratch.write();
+
+  // Open the gate (CTRL.SEL == 1).
+  sel = 1;
+  sel.write();
+
+  auto gated = device.getOneDRegisterAccessor<std::string>("DATA/INT_GATED_STR", 0, 0, {AccessMode::wait_for_new_data});
+
+  // The mandatory initial value after activation is delivered even before the first interrupt.
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "AB");
+  BOOST_TEST(gated[1] == "CD");
+  auto versionAfterInitial = gated.getVersionNumber();
+
+  // An interrupt through the open gate delivers a new value and advances the version number.
+  scratch[0] = 0x4645U; // "EF"
+  scratch[1] = 0x4847U; // "GH"
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(gated[0] == "EF");
+  BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
+  auto versionAfterEfgh = gated.getVersionNumber();
+
+  // Close the gate: an interrupt must neither wake the consumer nor advance its version number.
+  sel = 0;
+  sel.write();
+  scratch[0] = 0x4a49U; // "IJ"
+  scratch[1] = 0x4c4bU; // "KL"
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(!gated.readNonBlocking());
+  // The suppressed delivery leaves the consumer untouched: value, version number and data validity stay those of the
+  // last delivered value.
+  BOOST_TEST(gated.getVersionNumber() == versionAfterEfgh);
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "EF");
+
+  // Reopen the gate: the next interrupt delivers the fresh value.
+  sel = 1;
+  sel.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(gated[0] == "IJ");
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated.getVersionNumber() > versionAfterEfgh);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/

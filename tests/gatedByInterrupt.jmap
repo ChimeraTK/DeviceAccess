@@ -53,6 +53,21 @@
           "_": "Plain writable register at the bit-range payload address: lets the test place the raw value an interrupt reads.",
           "address": { "type": "DMA", "offset": "0x2000" },
           "representation": { "width": 32 }
+        },
+        "SCRATCH_STR": {
+          "_": "Plain writable registers at the ASCII payload address: lets the test place the raw bytes an interrupt reads.",
+          "address": { "type": "DMA", "offset": "0x3000" },
+          "numberOfElements": 2,
+          "representation": { "width": 32 }
+        },
+        "INT_GATED_STR": {
+          "_": "Gated ASCII register, gated by CTRL.SEL == 1: a new value is delivered on interrupt 1 while the gate is open.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "type": "DMA", "offset": "0x3000" },
+          "numberOfElements": 2,
+          "bytesPerElement": 4,
+          "representation": { "type": "string" }
         }
       }
     }

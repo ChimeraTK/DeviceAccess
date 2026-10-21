@@ -917,6 +917,46 @@ BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(TestGatedByAsciiPolled) {
+  // A gated ASCII ("string") register is gated like a numeric one: a polled read reports faulty data while its gate
+  // is closed and the data while it is open. The payload through a closed gate is unspecified and not asserted.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the payload address lets the test place the raw bytes the ASCII accessor reads.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH_STR");
+  auto gated = device.getOneDRegisterAccessor<std::string>("DATA/STRING_GATED");
+
+  // "AB" in the first character slot, "CD" in the second.
+  scratch[0] = 0x4241U;
+  scratch[1] = 0x4443U;
+  scratch.write();
+
+  // Open gate: CTRL.SEL == 1 is the configured value.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "AB");
+  BOOST_TEST(gated[1] == "CD");
+
+  // Closed gate: any other value of the gating register.
+  sel = 0;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Reopening restores good data.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "AB");
+}
+
+/**********************************************************************************************************************/
+
 // A backend that counts the reads of each hardware address, so a test can check that one gating register is read once
 // per transfer however many consumers it gates.
 class GatedReadCountBackend : public DummyBackend {

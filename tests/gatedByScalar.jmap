@@ -98,6 +98,21 @@
           "gatedBy": { "register": "CTRL.TOP", "value": 2147483648 },
           "address": { "offset": "0x12C" },
           "representation": { "width": 32 }
+        },
+        "SCRATCH_STR": {
+          "_": "Writable registers at the payload address of STRING_GATED: lets the test place the raw bytes that the gated ASCII accessor reads.",
+          "address": { "offset": "0x140" },
+          "numberOfElements": 2,
+          "representation": { "width": 32 }
+        },
+        "STRING_GATED": {
+          "_": "Gated ASCII register: gated by CTRL.SEL == 1. The gate applies to reads, so the accessor is read-only.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "offset": "0x140" },
+          "numberOfElements": 2,
+          "bytesPerElement": 4,
+          "representation": { "type": "string" }
         }
       }
     }
