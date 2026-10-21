@@ -4,6 +4,7 @@
 
 #include "ClosedGateQuery.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "NumericAddressedBackendASCIIAccessor.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 
 #include <functional>
@@ -57,12 +58,18 @@ namespace ChimeraTK {
     /**
      * Locate the base register accessor of a given UserType anywhere in the getInternalElements() chain and return a
      * query for its gate result, or an empty function. Both raw and cooked base accessors are searched, since a gated
-     * register may be read in either mode.
+     * register may be read in either mode. An ASCII accessor (UserType std::string) is recognised next to them: it
+     * carries its own registration and its getInternalElements() chain does not name it.
      */
     template<typename UserType>
     std::function<bool()> findBaseRegisterGateQuery(const boost::shared_ptr<TransferElement>& element) {
       if(!element) {
         return {};
+      }
+      if(auto ascii = boost::dynamic_pointer_cast<NumericAddressedBackendASCIIAccessor>(element)) {
+        if constexpr(std::is_same_v<UserType, std::string>) {
+          return [ascii] { return ascii->readRegistration().gateClosed(); };
+        }
       }
       if(auto cooked = boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, false>>(element)) {
         return [cooked] { return cooked->readRegistration().gateClosed(); };
