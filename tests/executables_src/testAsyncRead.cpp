@@ -866,7 +866,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByBitRangeAccessor) {
   // Open the gate (CTRL.SEL == 1) and write the raw word whose bits 4..11 are the payload value 0x5.
   sel = 1;
   sel.write();
-  scratch = 0x5U << 4;
+  scratch = 0x5U << 4U;
   scratch.write();
 
   auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED_BR", 0, {AccessMode::wait_for_new_data});
@@ -879,7 +879,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByBitRangeAccessor) {
   // Close the gate: an interrupt must neither wake the consumer nor advance its version number.
   sel = 0;
   sel.write();
-  scratch = 0x9U << 4;
+  scratch = 0x9U << 4U;
   scratch.write();
   backend->triggerInterrupt(1);
   BOOST_TEST(!gated.readNonBlocking());
@@ -889,7 +889,7 @@ BOOST_AUTO_TEST_CASE(testAsyncReadGatedByBitRangeAccessor) {
   // Reopen the gate: the next interrupt delivers the fresh value.
   sel = 1;
   sel.write();
-  scratch = 0xaU << 4;
+  scratch = 0xaU << 4U;
   scratch.write();
   backend->triggerInterrupt(1);
   BOOST_TEST(gated.readNonBlocking());
