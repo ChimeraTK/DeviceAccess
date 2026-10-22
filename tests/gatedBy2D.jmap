@@ -21,6 +21,12 @@
     "DAQ": {
       "_": "2D payload registers carrying gatedBy conditions.",
       "children": {
+        "SCRATCH": {
+          "_": "Writable registers at the payload addresses of the gated 2D blocks (0x80..0x30F): lets a test place the raw block the gated accessors read.",
+          "address": { "offset": "0x80" },
+          "numberOfElements": 164,
+          "representation": { "width": 32 }
+        },
         "GATED_STATUS": {
           "_": "Gated channel carrying a bit-field child: the child slice inherits the channel's gate, so the bit-range accessor is gated too.",
           "access": "RO",

@@ -473,6 +473,17 @@ BOOST_AUTO_TEST_CASE(testGatedByPerChannel2DPolled) {
   device.open("(dummy?map=gatedBy2D.jmap)");
 
   auto chSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/CH_SEL");
+  // Writable registers at the payload address let the test place the raw block: word i carries Ch0 in its low and
+  // Ch1 in its high 16 bits. PER_CHANNEL sits at word offset 32 of the scratch.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DAQ/SCRATCH");
+  auto packChannels = [](uint16_t ch0, uint16_t ch1) {
+    return static_cast<uint32_t>(ch0) | (static_cast<uint32_t>(ch1) << 16U);
+  };
+  for(size_t i = 0; i < 4; ++i) {
+    scratch[32 + i] = packChannels(static_cast<uint16_t>(100 + 100 * i), static_cast<uint16_t>(500 + 100 * i));
+  }
+  scratch.write();
+
   auto ch0 = device.getOneDRegisterAccessor<int16_t>("DAQ/PER_CHANNEL/Ch0");
   auto ch1 = device.getOneDRegisterAccessor<int16_t>("DAQ/PER_CHANNEL/Ch1");
 
@@ -482,6 +493,10 @@ BOOST_AUTO_TEST_CASE(testGatedByPerChannel2DPolled) {
   ch0.read();
   ch1.read();
   BOOST_TEST(ch0.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(ch0[0] == 100);
+  BOOST_TEST(ch0[1] == 200);
+  BOOST_TEST(ch0[2] == 300);
+  BOOST_TEST(ch0[3] == 400);
   BOOST_TEST(ch1.dataValidity() == ChimeraTK::DataValidity::faulty);
 
   // CTRL.CH_SEL == 1 swaps the roles.
@@ -491,6 +506,10 @@ BOOST_AUTO_TEST_CASE(testGatedByPerChannel2DPolled) {
   ch1.read();
   BOOST_TEST(ch0.dataValidity() == ChimeraTK::DataValidity::faulty);
   BOOST_TEST(ch1.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(ch1[0] == 500);
+  BOOST_TEST(ch1[1] == 600);
+  BOOST_TEST(ch1[2] == 700);
+  BOOST_TEST(ch1[3] == 800);
 
   device.close();
 }
@@ -505,6 +524,17 @@ BOOST_AUTO_TEST_CASE(testGatedByRegisterLevel2DPolled) {
   device.open("(dummy?map=gatedBy2D.jmap)");
 
   auto blockSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/BLOCK_SEL");
+  // Writable registers at the payload address let the test place the raw block: word i carries Ch0 in its low and
+  // Ch1 in its high 16 bits. BLOCK_ONLY sits at word offset 96 of the scratch.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DAQ/SCRATCH");
+  auto packChannels = [](uint16_t ch0, uint16_t ch1) {
+    return static_cast<uint32_t>(ch0) | (static_cast<uint32_t>(ch1) << 16U);
+  };
+  for(size_t i = 0; i < 4; ++i) {
+    scratch[96 + i] = packChannels(static_cast<uint16_t>(10 + 10 * i), static_cast<uint16_t>(50 + 10 * i));
+  }
+  scratch.write();
+
   auto full = device.getTwoDRegisterAccessor<int16_t>("DAQ/BLOCK_ONLY");
   auto ch0 = device.getOneDRegisterAccessor<int16_t>("DAQ/BLOCK_ONLY/Ch0");
 
@@ -513,10 +543,18 @@ BOOST_AUTO_TEST_CASE(testGatedByRegisterLevel2DPolled) {
   blockSel.write();
   full.read();
   BOOST_TEST(full.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(full[0][0] == 10);
+  BOOST_TEST(full[0][1] == 20);
+  BOOST_TEST(full[0][2] == 30);
+  BOOST_TEST(full[0][3] == 40);
+  BOOST_TEST(full[1][0] == 50);
+  BOOST_TEST(full[1][3] == 80);
 
   // The channel slice is not affected by the register-level gate.
   ch0.read();
   BOOST_TEST(ch0.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(ch0[0] == 10);
+  BOOST_TEST(ch0[3] == 40);
 
   // Any other value closes the register-level gate, marking the whole block faulty.
   blockSel = 0;
@@ -538,6 +576,16 @@ BOOST_AUTO_TEST_CASE(testGatedByBothLevels2DPolled) {
 
   auto chSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/CH_SEL");
   auto blockSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/BLOCK_SEL");
+  // BOTH sits at word offset 160 of the scratch; word i carries Ch0 in its low and Ch1 in its high 16 bits.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DAQ/SCRATCH");
+  auto packChannels = [](uint16_t ch0, uint16_t ch1) {
+    return static_cast<uint32_t>(ch0) | (static_cast<uint32_t>(ch1) << 16U);
+  };
+  for(size_t i = 0; i < 4; ++i) {
+    scratch[160 + i] = packChannels(static_cast<uint16_t>(100 + 100 * i), static_cast<uint16_t>(500 + 100 * i));
+  }
+  scratch.write();
+
   auto full = device.getTwoDRegisterAccessor<int16_t>("DAQ/BOTH");
   auto ch0 = device.getOneDRegisterAccessor<int16_t>("DAQ/BOTH/Ch0");
   auto ch1 = device.getOneDRegisterAccessor<int16_t>("DAQ/BOTH/Ch1");
@@ -551,7 +599,11 @@ BOOST_AUTO_TEST_CASE(testGatedByBothLevels2DPolled) {
   ch0.read();
   ch1.read();
   BOOST_TEST(full.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(full[0][0] == 100);
+  BOOST_TEST(full[1][3] == 800);
   BOOST_TEST(ch0.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(ch0[0] == 100);
+  BOOST_TEST(ch0[3] == 400);
   BOOST_TEST(ch1.dataValidity() == ChimeraTK::DataValidity::faulty);
 
   // Close only the register-level gate: the slices keep their own, independent per-channel result.
@@ -562,6 +614,8 @@ BOOST_AUTO_TEST_CASE(testGatedByBothLevels2DPolled) {
   ch1.read();
   BOOST_TEST(full.dataValidity() == ChimeraTK::DataValidity::faulty);
   BOOST_TEST(ch0.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(ch0[0] == 100);
+  BOOST_TEST(ch0[3] == 400);
   BOOST_TEST(ch1.dataValidity() == ChimeraTK::DataValidity::faulty);
 
   // Reopen the register-level gate but change the channel gate: the two gates move independently.
@@ -573,8 +627,12 @@ BOOST_AUTO_TEST_CASE(testGatedByBothLevels2DPolled) {
   ch0.read();
   ch1.read();
   BOOST_TEST(full.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(full[0][0] == 100);
+  BOOST_TEST(full[1][3] == 800);
   BOOST_TEST(ch0.dataValidity() == ChimeraTK::DataValidity::faulty);
   BOOST_TEST(ch1.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(ch1[0] == 500);
+  BOOST_TEST(ch1[3] == 800);
 
   device.close();
 }

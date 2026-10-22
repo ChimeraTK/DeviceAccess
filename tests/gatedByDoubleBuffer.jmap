@@ -54,6 +54,35 @@
           "address": { "type": "DMA", "offset": "0x1000" },
           "representation": { "width": 32 }
         },
+        "SCRATCH_SECONDARY": {
+          "_": "Plain writable register at the SCALAR secondary buffer address: the other buffer a double-buffered read can select.",
+          "address": { "type": "DMA", "offset": "0x1100" },
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_BLOCK": {
+          "_": "Plain writable registers at the BLOCK primary buffer address: lets a test place the raw block the full-register accessor reads.",
+          "address": { "type": "DMA", "offset": "0x2000" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_BLOCK_SECONDARY": {
+          "_": "Plain writable registers at the BLOCK secondary buffer address: the other buffer a double-buffered read can select.",
+          "address": { "type": "DMA", "offset": "0x2100" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_PER_CHANNEL": {
+          "_": "Plain writable registers at the PER_CHANNEL primary buffer address: lets a test place the raw block the channel slices read.",
+          "address": { "type": "DMA", "offset": "0x3000" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_PER_CHANNEL_SECONDARY": {
+          "_": "Plain writable registers at the PER_CHANNEL secondary buffer address: the other buffer a double-buffered read can select.",
+          "address": { "type": "DMA", "offset": "0x3100" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
         "SCALAR": {
           "_": "Gated double-buffered scalar register (DAQ.SCALAR), gated by CTRL.SEL == 1.",
           "triggeredByInterrupt": [ 1 ],

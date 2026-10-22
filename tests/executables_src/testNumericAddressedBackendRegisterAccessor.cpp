@@ -732,6 +732,10 @@ BOOST_AUTO_TEST_CASE(TestGatedByScalarPolled) {
   device.open("(dummy?map=gatedByScalar.jmap)");
 
   auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the payload address lets the test place the raw word the gated accessor reads.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  scratch[0] = 0x1234U;
+  scratch.write();
   auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
 
   // Open gate: CTRL.SEL == 1 is the configured value.
@@ -739,6 +743,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByScalarPolled) {
   sel.write();
   plain.read();
   BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plain) == 0x1234U);
 
   // Closed gate: any other value of the gating register.
   sel = 0;
@@ -751,6 +756,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByScalarPolled) {
   sel.write();
   plain.read();
   BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plain) == 0x1234U);
 }
 
 /**********************************************************************************************************************/
@@ -762,6 +768,9 @@ BOOST_AUTO_TEST_CASE(TestGatedByAlternativesPolled) {
   device.open("(dummy?map=gatedByScalar.jmap)");
 
   auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  scratch[0] = 0x1234U;
+  scratch.write();
   auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
   auto plainAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN_ALT");
 
@@ -771,6 +780,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByAlternativesPolled) {
   plain.read();
   plainAlt.read();
   BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plain) == 0x1234U);
   BOOST_TEST(plainAlt.dataValidity() == ChimeraTK::DataValidity::faulty);
 
   // CTRL.SEL == 2 swaps the roles.
@@ -780,6 +790,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByAlternativesPolled) {
   plainAlt.read();
   BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::faulty);
   BOOST_TEST(plainAlt.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plainAlt) == 0x1234U);
 }
 
 /**********************************************************************************************************************/
@@ -790,12 +801,21 @@ BOOST_AUTO_TEST_CASE(TestGatedByOneDArrayPolled) {
   device.open("(dummy?map=gatedByScalar.jmap)");
 
   auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // The ARRAY payload sits at word offsets 4..6 of the scratch.
+  scratch[4] = 0x1111U;
+  scratch[5] = 0x2222U;
+  scratch[6] = 0x3333U;
+  scratch.write();
   auto array = device.getOneDRegisterAccessor<uint32_t>("DATA/ARRAY");
 
   sel = 1;
   sel.write();
   array.read();
   BOOST_TEST(array.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(array[0] == 0x1111U);
+  BOOST_TEST(array[1] == 0x2222U);
+  BOOST_TEST(array[2] == 0x3333U);
 
   sel = 0;
   sel.write();
@@ -825,6 +845,10 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeGatingRegisterPolled) {
   device.open("(dummy?map=gatedByScalar.jmap)");
 
   auto brSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/BR_SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // The GATED_BY_BR payload sits at word offset 10 of the scratch.
+  scratch[10] = 0x55U;
+  scratch.write();
   auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_BR");
 
   // CTRL.BR_SEL == 3 is the configured value.
@@ -832,6 +856,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeGatingRegisterPolled) {
   brSel.write();
   gated.read();
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x55U);
 
   brSel = 1;
   brSel.write();
@@ -848,6 +873,10 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeAccessorPolled) {
   device.open("(dummy?map=gatedByScalar.jmap)");
 
   auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // GATED_BIT_RANGE is the 8-bit field at bits 4..11 of word offset 9; the raw word carries the payload value 0x5.
+  scratch[9] = 0x5U << 4U;
+  scratch.write();
   auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BIT_RANGE");
 
   // CTRL.SEL == 1 is the configured value.
@@ -855,6 +884,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeAccessorPolled) {
   sel.write();
   gated.read();
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
 
   // Any other value closes the gate.
   sel = 0;
@@ -867,6 +897,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeAccessorPolled) {
   sel.write();
   gated.read();
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
 }
 
 /**********************************************************************************************************************/
@@ -878,6 +909,10 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeChildSlicePolled) {
   device.open("(dummy?map=gatedBy2D.jmap)");
 
   auto chSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/CH_SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DAQ/SCRATCH");
+  // The Flag bit is bit 2 of the first element of GATED_STATUS, i.e. of the first scratch word.
+  scratch[0] = 0x4U;
+  scratch.write();
   auto flag = device.getScalarRegisterAccessor<uint32_t>("DAQ/GATED_STATUS/StatusCh0/Flag");
 
   // The channel is gated by CTRL.CH_SEL == 1.
@@ -885,6 +920,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByBitRangeChildSlicePolled) {
   chSel.write();
   flag.read();
   BOOST_TEST(flag.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(flag) == 1U);
 
   chSel = 0;
   chSel.write();
@@ -900,6 +936,10 @@ BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
   device.open("(dummy?map=gatedByScalar.jmap)");
 
   auto top = device.getScalarRegisterAccessor<uint32_t>("CTRL/TOP");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // The GATED_BY_TOP payload sits at word offset 11 of the scratch.
+  scratch[11] = 0x77U;
+  scratch.write();
   auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_TOP");
 
   // The configured value is 2^31, i.e. only the top bit set.
@@ -907,6 +947,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
   top.write();
   gated.read();
   BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x77U);
 
   // The same register value with the top bit cleared closes the gate.
   top = 0x7fffffffU;
