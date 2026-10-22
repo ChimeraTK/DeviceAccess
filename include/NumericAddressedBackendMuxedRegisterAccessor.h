@@ -99,6 +99,19 @@ namespace ChimeraTK {
 
     NumericAddressedRegisterInfo _registerInfo;
 
+    /**
+     * The gating register accessor of the register-level gate of this block, or null when the register carries no
+     * register-level gatedBy. It is read once in the transfer phase, next to the raw block read. Kept here so its
+     * lifetime is tied to the accessor.
+     */
+    boost::shared_ptr<NDRegisterAccessor<uint64_t>> _gateAccessor;
+
+    /** The expected value of the gating register which opens the register-level gate. */
+    uint64_t _gateValue{0};
+
+    /** The whole block is faulty while the register-level gate is closed. */
+    bool _gateClosed{false};
+
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
     }

@@ -1,0 +1,107 @@
+{
+  "mapFormatVersion": "1.0",
+  "interruptHandler": {},
+  "metadata": {},
+  "addressSpace": {
+    "CTRL": {
+      "_": "Gating registers used by the gatedBy conditions below.",
+      "children": {
+        "CH_SEL": {
+          "_": "Plain writable scalar gating register, used for the per-channel gates.",
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        },
+        "BLOCK_SEL": {
+          "_": "Plain writable scalar gating register, used for the register-level gate.",
+          "address": { "offset": 4 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "DAQ": {
+      "_": "2D payload registers carrying gatedBy conditions.",
+      "children": {
+        "SCRATCH": {
+          "_": "Writable registers at the payload addresses of the gated 2D blocks (0x80..0x30F): lets a test place the raw block the gated accessors read.",
+          "address": { "offset": "0x80" },
+          "numberOfElements": 164,
+          "representation": { "width": 32 }
+        },
+        "GATED_STATUS": {
+          "_": "Gated channel carrying a bit-field child: the child slice inherits the channel's gate, so the bit-range accessor is gated too.",
+          "access": "RO",
+          "address": { "offset": "0x80" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "StatusCh0": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 1 },
+              "bytesPerElement": 4,
+              "offset": 0,
+              "children": {
+                "Flag": {
+                  "representation": { "bitShift": 2, "width": 1 }
+                }
+              }
+            }
+          }
+        },
+        "PER_CHANNEL": {
+          "_": "Per-channel gates only: each channel slice is valid while CTRL.CH_SEL equals its value.",
+          "access": "RO",
+          "address": { "offset": "0x100" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "Ch0": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 0 },
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": { "type": "fixedPoint", "width": 16 }
+            },
+            "Ch1": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 1 },
+              "bytesPerElement": 2,
+              "offset": 2,
+              "representation": { "type": "fixedPoint", "width": 16 }
+            }
+          }
+        },
+        "BLOCK_ONLY": {
+          "_": "Register-level gate only: the whole full-register accessor is valid while CTRL.BLOCK_SEL equals its value; the channels carry no gate of their own.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.BLOCK_SEL", "value": 5 },
+          "address": { "offset": "0x200" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "Ch0": { "bytesPerElement": 2, "offset": 0, "representation": { "type": "fixedPoint", "width": 16 } },
+            "Ch1": { "bytesPerElement": 2, "offset": 2, "representation": { "type": "fixedPoint", "width": 16 } }
+          }
+        },
+        "BOTH": {
+          "_": "Both gates at once: a register-level gate on the full-register accessor and independent per-channel gates on the slices.",
+          "access": "RO",
+          "gatedBy": { "register": "CTRL.BLOCK_SEL", "value": 7 },
+          "address": { "offset": "0x300" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "channels": {
+            "Ch0": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 0 },
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": { "type": "fixedPoint", "width": 16 }
+            },
+            "Ch1": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 1 },
+              "bytesPerElement": 2,
+              "offset": 2,
+              "representation": { "type": "fixedPoint", "width": 16 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

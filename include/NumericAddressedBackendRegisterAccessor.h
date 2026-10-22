@@ -73,6 +73,21 @@ namespace ChimeraTK {
 
     void setExceptionBackend(boost::shared_ptr<DeviceBackend> exceptionBackend) override;
 
+    /**
+     * Get the read consumer's registration with the read coordinator of its raw element. The gate result of this
+     * consumer (see Registration::gateClosed()) can therefore be read from outside, e.g. by a GatedByDecorator.
+     */
+    [[nodiscard]] detail::ReadCoordinator::Registration<UserType>& readRegistration() { return _readRegistration; }
+
+    /**
+     * Attach a gate to this read consumer: re-register it with the read coordinator of its raw element, carrying the
+     * given gating register path and expected value. Used for a bit-range accessor, whose target is built from a
+     * numeric-address path and therefore carries no gatedBy in its register info, so the gate is attached explicitly
+     * instead. The gating register must be scalar; the caller checks that precondition when the gated accessor is
+     * created. The caller reads the gate result through readRegistration().gateClosed().
+     */
+    void attachGate(const RegisterPath& gatingRegisterPath, uint64_t gateValue);
+
    protected:
     /** Address, size and fixed-point representation information of the register
      * from the map file */
@@ -83,6 +98,20 @@ namespace ChimeraTK {
 
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
+
+    /**
+     * The expected value of this consumer's gating register, which opens the gate. Only meaningful when the register
+     * carries a gatedBy (see _registerInfo) or a gate has been attached explicitly (see attachGate). The gating
+     * register accessor itself is owned by the low-level element's gate group, keyed by the gating register path; this
+     * accessor does not hold it.
+     */
+    uint64_t _gateValue{0};
+
+    /**
+     * The gating register path attached explicitly through attachGate(), instead of read from _registerInfo. Empty
+     * unless a gate has been attached explicitly (a bit-range target built from a numeric-address path).
+     */
+    RegisterPath _attachedGatePath;
 
     /**
      * Registration of this read consumer with the read coordinator of its raw element. The handle owns the staging

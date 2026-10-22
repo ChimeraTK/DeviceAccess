@@ -77,6 +77,22 @@ namespace ChimeraTK {
     _registerInfo.address += wordOffsetInRegister * _registerInfo.elementPitchBits / 8;
     _registerInfo.nElements = numberOfWords;
 
+    // Record the gate of this read consumer, if the register carries one (a scalar/1D register or a channel slice of a
+    // 2D register; a register-level gate on a 2D register is enforced by the full-register accessor instead). The gate
+    // accessor is not built here: the low-level element owns it and builds it on demand, keyed by the gating register
+    // path, so two consumers sharing one gating register share one accessor. The gating register must be scalar; the
+    // parser already rejects a gating register that is itself gated, so no gate chain and hence no recursion occurs.
+    // The scalar precondition is checked here, when the gated accessor is created.
+    if(_registerInfo.channels.front().gatedBy.has_value()) {
+      const auto& gatedBy = *_registerInfo.channels.front().gatedBy;
+      auto gateInfo = _dev->getRegisterInfo(gatedBy.regPath);
+      if(gateInfo.getNumberOfChannels() != 1 || gateInfo.nElements > 1) {
+        throw ChimeraTK::logic_error("gatedBy: the gating register '" + gatedBy.regPath + "' of register '" +
+            registerPathName + "' must be a scalar register.");
+      }
+      _gateValue = gatedBy.val;
+    }
+
     // create low-level transfer element handling the actual data transfer to the hardware with raw data
     assert(_registerInfo.elementPitchBits % 8 == 0);
     _rawAccessor = boost::make_shared<NumericAddressedLowLevelTransferElement>(
@@ -143,15 +159,16 @@ namespace ChimeraTK {
     }
 
     // The conversion has already been performed by the raw element's read coordinator into the staging buffer; swap it
-    // into the application buffer. Data and meta data are updated together below, and the buffers stay unchanged when
-    // hasNewData is false.
+    // into the application buffer. The validity is the consumer's own, computed by the coordinator (faulty while the
+    // gate is closed). Data and meta data are updated together below, and the buffers stay unchanged when hasNewData is
+    // false.
     buffer_2D[0].swap(_readRegistration.staging());
+    this->_dataValidity = _readRegistration.validity();
 
     // we don't put the setting of the version number into the PrePostActionImplementor
     // because it does not need template specialisation, and the implementer does not
     // know about _versionNumber. It's just easier here.
     this->_versionNumber = _rawAccessor->getVersionNumber();
-    this->_dataValidity = _rawAccessor->dataValidity();
   }
 
   /********************************************************************************************************************/
@@ -326,9 +343,25 @@ namespace ChimeraTK {
 
   template<typename UserType, bool isRaw>
   void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::registerWithReadCoordinator() {
+    const bool hasGate =
+        _registerInfo.channels.front().gatedBy.has_value() || !_attachedGatePath.getComponents().empty();
     _readRegistration = detail::ReadCoordinator::Registration<UserType>(&_rawAccessor->_readCoordinator, _registerInfo,
         isRaw, _registerInfo.address - _rawAccessor->_startAddress, _registerInfo.elementPitchBits / 8,
-        _registerInfo.nElements);
+        _registerInfo.nElements, hasGate, _gateValue, _attachedGatePath);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, bool isRaw>
+  void NumericAddressedBackendRegisterAccessor<UserType, isRaw>::attachGate(
+      const RegisterPath& gatingRegisterPath, uint64_t gateValue) {
+    // Re-register the consumer with the gate. _rawAccessor is unchanged, so the shift of the address by the element's
+    // start address stays correct. The previous registration is reset first, so the coordinator drops the ungated
+    // consumer before the gated one is added.
+    _readRegistration.reset();
+    _attachedGatePath = gatingRegisterPath;
+    _gateValue = gateValue;
+    registerWithReadCoordinator();
   }
 
   /********************************************************************************************************************/

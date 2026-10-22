@@ -175,7 +175,7 @@ namespace ChimeraTK::async {
   struct AsyncVariableImpl : public AsyncVariable {
     AsyncVariableImpl(size_t nChannels, size_t nElements);
 
-    void send() final;
+    void send() override;
     void sendException(std::exception_ptr e) final;
     unsigned int getNumberOfChannels() override;
     unsigned int getNumberOfSamples() override;
