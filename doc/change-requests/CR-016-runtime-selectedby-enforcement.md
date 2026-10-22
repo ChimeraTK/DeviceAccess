@@ -607,8 +607,14 @@ replaces the expectations for `/REG2D_TOP` in
 selector register, a gated selector register and a gate on a writable
 register are rejected
 - a register without `gatedBy` reports no gate (regression)
+- Fixtures (`gatedByScalar.jmap`, `gatedByDoubleBuffer.jmap`): a writable
+scratch register mirrors every gated numeric and double-buffered payload
+address, the way `SCRATCH` and `SCRATCH_STR` already mirror the numeric and
+string payload addresses. A test writes a known payload through it, so the
+open gate can be asserted on the payload value.
 - Polled scalar/1D (`testNumericAddressedBackendRegisterAccessor.cpp`):
-- an open gate returns `DataValidity::ok` and the data
+- an open gate returns `DataValidity::ok` and the known payload placed at the
+address
 - a closed gate returns `DataValidity::faulty`, with no assertion on the
 payload bytes
 - changing the gating register returns the other alternative at the same
@@ -625,8 +631,8 @@ genuine bit range, so the test exercises a bit-range gating register
 - the parser rejects a negative `value`
 - Gated bit-range accessors:
 - a scalar/1D register whose own representation has a non-zero `bitShift` and a
-`gatedBy` reports `DataValidity::faulty` while its gate is closed and the data
-while it is open
+`gatedBy` reports `DataValidity::faulty` while its gate is closed and the
+known payload while it is open
 - a bit-field child slice of a gated channel reports `DataValidity::faulty`
 while the channel's gate is closed
 - the async path of a gated bit-range accessor neither wakes nor advances the
@@ -634,7 +640,7 @@ version number while its gate is closed
 - Gated ASCII (`string`) register (fixture with a `"string"` register and a
 `gatedBy`):
 - a polled read reports `DataValidity::faulty` while its gate is closed and
-the data while it is open
+the known payload while it is open
 - the async path, if supported for ASCII, neither wakes the consumer nor
 advances the version number while the gate is closed
 - Polled 2D (`testMultiplexedDataAccesor.cpp`):
@@ -651,9 +657,10 @@ those of the last delivered value, not of the initial one
 - the consumer never observes the data of a closed alternative
 - Gated double-buffered registers:
 - a gated double-buffered scalar/1D reports `DataValidity::faulty` while its
-gate is closed and the data while it is open
+gate is closed and the known payload while it is open
 - a gated double-buffered channel slice (e.g. `DAQ.FD.AmplitudeCh0`) reports
-`DataValidity::faulty` while its gate is closed and the data while it is open
+`DataValidity::faulty` while its gate is closed and the known payload while it
+is open
 - a closed gate neither wakes the async consumer of a double-buffered register
 nor advances its version number
 - a register-level gate on a double-buffered 2D register faults the
@@ -810,3 +817,4 @@ not skip a backend's override.
 - DI-41 [DONE] tests/executables_src/testAsyncRead.cpp:869, :882, :892 - the three new shift expressions `0x5U << 4`, `0x9U << 4` and `0xaU << 4` in testAsyncReadGatedByBitRangeAccessor carry a signed shift count (the literal `4`), so clang-tidy reports `hicpp-signed-bitwise` ('use of a signed integer operand with a binary bitwise operator') on each of these new lines. The project config enables the check and the no-warnings policy forbids new linter warnings; tests in this tree predomina...
 - DI-42 [DONE] The 'Layer structure' subsection of CR-016 (the synchronous-stack diagram and the asynchronous-case diagram) uses ASCII-art boxes; the user requires mermaid graphs instead of ASCII art.
 - DI-43 [DONE] tests/executables_src/testJsonMapFileParser.cpp:1133, 1161, 1166, 1171, 1180, 1191, 1213 - comments carry internal review-progress labels 'PR1'-'PR5' (e.g. '// PR1: ...gatedBy... must be rejected', 'Helper used by PR5: ...'), which appear nowhere else in the repository and not in CR-016 itself. Reword them to describe the test behaviour (read-write/write-only rejected, read-only/interrupt accepted, inherited writable descendant rejected) instead of naming plan/review steps.
+- DI-44 [NEW] Test-plan conformance gap: the Test plan requires an open gated polled read to assert 'the data while it is open', and for the closed gate explicitly states 'no assertion on the payload bytes' (CR-016:611-613, and the same 'and the data while it is open' wording at CR-016:627-629 bit-range accessor and CR-016:653-656 double-buffered scalar/channel slice). The tests assert only dataValidity() for the open gate and never compare the payload: testNumericAddressedBackendRegisterAccessor.cpp:728 TestGatedByScalarPolled, :787 TestGatedByOneDArrayPolled, :844 TestGatedByBitRangeAccessorPolled, and testDoubleBufferAccessor.cc:216 TestGatedDoubleBufferedScalarPolled, :248 TestGatedDoubleBufferedChannelSlicePolled. Only TestGatedByAsciiPolled (testNumericAddressedBackendRegisterAccessor.cpp:941/942 'gated[0]=="AB"') and the async tests (e.g. testAsyncRead.cpp:799/807/830, :876/887/896) assert the payload value through an open gate. Fix: place a known payload at the gated address via a writable scratch register as already done for SCRATCH_STR/SCRATCH (add one to tests/gatedByScalar.jmap and tests/gatedByDoubleBuffer.jmap for the numeric/double-buffer payload addresses) and assert the value for the open gate in the five cases above; otherwise the plan bullets are not met and the payload-delivery path (staging to output buffer) is unverified.
