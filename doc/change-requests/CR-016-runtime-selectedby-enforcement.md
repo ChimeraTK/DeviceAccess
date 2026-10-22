@@ -9,7 +9,7 @@ change also unifies the wording on "gate": the jmap key `selectedBy` becomes
 
 Depends on: CR-011
 
-Status: TESTS REVIEWED
+Status: PLANNED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -538,23 +538,23 @@ The synchronous stack, outermost object first:
 
 ```mermaid
 flowchart TB
-  consumer["Consumer of the synchronous accessor<br/>- calls read()"]
-  decorator["GatedByDecorator&lt;UserType&gt; (outermost)<br/>- the object the caller receives<br/>- transparent: forwards value, validity and version<br/>- brings in ClosedGateQuery::isGateClosed()<br/>- reads the gate result via the registration, resolved once at construction (dynamic_cast over getInternalElements())"]
-  optional["BitRangeAccessorDecorator / SubArrayAccessorDecorator<br/>- optional, transparent"]
-  base["NumericAddressedBackendRegisterAccessor&lt;UserType&gt; (base accessor)<br/>- one per consumer<br/>- owns the Registration member"]
-  lowlevel["NumericAddressedLowLevelTransferElement<br/>- shared by every read consumer<br/>- owns the gate TransferGroup, read in the transfer phase"]
-  coordinator["ReadCoordinator<br/>- per-consumer Consumer&lt;UserType&gt;<br/>- computes the GATE RESULT"]
-  registration["Registration&lt;UserType&gt;<br/>- base accessor member<br/>- one per consumer<br/>- holds the GATE RESULT (open / closed)<br/>- written by the coordinator<br/>- not inferred from the value validity"]
+consumer["Consumer of the synchronous accessor<br/>- calls read()"]
+decorator["GatedByDecorator&lt;UserType&gt; (outermost)<br/>- the object the caller receives<br/>- transparent: forwards value, validity and version<br/>- brings in ClosedGateQuery::isGateClosed()<br/>- reads the gate result via the registration, resolved once at construction (dynamic_cast over getInternalElements())"]
+optional["BitRangeAccessorDecorator / SubArrayAccessorDecorator<br/>- optional, transparent"]
+base["NumericAddressedBackendRegisterAccessor&lt;UserType&gt; (base accessor)<br/>- one per consumer<br/>- owns the Registration member"]
+lowlevel["NumericAddressedLowLevelTransferElement<br/>- shared by every read consumer<br/>- owns the gate TransferGroup, read in the transfer phase"]
+coordinator["ReadCoordinator<br/>- per-consumer Consumer&lt;UserType&gt;<br/>- computes the GATE RESULT"]
+registration["Registration&lt;UserType&gt;<br/>- base accessor member<br/>- one per consumer<br/>- holds the GATE RESULT (open / closed)<br/>- written by the coordinator<br/>- not inferred from the value validity"]
 
-  consumer -->|read| decorator
-  decorator -->|read (delegated)| optional
-  optional -->|read (delegated)| base
-  base -->|read| lowlevel
-  lowlevel -->|read| coordinator
-  base -->|owns| registration
-  coordinator -->|writes the GATE RESULT after each read| registration
-  decorator -.->|value, validity, version| consumer
-  registration -.->|gate result, read through the registration| decorator
+consumer -->|read| decorator
+decorator -->|read (delegated)| optional
+optional -->|read (delegated)| base
+base -->|read| lowlevel
+lowlevel -->|read| coordinator
+base -->|owns| registration
+coordinator -->|writes the GATE RESULT after each read| registration
+decorator -.->|value, validity, version| consumer
+registration -.->|gate result, read through the registration| decorator
 ```
 
 The asynchronous case. The synchronous accessor in the middle is the same
@@ -563,29 +563,29 @@ stack as above, reached through the object
 
 ```mermaid
 flowchart TB
-  appconsumer["Consumer (application)<br/>- subscribes<br/>- receives pushed values"]
-  polled["PolledAsyncVariable<br/>- inside TriggeredPollDistributor<br/>- one poll per distribute() call<br/>- resolves ClosedGateQuery once<br/>- overrides send(): gate closed and not initial: nothing is pushed; otherwise AsyncVariableImpl::send()<br/>- initial value by version: _lastSentVersion &lt; getVersionOnOpen()"]
+appconsumer["Consumer (application)<br/>- subscribes<br/>- receives pushed values"]
+polled["PolledAsyncVariable<br/>- inside TriggeredPollDistributor<br/>- one poll per distribute() call<br/>- resolves ClosedGateQuery once<br/>- overrides send(): gate closed and not initial: nothing is pushed; otherwise AsyncVariableImpl::send()<br/>- initial value by version: _lastSentVersion &lt; getVersionOnOpen()"]
 
-  subgraph syncstack["the synchronous stack getSyncRegisterAccessor() returns, as above"]
-    decorator["GatedByDecorator&lt;UserType&gt; (outermost)<br/>- the accessor the distributor polls<br/>- brings in ClosedGateQuery"]
-    optional["BitRangeAccessorDecorator / SubArrayAccessorDecorator<br/>- optional, transparent"]
-    base["NumericAddressedBackendRegisterAccessor&lt;UserType&gt; (base accessor)<br/>- one per consumer<br/>- owns the Registration member"]
-    lowlevel["NumericAddressedLowLevelTransferElement<br/>- shared by every read consumer<br/>- owns the gate TransferGroup, read in the transfer phase"]
-    coordinator["ReadCoordinator<br/>- per-consumer Consumer&lt;UserType&gt;<br/>- computes the GATE RESULT"]
-    registration["Registration&lt;UserType&gt;<br/>- holds the GATE RESULT"]
-    decorator -->|read (delegated)| optional
-    optional -->|read (delegated)| base
-    base -->|read| lowlevel
-    lowlevel -->|read| coordinator
-    base -->|owns| registration
-    coordinator -->|writes the GATE RESULT| registration
-  end
+subgraph syncstack["the synchronous stack getSyncRegisterAccessor() returns, as above"]
+decorator["GatedByDecorator&lt;UserType&gt; (outermost)<br/>- the accessor the distributor polls<br/>- brings in ClosedGateQuery"]
+optional["BitRangeAccessorDecorator / SubArrayAccessorDecorator<br/>- optional, transparent"]
+base["NumericAddressedBackendRegisterAccessor&lt;UserType&gt; (base accessor)<br/>- one per consumer<br/>- owns the Registration member"]
+lowlevel["NumericAddressedLowLevelTransferElement<br/>- shared by every read consumer<br/>- owns the gate TransferGroup, read in the transfer phase"]
+coordinator["ReadCoordinator<br/>- per-consumer Consumer&lt;UserType&gt;<br/>- computes the GATE RESULT"]
+registration["Registration&lt;UserType&gt;<br/>- holds the GATE RESULT"]
+decorator -->|read (delegated)| optional
+optional -->|read (delegated)| base
+base -->|read| lowlevel
+lowlevel -->|read| coordinator
+base -->|owns| registration
+coordinator -->|writes the GATE RESULT| registration
+end
 
-  appconsumer -->|subscribe| polled
-  polled -->|poll / read| decorator
-  registration -.->|gate result through the registration| decorator
-  decorator -.->|isGateClosed(): gate result| polled
-  polled -.->|send| appconsumer
+appconsumer -->|subscribe| polled
+polled -->|poll / read| decorator
+registration -.->|gate result through the registration| decorator
+decorator -.->|isGateClosed(): gate result| polled
+polled -.->|send| appconsumer
 ```
 
 ## Test plan
@@ -808,4 +808,4 @@ not skip a backend's override.
 - DI-39 [DONE] A gated ASCII (`"string"`) register is silently left ungated, so the requirement "a polled read of a register with a `gatedBy` is `DataValidity::faulty` while the gate is closed" (Requirements, CR-016:25-31) and the specification's claim that the gate "is attached uniformly instead of being special-cased per conversion path" (CR-016:283-285) hold for numeric registers only. `NumericAddressedBackend::getSyncRegisterAccessor()` has a dedicated ASCII branch (src/NumericAddress...
 - DI-40 [DONE] No other deviations found: the implemented gate mechanism matches the plan for numeric scalar/1D, bit-range, 2D register-level and per-channel, double-buffered and async paths (verified in src/NumericAddressedBackend.cc:156-285, include/NumericAddressedLowLevelTransferElement.h, include/ReadCoordinator.h:238-319, src/NumericAddressedBackendRegisterAccessor.cc:80-114/344-402, src/NumericAddressedBackendMuxedRegisterAccessor.cc:137-189, src/DoubleBufferAccessor.cc:21-126, include/as...
 - DI-41 [DONE] tests/executables_src/testAsyncRead.cpp:869, :882, :892 - the three new shift expressions `0x5U << 4`, `0x9U << 4` and `0xaU << 4` in testAsyncReadGatedByBitRangeAccessor carry a signed shift count (the literal `4`), so clang-tidy reports `hicpp-signed-bitwise` ('use of a signed integer operand with a binary bitwise operator') on each of these new lines. The project config enables the check and the no-warnings policy forbids new linter warnings; tests in this tree predomina...
-- DI-42 [NEW] The 'Layer structure' subsection of CR-016 (the synchronous-stack diagram and the asynchronous-case diagram) uses ASCII-art boxes; the user requires mermaid graphs instead of ASCII art.
+- DI-42 [FOLDED-IN] The 'Layer structure' subsection of CR-016 (the synchronous-stack diagram and the asynchronous-case diagram) uses ASCII-art boxes; the user requires mermaid graphs instead of ASCII art.
