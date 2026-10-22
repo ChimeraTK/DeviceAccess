@@ -1130,7 +1130,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByGatingItselfGated) {
 }
 
 /**********************************************************************************************************************/
-// Helper used by the gatedBy read-only restriction tests (PR1-PR5): build a minimal map in a temp file and parse
+// Helper used by the gatedBy read-only restriction tests: build a minimal map in a temp file and parse
 // it. The map carries a gating register APP.SEL and a register APP.DATA whose 'gatedBy' points to it; the
 // register's access is controlled by the caller. If 'access' is empty the 'access' member is omitted, defaulting to
 // READ_WRITE at parse time.
@@ -1158,17 +1158,17 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseGatedByAccessFixture(
 
 /**********************************************************************************************************************/
 
-// PR1: 'gatedBy' on a register with Access::READ_WRITE must be rejected as a parsing error.
+// 'gatedBy' on a register with Access::READ_WRITE must be rejected as a parsing error.
 BOOST_AUTO_TEST_CASE(TestGatedByReadWriteRejected) {
   BOOST_CHECK_THROW(parseGatedByAccessFixture("RW"), ChimeraTK::logic_error);
 }
 
-// PR2: 'gatedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
+// 'gatedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
 BOOST_AUTO_TEST_CASE(TestGatedByWriteOnlyRejected) {
   BOOST_CHECK_THROW(parseGatedByAccessFixture("WO"), ChimeraTK::logic_error);
 }
 
-// PR3: 'gatedBy' on a register with Access::READ_ONLY is accepted.
+// 'gatedBy' on a register with Access::READ_ONLY is accepted.
 BOOST_AUTO_TEST_CASE(TestGatedByReadOnlyAccepted) {
   auto regs = parseGatedByAccessFixture("RO");
   auto reg = regs.getBackendRegister("/APP/DATA");
@@ -1177,7 +1177,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByReadOnlyAccepted) {
   BOOST_TEST(reg.channels[0].gatedBy->val == 1);
 }
 
-// PR4: 'gatedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
+// 'gatedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
 // 'triggeredByInterrupt' (which implies read-only) instead of 'access'.
 BOOST_AUTO_TEST_CASE(TestGatedByInterruptAccepted) {
   auto regs = parseGatedByAccessFixture("", {{"triggeredByInterrupt", nlohmann::json::array({0})}});
@@ -1188,7 +1188,8 @@ BOOST_AUTO_TEST_CASE(TestGatedByInterruptAccepted) {
 
 /**********************************************************************************************************************/
 
-// Helper used by PR5: build a map with a module 'MOD' that declares 'gatedBy', and a single descendant register
+// Helper used by the inherited read-only restriction test: build a map with a module 'MOD' that declares
+// 'gatedBy', and a single descendant register
 // '<childName>' under it. The child's access is controlled by 'childAccess' (empty => READ_WRITE default).
 static ChimeraTK::NumericAddressedRegisterCatalogue parseGatedByInheritedAccessFixture(
     const std::string& childAccess, const std::string& childName) {
@@ -1210,7 +1211,7 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseGatedByInheritedAccessF
   return ChimeraTK::MapFileParser::parse(tmpFile).first;
 }
 
-// PR5: a module/parent declaring 'gatedBy' must be rejected if any descendant register inheriting it is writable;
+// A module/parent declaring 'gatedBy' must be rejected if any descendant register inheriting it is writable;
 // the error points to the parent declaration, not the child.
 BOOST_AUTO_TEST_CASE(TestGatedByInheritedWritableDescendantRejected) {
   // A writable (default READ_WRITE) descendant inheriting the module's gatedBy is rejected.
