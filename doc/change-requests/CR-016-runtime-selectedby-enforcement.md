@@ -9,7 +9,7 @@ change also unifies the wording on "gate": the jmap key `selectedBy` becomes
 
 Depends on: CR-011
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -809,3 +809,4 @@ not skip a backend's override.
 - DI-40 [DONE] No other deviations found: the implemented gate mechanism matches the plan for numeric scalar/1D, bit-range, 2D register-level and per-channel, double-buffered and async paths (verified in src/NumericAddressedBackend.cc:156-285, include/NumericAddressedLowLevelTransferElement.h, include/ReadCoordinator.h:238-319, src/NumericAddressedBackendRegisterAccessor.cc:80-114/344-402, src/NumericAddressedBackendMuxedRegisterAccessor.cc:137-189, src/DoubleBufferAccessor.cc:21-126, include/as...
 - DI-41 [DONE] tests/executables_src/testAsyncRead.cpp:869, :882, :892 - the three new shift expressions `0x5U << 4`, `0x9U << 4` and `0xaU << 4` in testAsyncReadGatedByBitRangeAccessor carry a signed shift count (the literal `4`), so clang-tidy reports `hicpp-signed-bitwise` ('use of a signed integer operand with a binary bitwise operator') on each of these new lines. The project config enables the check and the no-warnings policy forbids new linter warnings; tests in this tree predomina...
 - DI-42 [DONE] The 'Layer structure' subsection of CR-016 (the synchronous-stack diagram and the asynchronous-case diagram) uses ASCII-art boxes; the user requires mermaid graphs instead of ASCII art.
+- DI-43 [NEW] tests/executables_src/testJsonMapFileParser.cpp:1133, 1161, 1166, 1171, 1180, 1191, 1213 - comments carry internal review-progress labels 'PR1'-'PR5' (e.g. '// PR1: ...gatedBy... must be rejected', 'Helper used by PR5: ...'), which appear nowhere else in the repository and not in CR-016 itself. Reword them to describe the test behaviour (read-write/write-only rejected, read-only/interrupt accepted, inherited writable descendant rejected) instead of naming plan/review steps.
