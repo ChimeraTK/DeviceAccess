@@ -1093,7 +1093,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByNegativeValue) {
 
 /**********************************************************************************************************************/
 
-// S1: 'gatedBy' referencing a gating register that does not exist in the catalogue must be rejected.
+// 'gatedBy' referencing a gating register that does not exist in the catalogue must be rejected.
 BOOST_AUTO_TEST_CASE(TestGatedByGatingNotFound) {
   nlohmann::json map;
   map["mapFormatVersion"] = "1.0";
@@ -1108,7 +1108,7 @@ BOOST_AUTO_TEST_CASE(TestGatedByGatingNotFound) {
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
 }
 
-// S2: a gating register that is itself gated by a 'gatedBy' of its own must be rejected: a
+// A gating register that is itself gated by a 'gatedBy' of its own must be rejected: a
 // gating drives the gate of another register and must therefore be readable unconditionally.
 BOOST_AUTO_TEST_CASE(TestGatedByGatingItselfGated) {
   nlohmann::json map;
