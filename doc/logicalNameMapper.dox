@@ -146,11 +146,10 @@ In the xlmap file, plugins can be specified by adding one ore more <code>&lt;plu
 \endcode
 This will enable two instances of the <code>multiply</code> plugin.
 
-\subsection plugins_reference List of plugins
 The following plugins can be enabled. It is not possible to extend the Logical Name Mapping Backend with plugins through
 runtime loading or linking, all plugins have to be shipped with the DeviceAccess library.
 
-\subsubsection plugins_reference_multiply multiply
+\subsection plugins_reference_multiply multiply
 The <code>multiply</code> plugin multiplies the value of the register with the given factor. Note that the
 multiplication is done for both reading and writing. Hence if this plugin is used e.g. to convert a raw value into a
 physical value, the register should be used in one direction only. The plugin will internally always read the value as
@@ -159,7 +158,7 @@ a 64 bit floating point, so the result may not be bit exact. The target register
 Parameters:
 - <code>factor</code>: Factor to multiply the value with. Will be interpreted as a (floating-point) number.
 
-\subsubsection plugins_reference_math math
+\subsection plugins_reference_math math
 The <code>math</code> plugin allows to apply an arbitrary mathematical formula to the data. The exprtk library is used
 to parse the library. For an exact documentation of the possible syntax, please refer to its documentation:
 http://www.partow.net/programming/exprtk/index.html
@@ -217,15 +216,15 @@ Examples for formulae:
   combination with the <code>enable_push_parameters</code> parameter, writing to variables can trigger a write to the
   target register.
 
-\subsubsection plugins_reference_force_read_only forceReadOnly
+\subsection plugins_reference_force_read_only forceReadOnly
 The <code>forceReadOnly</code> plugin changes the access mode of a register to read-only. The target register has to be
 writeable. This plugin accepts no parameters.
 
-\subsubsection plugins_reference_force_polling_read forcePollingRead
+\subsection plugins_reference_force_polling_read forcePollingRead
 The <code>forcePollingRead</code> plugin changes the access mode of a register from push-type to poll-type. The plugin
 accepts no parameters. Will do nothing if the register is poll-type allready.
 
-\subsubsection plugins_reference_monostable_trigger monostableTrigger
+\subsection plugins_reference_monostable_trigger monostableTrigger
 The <code>monostableTrigger</code> implements a monostable behaviour triggered by a write transaction. The target
 register has to be an integral scalar and has to be writeable. The resulting logical register will be write only with
 the type RegisterInfo::FundamentalType::nodata, i.e. the data written to the register will be discarded. Instead, the
@@ -241,7 +240,7 @@ Parameters:
 Note that writing to the logical register will block for the full duration of the two target write transfers including
 the delay.
 
-\subsubsection plugins_reference_type_hint_modifier typeHintModifier
+\subsection plugins_reference_type_hint_modifier typeHintModifier
 The <code>typeHintModifier</code> is a simple plugin to change the type of the mapped variable in logical name mapper's
 catalogue. It does, however, <strong>NOT</strong> perform any type conversion on its own.
 In the context of ApplicationCore, use this to request conversion from the transport-layer type (raw type) to another type. Note that type conversion is implemented by clamping.
@@ -249,7 +248,7 @@ In the context of ApplicationCore, use this to request conversion from the trans
 Parameters:
 - <code>type</code>: New type. The same type names as for \ref variables_and_constants are supported.
 
-\subsubsection double_buffering_plugin Double Buffering plugin for the Logical Name Mapper
+\subsection double_buffering_plugin Double Buffering plugin for the Logical Name Mapper
 
 This plugin provides a way to read values form the double buffering
 scheme provided by the firmware. The double buffering mechanism is
@@ -289,7 +288,7 @@ Notes and CAVEATS:
   finishes. Regions are identified on the basis of the enableDoubleBuffering.
   However, current implementation is not safe for concurrent readers from different processes.
 
-\subsubsection plugins_reference_bit_range bitRange
+\subsection plugins_reference_bit_range bitRange
 
 <code>bitRange</code> enables to split a single variable into one or multiple variables which can be used to manipulate
 those parts individually without having to deal with bit masks yourself.
@@ -338,6 +337,47 @@ Notes:
 - The plugin accepts either <code>add</code> and <code>remove</code> or <code>set</code>, but not a mix.
 - The order of application is first <code>add</code>, then <code>remove</code>.
 - See ChimeraTK::SystemTags for a list of pre-defined tags.
+
+\subsection plugins_reference_set_description setDescription
+
+<code>setDescription</code> overwrites the description (\ref variables_and_constants) and/or the engineering unit of the
+logical register in the catalogue, without changing the type. It is useful for redirected registers or redirected channels
+whose target device (e.g. a JSON/jmap or another logical-name-map device) does not provide a suitable unit/description,
+or to override them. Parameters not given are left unchanged and inherited from the target register.
+
+Parameters (both optional, at least one should be given):
+- <code>engineeringUnit</code>: New engineering unit (a physical unit string, e.g. <code>mV</code>).
+- <code>description</code>: New free-form description string.
+
+The plugin can be used with both <code>redirectedRegister</code> and <code>redirectedChannel</code>.
+
+Example (redirected register, set both unit and description):
+\code{.xml}
+<redirectedRegister name="CustomUnitDescription">
+    <targetDevice>PCIE2</targetDevice>
+    <targetRegister>BOARD.WORD_USER</targetRegister>
+    <plugin name="setDescription">
+      <parameter name="engineeringUnit">mV</parameter>
+      <parameter name="description">A custom description</parameter>
+    </plugin>
+</redirectedRegister>
+\endcode
+
+Example (redirected channel, set only the description; the unit is inherited from the target):
+\code{.xml}
+<redirectedChannel name="Channel4">
+    <targetDevice>PCIE3</targetDevice>
+    <targetRegister>TEST.NODMA</targetRegister>
+    <targetChannel>4</targetChannel>
+    <plugin name="setDescription">
+      <parameter name="description">A custom description</parameter>
+    </plugin>
+</redirectedChannel>
+\endcode
+
+Note: when extracting a channel from a 2D area via <code>redirectedChannel</code>, any name/description/unit that the
+target channel already carries in the .jmap is <strong>not</strong> available, so the channel's info is taken only from the
+plugin (and target register).
 
 \subsection plugins_reference_is_status_output isStatusOutput
 
