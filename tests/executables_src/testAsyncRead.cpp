@@ -9,6 +9,7 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "DeviceAccessVersion.h"
 #include "DeviceBackendImpl.h"
+#include "DummyBackend.h"
 #include "ReadAnyGroup.h"
 
 #include <boost/thread.hpp>
@@ -760,6 +761,374 @@ BOOST_AUTO_TEST_CASE(testReadAnyInvalid) {
     // direct read on accessor in ReadAnyGroup is not allowed and should issue exception.
     BOOST_CHECK_THROW(a1.read(), ChimeraTK::logic_error);
   }
+
+  device.close();
+}
+
+// A gated register read with 'wait_for_new_data' is served by the triggered-poll path. While its gate is open an
+// interrupt delivers a new value; while the gate is closed the interrupt does not wake the consumer and publishes no
+// new version number.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedBy) {
+  std::cout << "testAsyncReadGatedBy" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the payload address lets the test place the raw value that an interrupt reads.
+  auto payload = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH");
+
+  // Open the gate for INT_GATED and write the value the accessor must pick up as its initial value.
+  sel = 1;
+  sel.write();
+  payload = 0x1234;
+  payload.write();
+
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED", 0, {AccessMode::wait_for_new_data});
+  // The closed alternative at the same address is observed through a plain polled accessor, which does not join the
+  // asynchronous transfer group and therefore does not merge with the gated accessor's payload element.
+  auto gatedAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED_ALT");
+
+  // The mandatory initial value after activation is delivered even before the first interrupt.
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1234U);
+  auto versionAfterInitial = gated.getVersionNumber();
+
+  // An interrupt through the open gate delivers a new value and advances the version number.
+  payload = 0x5678;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678U);
+  BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
+  auto versionAfter5678 = gated.getVersionNumber();
+
+  // The alternative register is closed (CTRL.SEL == 1 opens INT_GATED, not INT_GATED_ALT).
+  gatedAlt.read();
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Close the gate: an interrupt must not wake the consumer and must not publish a new version number.
+  sel = 0;
+  sel.write();
+
+  auto waitForRead = std::async(std::launch::async, [&gated] { gated.read(); });
+  BOOST_CHECK(waitForRead.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
+
+  payload = 0x9999;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_CHECK(waitForRead.wait_for(std::chrono::seconds(1)) == std::future_status::timeout); // no wake
+  // The suppressed delivery leaves the consumer untouched: value, version number and data validity stay those of the
+  // last delivered value.
+  BOOST_TEST(gated.getVersionNumber() == versionAfter5678);        // version number unchanged
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok); // validity of the last delivered value
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678U);             // value of the last delivered value
+
+  // Reopen the gate while the consumer is pending: the next interrupt wakes it and delivers the fresh value.
+  sel = 1;
+  sel.write();
+  payload = 0xabcd;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_CHECK(waitForRead.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
+  waitForRead.wait();
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0xabcdU);
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated.getVersionNumber() > versionAfter5678);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// A gated accessor whose own representation is a bit range is a bit-range accessor carrying the gate. Its async path
+// must suppress a closed-gate interrupt just like the plain path: the consumer is neither woken nor does its version
+// number advance while the gate is closed.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByBitRangeAccessor) {
+  std::cout << "testAsyncReadGatedByBitRangeAccessor" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the bit-range payload address lets the test place the raw word that an interrupt reads.
+  auto scratch = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH_BR");
+
+  // Open the gate (CTRL.SEL == 1) and write the raw word whose bits 4..11 are the payload value 0x5.
+  sel = 1;
+  sel.write();
+  scratch = 0x5U << 4U;
+  scratch.write();
+
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED_BR", 0, {AccessMode::wait_for_new_data});
+
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
+  auto versionAfterInitial = gated.getVersionNumber();
+
+  // Close the gate: an interrupt must neither wake the consumer nor advance its version number.
+  sel = 0;
+  sel.write();
+  scratch = 0x9U << 4U;
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(!gated.readNonBlocking());
+  BOOST_TEST(gated.getVersionNumber() == versionAfterInitial);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
+
+  // Reopen the gate: the next interrupt delivers the fresh value.
+  sel = 1;
+  sel.write();
+  scratch = 0xaU << 4U;
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0xaU);
+  BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// Two gated alternatives at the same address are served by the triggered-poll path at once. Their payload elements
+// merge in the transfer group, so the second gate accessor is re-registered with the merged element's gate group. A
+// change of the gating register while the consumer is pending picks the matching alternative; the other one stays
+// closed and is never delivered.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByAlternative) {
+  std::cout << "testAsyncReadGatedByAlternative" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto payload = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH");
+
+  // Start with the alternative's gate open (CTRL.SEL == 2) and write a value for it.
+  sel = 2;
+  sel.write();
+  payload = 0x2222;
+  payload.write();
+
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED", 0, {AccessMode::wait_for_new_data});
+  auto gatedAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED_ALT", 0, {AccessMode::wait_for_new_data});
+
+  gatedAlt.read();
+  gated.read();
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_TEST(static_cast<uint32_t>(gatedAlt) == 0x2222U);
+
+  // While the alternative is pending, switch the gate to the first register and place a value for it.
+  auto waitForAlt = std::async(std::launch::async, [&gatedAlt] { gatedAlt.read(); });
+  BOOST_CHECK(waitForAlt.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
+
+  sel = 1;
+  sel.write();
+  payload = 0x1111;
+  payload.write();
+
+  // The interrupt now goes through the first register's gate; the alternative stays closed and is not woken.
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1111U);
+  BOOST_CHECK(waitForAlt.wait_for(std::chrono::seconds(1)) == std::future_status::timeout);
+  // The suppressed delivery leaves the alternative untouched: its validity stays that of its last delivered value.
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  // Reopen the alternative's gate so the pending read can finish before the device is closed.
+  sel = 2;
+  sel.write();
+  backend->triggerInterrupt(1);
+  BOOST_CHECK(waitForAlt.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
+  waitForAlt.wait();
+  BOOST_TEST(gatedAlt.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// The gating register is read with a synchronous accessor, so a gating register that itself supports
+// wait_for_new_data gets no subscription. A consumer's gate is therefore only re-evaluated on a payload update, and
+// the gating register's own interrupt never wakes the consumer.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByGatingRegisterNotSubscribed) {
+  std::cout << "testAsyncReadGatedByGatingRegisterNotSubscribed" << std::endl;
+
+  Device device("(dummy?map=gatedByInterruptGatingReg.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL_INT_SET");
+  auto payload = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH");
+
+  sel = 1;
+  sel.write();
+  payload = 0x1234;
+  payload.write();
+
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_GATED", 0, {AccessMode::wait_for_new_data});
+
+  gated.read();
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x1234U);
+  auto versionAfterInitial = gated.getVersionNumber();
+
+  // An interrupt of the gating register itself must not wake the consumer: the gating register is not subscribed.
+  backend->triggerInterrupt(2);
+  BOOST_TEST(!gated.readNonBlocking());
+  BOOST_TEST(gated.getVersionNumber() == versionAfterInitial);
+
+  // Only the payload's own interrupt delivers a new value.
+  payload = 0x5678;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5678U);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// Two gated registers at one address gated by different gating registers are obtained as wait_for_new_data consumers
+// together. Their payload elements merge in the transfer group, and each consumer keeps its own gate result.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByMergedDifferentGatingRegisters) {
+  std::cout << "testAsyncReadGatedByMergedDifferentGatingRegisters" << std::endl;
+
+  Device device("(dummy?map=gatedByInterruptMerged.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto selA = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL_A");
+  auto selB = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL_B");
+  auto payload = device.getScalarRegisterAccessor<uint32_t>("DATA/SCRATCH");
+
+  // Only A is open.
+  selA = 1;
+  selA.write();
+  selB = 0;
+  selB.write();
+  payload = 0x1111;
+  payload.write();
+
+  // Both consumers are obtained together; obtaining the second must not throw a TransferGroup error.
+  auto a = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_A", 0, {AccessMode::wait_for_new_data});
+  auto b = device.getScalarRegisterAccessor<uint32_t>("DATA/INT_B", 0, {AccessMode::wait_for_new_data});
+
+  a.read();
+  b.read();
+  BOOST_TEST(a.dataValidity() != ChimeraTK::DataValidity::faulty);
+  BOOST_TEST(b.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // An interrupt goes through A's gate only; B stays closed.
+  payload = 0x2222;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(a.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(a) == 0x2222U);
+  BOOST_TEST(!b.readNonBlocking());
+
+  // Open B's gate instead and interrupt again: now B is served, A is not.
+  selA = 0;
+  selA.write();
+  selB = 1;
+  selB.write();
+  payload = 0x3333;
+  payload.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(b.readNonBlocking());
+  BOOST_TEST(static_cast<uint32_t>(b) == 0x3333U);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// The async path of a gated ASCII ("string") register behaves like the numeric one: while its gate is open an
+// interrupt delivers a new value and advances the version number; while it is closed the interrupt neither wakes the
+// consumer nor advances the version number, and the consumer keeps the value of its last delivered update.
+BOOST_AUTO_TEST_CASE(testAsyncReadGatedByAscii) {
+  std::cout << "testAsyncReadGatedByAscii" << std::endl;
+
+  Device device("(dummy?map=gatedByInterrupt.jmap)");
+  device.open();
+  device.activateAsyncRead();
+
+  auto backend = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // Writable registers at the ASCII payload address let the test place the raw bytes an interrupt reads.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH_STR");
+  scratch[0] = 0x4241U; // "AB"
+  scratch[1] = 0x4443U; // "CD"
+  scratch.write();
+
+  // Open the gate (CTRL.SEL == 1).
+  sel = 1;
+  sel.write();
+
+  auto gated = device.getOneDRegisterAccessor<std::string>("DATA/INT_GATED_STR", 0, 0, {AccessMode::wait_for_new_data});
+
+  // The mandatory initial value after activation is delivered even before the first interrupt.
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "AB");
+  BOOST_TEST(gated[1] == "CD");
+  auto versionAfterInitial = gated.getVersionNumber();
+
+  // An interrupt through the open gate delivers a new value and advances the version number.
+  scratch[0] = 0x4645U; // "EF"
+  scratch[1] = 0x4847U; // "GH"
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(gated[0] == "EF");
+  BOOST_TEST(gated.getVersionNumber() > versionAfterInitial);
+  auto versionAfterEfgh = gated.getVersionNumber();
+
+  // Close the gate: an interrupt must neither wake the consumer nor advance its version number.
+  sel = 0;
+  sel.write();
+  scratch[0] = 0x4a49U; // "IJ"
+  scratch[1] = 0x4c4bU; // "KL"
+  scratch.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(!gated.readNonBlocking());
+  // The suppressed delivery leaves the consumer untouched: value, version number and data validity stay those of the
+  // last delivered value.
+  BOOST_TEST(gated.getVersionNumber() == versionAfterEfgh);
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "EF");
+
+  // Reopen the gate: the next interrupt delivers the fresh value.
+  sel = 1;
+  sel.write();
+  backend->triggerInterrupt(1);
+  BOOST_TEST(gated.readNonBlocking());
+  BOOST_TEST(gated[0] == "IJ");
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated.getVersionNumber() > versionAfterEfgh);
 
   device.close();
 }

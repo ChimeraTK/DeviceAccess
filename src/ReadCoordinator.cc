@@ -39,6 +39,13 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
+  void ReadCoordinator::setGateAccessorSink(
+      std::function<boost::shared_ptr<NDRegisterAccessor<uint64_t>>(const RegisterPath&)> sink) {
+    _gateAccessorSink = std::move(sink);
+  }
+
+  /********************************************************************************************************************/
+
   template<class UserType, typename RawType, RawConverter::SignificantBitsCase sc, RawConverter::FractionalCase fc,
       bool isSigned>
   void ReadCoordinator::doPostReadImpl(
@@ -54,6 +61,17 @@ namespace ChimeraTK::detail {
       auto& group = static_cast<Group<UserType>&>(*_groups.at(groupId));
       const uint8_t* raw = _rawBuffer->data();
       for(auto& consumer : group.consumers) {
+        // Evaluate and record the gate while the group is processed. A closed-gate consumer keeps its (unspecified)
+        // payload unconverted and is marked faulty; the gate result is recorded separately from the validity.
+        if(consumer.hasGate) {
+          consumer.gateClosed = evaluateGateClosed(consumer);
+          if(consumer.gateClosed) {
+            consumer.validity = DataValidity::faulty;
+            continue;
+          }
+        }
+        consumer.gateClosed = false;
+        consumer.validity = DataValidity::ok;
         if(consumer.nSamples == 0) {
           continue;
         }
@@ -81,10 +99,31 @@ namespace ChimeraTK::detail {
 
   template<typename UserType>
   ReadCoordinator::Registration<UserType>::Registration(ReadCoordinator* owner,
-      const NumericAddressedRegisterInfo& info, bool isRaw, size_t byteOffset, size_t stride, size_t nSamples)
-  : _owner(owner), _staging(std::make_unique<std::vector<UserType>>(nSamples)) {
+      const NumericAddressedRegisterInfo& info, bool isRaw, size_t byteOffset, size_t stride, size_t nSamples,
+      bool hasGate, uint64_t gateValue, const RegisterPath& explicitGatePath)
+  : _owner(owner), _state(std::make_unique<ConsumerState<UserType>>()), _gateValue(gateValue) {
+    _state->staging.resize(nSamples);
+    _state->hasGate = hasGate;
+    if(hasGate) {
+      // The gate path comes either from the register info's gatedBy or, for a bit-range target whose numeric-address
+      // register info carries none, from the explicit path the caller attached the gate with.
+      if(!explicitGatePath.getComponents().empty()) {
+        _state->gatePath = explicitGatePath;
+      }
+      else if(info.channels.front().gatedBy.has_value()) {
+        _state->gatePath = info.channels.front().gatedBy->regPath;
+      }
+      // Resolve the gating register accessor now, so the owning element builds and holds it (and reads it in the
+      // transfer phase) before the first read. The accessor itself is not kept by the registration: the element owns
+      // it, keyed by the gating register path, and hands it back on each evaluation. This keeps every gate accessor
+      // owned by the element that reads it, so a transfer-group merge never offers a foreign accessor to a group.
+      if(_owner->_gateAccessorSink) {
+        _owner->_gateAccessorSink(_state->gatePath);
+      }
+    }
     // Same grouping as the 2D accessor: converter information plus UserType; raw-mode consumers are grouped separately
-    // by their UserType and copied without conversion.
+    // by their UserType and copied without conversion. A consumer's gate does not take part in the grouping: the same
+    // register read by ungated and gated consumers still shares one group, and the gate is evaluated per consumer.
     const auto& channel = info.channels[0];
     GroupKey key{channel.dataType, channel.width, channel.nFractionalBits, channel.signedFlag, channel.rawType,
         std::type_index(typeid(UserType)), isRaw};
@@ -99,6 +138,7 @@ namespace ChimeraTK::detail {
       _groupId = _owner->_nextGroupId++;
       groupIt->second = _groupId;
       auto group = std::make_unique<Group<UserType>>();
+      group->owner = owner;
       group->isRaw = isRaw;
       if(!group->isRaw) {
         // The group's typed conversion loop: one ConverterLoopHelper, cloned from the 2D accessor's pattern.
@@ -122,7 +162,8 @@ namespace ChimeraTK::detail {
       _groupId = groupIt->second;
     }
     auto& group = static_cast<Group<UserType>&>(*_owner->_groups.at(_groupId));
-    group.consumers.push_back(Consumer<UserType>(byteOffset, stride, nSamples, *_staging));
+    group.consumers.push_back(Consumer<UserType>(byteOffset, stride, nSamples, _state->staging, _state->validity,
+        _state->gateClosed, _state->hasGate, _state->gatePath, _gateValue));
     _it = std::prev(group.consumers.end());
   }
 
@@ -138,7 +179,8 @@ namespace ChimeraTK::detail {
 
   template<typename UserType>
   ReadCoordinator::Registration<UserType>::Registration(Registration&& other) noexcept
-  : _owner(other._owner), _groupId(other._groupId), _it(other._it), _staging(std::move(other._staging)) {
+  : _owner(other._owner), _groupId(other._groupId), _it(other._it), _state(std::move(other._state)),
+    _gateValue(other._gateValue) {
     other._owner = nullptr;
   }
 
@@ -154,7 +196,8 @@ namespace ChimeraTK::detail {
     _owner = other._owner;
     _groupId = other._groupId;
     _it = other._it;
-    _staging = std::move(other._staging);
+    _state = std::move(other._state);
+    _gateValue = other._gateValue;
     other._owner = nullptr;
     return *this;
   }
@@ -171,14 +214,45 @@ namespace ChimeraTK::detail {
     auto& group = static_cast<Group<UserType>&>(*_owner->_groups.at(_groupId));
     group.consumers.erase(_it);
     _owner = nullptr;
-    _staging.reset();
+    _state.reset();
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
   std::vector<UserType>& ReadCoordinator::Registration<UserType>::staging() {
-    return *_staging;
+    return _state->staging;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  DataValidity ReadCoordinator::Registration<UserType>::validity() const {
+    return _state ? _state->validity : DataValidity::ok;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool ReadCoordinator::Registration<UserType>::gateClosed() const {
+    return _state && _state->gateClosed;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool ReadCoordinator::Registration<UserType>::hasGate() const {
+    return _state && _state->hasGate;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<uint64_t>> ReadCoordinator::Registration<UserType>::gateAccessor() const {
+    if(!_state || !_state->hasGate || !_owner || !_owner->_gateAccessorSink) {
+      return nullptr;
+    }
+    return _owner->_gateAccessorSink(_state->gatePath);
   }
 
   /********************************************************************************************************************/
