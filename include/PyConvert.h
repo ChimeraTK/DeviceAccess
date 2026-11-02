@@ -37,10 +37,13 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /// Convert a python scalar (bool, int, float, str; also numpy scalars) into the expected UserType.
+  /// Will throw if input is None.
   ///
   /// We deliberately avoid relying on a lossy cast of the python scalar into a single std::variant, since that can
   /// mangle values (e.g. python ints which do not fit into int64, or negative values converted into an unsigned
   /// register). Instead we examine the python type explicitly and preserve the full range of the value.
+  /// A pybind11-bound ChimeraTK::Boolean object is also accepted and converted to the expected UserType.
+  /// Any other unsupported type throws, rather than being silently coerced via double.
   template<typename expectedUserType>
   expectedUserType convertPyScalar(const py::object& input) {
     // check for numpy scalars (e.g., np.int32, np.float64)
@@ -71,8 +74,16 @@ namespace ChimeraTK {
       }
       return userTypeToUserType<expectedUserType>(clean_input.cast<uint64_t>());
     }
-    // input is something unknown but might still define Python number protocol
-    return userTypeToUserType<expectedUserType>(clean_input.cast<double>());
+    // pybind11-bound ChimeraTK::Boolean (e.g. ac.Boolean) is neither str, float_ nor int_.
+    // Note, while ChimeraTK::Boolean is registered with PyApplicationCore, it is not for DeviceAccess-Pythonbindings.
+    // Within the latter, following if is always false.
+    if(py::isinstance<ChimeraTK::Boolean>(clean_input)) {
+      return userTypeToUserType<expectedUserType>(clean_input.cast<ChimeraTK::Boolean>());
+    }
+    // input is something unknown; fail hard instead of attempting some cast
+    throw ChimeraTK::logic_error("Cannot convert Python object of type '" +
+        py::cast<std::string>(clean_input.attr("__class__").attr("__name__")) + "' to UserType " +
+        DataType(typeid(expectedUserType)).getAsString());
   }
 
   /********************************************************************************************************************/
