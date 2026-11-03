@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: TESTS PASSED (from DONE)
+Status: STYLE REVIEWED (from DONE)
 
 ## Requirements
 
@@ -528,5 +528,5 @@ initialiser;
 ## Deferred issue
 
 - DI-1 [DONE] The internal locking of the dummy backdoor accessors breaks the caller-owned buffer-lock contract: the accessors lock the backend mutex internally, one lock per element access, so downstream code that relies on getBufferLock() and performs many element accesses under one lock breaks, and nested locking inverts the lock order. Resolution: drop the internal lock and restore getBufferLock() on the backdoor accessors, so the caller holds the lock as before.
-- DI-2 [IMPLEMENTED] CR document defect: the DI-1 note at doc/change-requests/CR-013-lazy-chunked-dummy-allocation.md:528 is truncated mid-sentence ('...accessors breaks'). Both the deferred issue's description (the caller-owned buffer-lock contract being broken) and its resolution (drop the internal lock, restore getBufferLock()) are missing. Restore the full text (original wording given in doc_updates).
-- DI-3 [IMPLEMENTED] testMuxedRegisterAccessor (tests/executables_src/testDummyRegisterAccessor.cpp:263-509) accesses the bar contents through the backdoor accessors WITHOUT holding the buffer lock: the raw backdoor 'muxedBackdoor' at lines 323, 351, 375, 462 and 485, and 'someMuxedRegister' element accesses at 380-412 and 431-457. This contradicts the specification (every element access requires the caller to hold the lock; DummyMultiplexedRegisterAccessor has no getBufferLock(), so the lock is t...
+- DI-2 [DONE] CR document defect: the DI-1 note at doc/change-requests/CR-013-lazy-chunked-dummy-allocation.md:528 is truncated mid-sentence ('...accessors breaks'). Both the deferred issue's description (the caller-owned buffer-lock contract being broken) and its resolution (drop the internal lock, restore getBufferLock()) are missing. Restore the full text (original wording given in doc_updates).
+- DI-3 [DONE] testMuxedRegisterAccessor (tests/executables_src/testDummyRegisterAccessor.cpp:263-509) accesses the bar contents through the backdoor accessors WITHOUT holding the buffer lock: the raw backdoor 'muxedBackdoor' at lines 323, 351, 375, 462 and 485, and 'someMuxedRegister' element accesses at 380-412 and 431-457. This contradicts the specification (every element access requires the caller to hold the lock; DummyMultiplexedRegisterAccessor has no getBufferLock(), so the lock is...
