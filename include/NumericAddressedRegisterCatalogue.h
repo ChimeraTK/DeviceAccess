@@ -182,6 +182,14 @@ namespace ChimeraTK {
 
     void addRegister(const NumericAddressedRegisterInfo& registerInfo);
 
+    /**
+     * Replaces the register information for the matching register, keeping the insertion order of the iterated
+     * catalogue. In addition to the base class behaviour, the derived interrupt bookkeeping is updated, so a register
+     * modified to interrupt access becomes part of getListOfInterrupts() and is reachable through its canonical
+     * interrupt path.
+     */
+    void modifyRegister(const NumericAddressedRegisterInfo& registerInfo);
+
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
     [[nodiscard]] std::shared_ptr<async::DataConsistencyRealm> getDataConsistencyRealm(
@@ -194,6 +202,13 @@ namespace ChimeraTK {
 
    protected:
     void fillFromThis(NumericAddressedRegisterCatalogue* target) const;
+
+    /**
+     *  Adds the interrupt bookkeeping for a register with interrupt access: the interrupt id to _listOfInterrupts and
+     *  the canonical interrupt paths !I, !I:M, ... to _canonicalInterrupts. Does nothing for a register without
+     *  interrupt access. The insertion is idempotent, so two registers may share one interrupt id.
+     */
+    void addInterruptBookkeeping(const NumericAddressedRegisterInfo& registerInfo);
 
     /**
      *  set of interrupt IDs. Each interrupt ID is a vector of (hierarchical) interrupt numbers.
