@@ -14,6 +14,7 @@
 
 namespace ChimeraTK {
   class DeviceBackend;
+  class NumericAddressedRegisterCatalogue;
 } // namespace ChimeraTK
 
 namespace ChimeraTK::async {
@@ -31,13 +32,23 @@ namespace ChimeraTK::async {
     boost::shared_ptr<MuxedInterruptDistributor> createMuxedInterruptDistributor(
         boost::shared_ptr<SubDomain<std::nullptr_t>> parent);
 
+    /// Dispatch one interrupt handler entry to the catalogue augmenter of its controller type.
+    void augmentCatalogue(std::vector<size_t> const& interruptId, std::string const& controllerType,
+        std::string const& controllerDescription, NumericAddressedRegisterCatalogue& catalogue);
+
    protected:
-    /** Each controller type is registered via name and creator function.
+    /** One record per controller type, so the creator and the optional catalogue augmenter share one lookup key and
+     *  one registration point. A type that augments the catalogue supplies an augmenter, the member is empty
+     *  otherwise.
      */
-    std::map<std::string,
-        std::function<std::unique_ptr<MuxedInterruptDistributor>(
-            std::string, boost::shared_ptr<SubDomain<std::nullptr_t>>)>>
-        _creatorFunctions;
+    struct ControllerTypeRecord {
+      std::function<std::unique_ptr<MuxedInterruptDistributor>(
+          std::string, boost::shared_ptr<SubDomain<std::nullptr_t>>)>
+          creator;
+      std::function<void(std::vector<size_t> const&, std::string const&, NumericAddressedRegisterCatalogue&)> augmenter;
+    };
+
+    std::map<std::string, ControllerTypeRecord> _controllerTypes;
     static std::unique_ptr<MuxedInterruptDistributorFactory> _instance;
 
     static std::pair<std::string, std::string> getInterruptControllerNameAndDescriptionFromCatalogue(
