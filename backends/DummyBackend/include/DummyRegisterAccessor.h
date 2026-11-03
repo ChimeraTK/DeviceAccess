@@ -45,14 +45,13 @@ namespace ChimeraTK {
 
     /// Value-semantic access to a single element's bytes through the chunked storage of a DummyBackend. It never
     /// exposes a pointer into the internal buffers; each access copies exactly the requested number of bytes via the
-    /// chunked transfer helper. It acquires the backend's storage lock for the short duration of the access.
+    /// chunked transfer helper. It takes no lock: the caller holds the backend's storage lock (see getBufferLock()).
     class RawByteAccess {
      public:
       RawByteAccess(DummyBackend* dev, uint64_t bar, uint64_t byteOffset)
       : _dev(dev), _bar(bar), _byteOffset(byteOffset) {}
 
       void read(std::byte* destination, size_t nbytes) const {
-        std::lock_guard<std::mutex> lock(_dev->mutex);
         DummyBackendBase::transferChunked(
             _bar, _byteOffset, nbytes,
             [this](uint64_t bar, uint64_t chunkIndex) { return _dev->getChunk(bar, chunkIndex); },
@@ -62,7 +61,6 @@ namespace ChimeraTK {
       }
 
       void write(const std::byte* source, size_t nbytes) const {
-        std::lock_guard<std::mutex> lock(_dev->mutex);
         DummyBackendBase::transferChunked(
             _bar, _byteOffset, nbytes,
             [this](uint64_t bar, uint64_t chunkIndex) { return _dev->getChunk(bar, chunkIndex); },
@@ -246,8 +244,10 @@ namespace ChimeraTK {
 
     const NumericAddressedRegisterInfo& getRegisterInfo() { return _registerInfo; }
 
-    /** Compatibility function. The buffer lock is handled internally, no need for the caller to take care of it. */
-    [[deprecated]] std::unique_lock<std::mutex> getBufferLock() { return {}; }
+    /** Obtain the buffer lock of the backend. The caller must hold it around every backdoor element access and
+     * release it as soon as possible, since it blocks all other functionality of the backend. Holding it lets a caller
+     * perform many element accesses under one lock instead of one lock per element. */
+    std::unique_lock<std::mutex> getBufferLock() { return std::unique_lock<std::mutex>(_dev->mutex); }
 
    protected:
     /// pointer to VirtualDevice
@@ -455,8 +455,8 @@ namespace ChimeraTK {
    *  (we still depend on the map file parser, but the whole dummy does. The address
    *   translation is re-done in the dummy, we are not using the one from the regular accessors.)
    *
-   *   The accessor returns value-semantic proxies. Every element access acquires the backend's storage lock for its
-   *   short duration, so the caller does not need to hold any lock.
+   *   The accessor returns value-semantic proxies. It takes no lock itself: the caller holds the backend's storage
+   *   lock via getBufferLock() around every element access.
    */
   template<typename RawType = int32_t>
   class DummyRegisterRawAccessor : public DummyRegisterRawElement<RawType> {
@@ -504,8 +504,10 @@ namespace ChimeraTK {
     /// return number of elements
     [[nodiscard]] unsigned int getNumberOfElements() const { return _registerInfo.nElements; }
 
-    /** Compatibility function. The buffer lock is handled internally, no need for the caller to take care of it. */
-    [[deprecated]] std::unique_lock<std::mutex> getBufferLock() { return {}; }
+    /** Obtain the buffer lock of the backend. The caller must hold it around every backdoor element access and
+     * release it as soon as possible, since it blocks all other functionality of the backend. Holding it lets a caller
+     * perform many element accesses under one lock instead of one lock per element. */
+    std::unique_lock<std::mutex> getBufferLock() { return std::unique_lock<std::mutex>(this->_backend->mutex); }
 
    protected:
     /// register map information

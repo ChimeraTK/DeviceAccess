@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: READY TO IMPLEMENT (from DONE)
+Status: IMPLEMENTED (from DONE)
 
 ## Requirements
 
@@ -525,8 +525,4 @@ initialiser;
 
 ## Deferred issue
 
-- DI-1 [FOLDED-IN] The internal locking of the dummy backdoor accessors breaks
-the caller-owned buffer-lock contract that downstream projects rely on, and it
-prevents a caller from performing several accesses under one lock. The internal
-lock is dropped and `getBufferLock()` is restored on `DummyRegisterAccessor`
-and `DummyRegisterRawAccessor`.
+- DI-1 [IMPLEMENTED] The internal locking of the dummy backdoor accessors breaks
