@@ -23,7 +23,12 @@ namespace ChimeraTK {
       removeExtraSeparators();
     }
     // we can use the default assignment operator but have to declare this because we have an explicit copy constructor
-    RegisterPath& operator=(const RegisterPath& _path) = default;
+    RegisterPath& operator=(const RegisterPath& _path) {
+      path = _path.path;
+      separator_alt = _path.separator_alt;
+      invalidateConversionCache();
+      return *this;
+    }
     // Yes, we want implicit construction. Turn off the linter.
     // NOLINTNEXTLINE(hicpp-explicit-conversions, google-explicit-constructor)
     RegisterPath(const char* _path) : path(std::string(separator) + _path) { removeExtraSeparators(); }
@@ -41,6 +46,7 @@ namespace ChimeraTK {
       else {
         separator_alt = altSeparator;
       }
+      invalidateConversionCache();
     }
 
     /** obtain path with alternative separator character instead of "/". The
@@ -59,6 +65,7 @@ namespace ChimeraTK {
     RegisterPath& operator/=(const std::string& rightHandSide) {
       path += std::string(separator) + rightHandSide;
       removeExtraSeparators();
+      invalidateConversionCache();
       return *this;
     }
 
@@ -66,6 +73,7 @@ namespace ChimeraTK {
     RegisterPath& operator+=(const std::string& rightHandSide) {
       path += rightHandSide;
       removeExtraSeparators();
+      invalidateConversionCache();
       return *this;
     }
 
@@ -93,6 +101,7 @@ namespace ChimeraTK {
       else {
         path = separator;
       }
+      invalidateConversionCache();
       return *this;
     }
 
@@ -110,6 +119,7 @@ namespace ChimeraTK {
       else {
         path = separator;
       }
+      invalidateConversionCache();
       return *this;
     }
 
@@ -187,6 +197,24 @@ namespace ChimeraTK {
     /** altenative separator character */
     std::string separator_alt;
 
+    /** Memo for the last conversion performed by
+     * getWithOtherSeparatorReplaced(). The conversion is a pure function of the
+     * (immutable between mutations) path and the requested other separator, and
+     * it is called repeatedly with the same arguments from the comparators used
+     * e.g. by std::map. The memo turns those repeated calls into a comparison of
+     * the (typically one character) other separator. The memo lives in the object
+     * and is invalidated by every mutation of the path. */
+    mutable bool conversionCacheValid{false};
+
+    /** other separator for which conversionCacheResult was computed */
+    mutable std::string conversionCacheSeparator;
+
+    /** cached result of getWithOtherSeparatorReplaced() */
+    mutable std::string conversionCacheResult;
+
+    /** Discard the memo. Must be called by every operation that modifies the path. */
+    void invalidateConversionCache() const { conversionCacheValid = false; }
+
     /** Search for duplicate separators (e.g. "//") and remove one of them. Also
      * removes a trailing separator, if present. */
     void removeExtraSeparators() { path = removeExtraSeparators(path); }
@@ -204,10 +232,18 @@ namespace ChimeraTK {
     }
 
     /** Return the path after replacing the given otherSeparator with the standard
-     * separator "/". */
-    [[nodiscard]] std::string getWithOtherSeparatorReplaced(const std::string& otherSeparator) const {
-      // no replacement needed, of other separator is empty
+     * separator "/".
+     *
+     * The result is memoised in the object (see conversionCacheResult) because the
+     * comparators used e.g. by std::map call this repeatedly with the same
+     * arguments. The returned reference is valid until the next mutation of this
+     * object or the next call with a different other separator. */
+    [[nodiscard]] const std::string& getWithOtherSeparatorReplaced(const std::string& otherSeparator) const {
+      // no replacement needed, if other separator is empty
       if(otherSeparator.length() == 0) return path;
+      if(conversionCacheValid && conversionCacheSeparator == otherSeparator) {
+        return conversionCacheResult;
+      }
       // replace all occurrences of otherSeparator with separator
       std::string path_other = path;
       size_t pos = 0;
@@ -216,7 +252,10 @@ namespace ChimeraTK {
       }
       // replace duplicate separators and remove one of them. Also remove a
       // trailing separator, if present.
-      return removeExtraSeparators(path_other);
+      conversionCacheResult = removeExtraSeparators(path_other);
+      conversionCacheSeparator = otherSeparator;
+      conversionCacheValid = true;
+      return conversionCacheResult;
     }
 
     /** return common alternative separator for this RegisterPath and the
