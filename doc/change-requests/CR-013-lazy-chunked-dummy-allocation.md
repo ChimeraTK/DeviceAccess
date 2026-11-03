@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: DONE
+Status: IN PROGRESS (from DONE)
 
 ## Requirements
 
@@ -151,6 +151,7 @@ always goes by the derived name; the order therefore does not matter.
 between processes.
 - Appending a materialised `(bar, chunkIndex)`, under the already-held
 interprocess mutex:
+
 1. Find the true tail: start at the home segment's tail if it names an
 existing segment, otherwise at the head, and follow the successor links
 through existing segments to the last one. A successor whose segment does
@@ -160,6 +161,7 @@ head names an existing segment.
 chunk name.
 1. Open or create the segment and construct its vector.
 1. Advance the home segment's tail to the derived chunk name.
+
 - This order makes the append crash-safe:
 - Walking to the true tail first recovers from a previous crash that happened
 before the tail was advanced: the walk reaches the segment that was created
@@ -181,12 +183,14 @@ behind the missing segment.
 instead of `listNamedElements()`, which only ever saw the home segment.
 `setupBarContents()` only resets the per-process chunk maps.
 - Teardown, when the last process leaves, under the mutex:
+
 1. Save the head, then clear the head and tail, so a racing process sees an
 empty chain.
 1. Remove the chunk segments by walking the saved chain.
 1. Remove the home segment.
 A racing process therefore rebuilds, instead of following a chain whose
 segments are being removed.
+
 - Every chain walk that removes or resets segments (recovery and teardown)
 tolerates a link whose segment does not exist: such a name is skipped, not
 mapped with `open_only`. A process killed between writing a link and creating
