@@ -76,14 +76,19 @@ chunks too. Only the touched chunk is materialised.
 - `_barChunks` stays in the derived classes. Their value types differ, and
 `DummyBackendBase` is in the core library and cannot use the
 boost-interprocess types.
-- Each backend implements one virtual storage method returning a `std::byte*` to
-a chunk, creating it zero-initialised on first access in its own map and
-allocator. It is the only method that touches the map.
-- A transfer helper in `DummyBackendBase` maps `(bar, byteOffset, size)` onto
-chunk indices, stitches the transfer across chunk boundaries and calls the
-virtual storage method for each touched chunk. It only ever handles
-`std::byte*`, so the two storage types stay hidden in the derived classes. It
-is used by:
+- Each backend implements one non-virtual storage method,
+`DummyBackend::getChunk` resp. `SharedDummyBackend::getChunk`, returning a
+`std::byte*` to a chunk, creating it zero-initialised on first access in its
+own map and allocator. It is the only method that touches the map. It is not
+virtual: it is passed to the static helper as a callback, so the helper needs
+no backend instance and `DummyBackendBase` stays free of the two value types.
+- A static transfer helper `DummyBackendBase::transferChunked` maps `(bar,
+byteOffset, size)` onto chunk indices, stitches the transfer across chunk
+boundaries and calls the storage method for each touched chunk. The storage
+method is passed in as a `std::function<std::byte*(uint64_t,uint64_t)>`
+getChunk callback, so the helper stays static and the two storage types stay
+hidden in the derived classes. It only ever handles `std::byte*`. It is used
+by:
 - `DummyBackend::read`/`write`;
 - `SharedDummyBackend::read`/`write`;
 - `writeRegisterWithoutCallback` (DummyBackend only);
@@ -529,4 +534,6 @@ initialiser;
 
 - DI-1 [DONE] The internal locking of the dummy backdoor accessors breaks the caller-owned buffer-lock contract: the accessors lock the backend mutex internally, one lock per element access, so downstream code that relies on getBufferLock() and performs many element accesses under one lock breaks, and nested locking inverts the lock order. Resolution: drop the internal lock and restore getBufferLock() on the backdoor accessors, so the caller holds the lock as before.
 - DI-2 [DONE] CR document defect: the DI-1 note at doc/change-requests/CR-013-lazy-chunked-dummy-allocation.md:528 is truncated mid-sentence ('...accessors breaks'). Both the deferred issue's description (the caller-owned buffer-lock contract being broken) and its resolution (drop the internal lock, restore getBufferLock()) are missing. Restore the full text (original wording given in doc_updates).
-- DI-3 [DONE] testMuxedRegisterAccessor (tests/executables_src/testDummyRegisterAccessor.cpp:263-509) accesses the bar contents through the backdoor accessors WITHOUT holding the buffer lock: the raw backdoor 'muxedBackdoor' at lines 323, 351, 375, 462 and 485, and 'someMuxedRegister' element accesses at 380-412 and 431-457. This contradicts the specification (every element access requires the caller to hold the lock; DummyMultiplexedRegisterAccessor has no getBufferLock(), so the lock is...
+- DI-3 [DONE] testMuxedRegisterAccessor (tests/executables_src/testDummyRegisterAccessor.cpp:263-509) accesses the bar contents through the backdoor accessors WITHOUT holding the buffer lock: the raw backdoor 'muxedBackdoor' at lines 323, 351, 375, 462 and 485, and 'someMuxedRegister' element accesses at 380-412 and 431-457. This contradicts the specification (every element access requires the caller to hold the lock; DummyMultiplexedRegisterAccessor has no getBufferLock(), so the lock is taken through an accessor of the same backend, `device->muxedBackdoor->getBufferLock()`). Resolution: hold that lock around the element accesses in testMuxedRegisterAccessor.
+- DI-4 [NEW] Spec/code mismatch: the specification states each backend implements "one virtual storage method returning a `std::byte*` to a chunk" and that the transfer helper "calls the virtual storage method for each touched chunk" (doc/change-requests/CR-013-lazy-chunked-dummy-allocation.md:79-85), but the implementation has no virtual method at all: `DummyBackendBase::transferChunked` is `static` and receives the storage method as a `std::function<std::byte*(uint64_t,uint64_t)>` callback (backends/DummyBackend/include/DummyBackendBase.h:83-84, src/DummyBackendBase.cc:73-87), and both `DummyBackend::getChunk` (backends/DummyBackend/include/DummyBackend.h:151) and `SharedDummyBackend::getChunk` (backends/SharedDummy/include/SharedDummyBackend.h:223) are plain non-virtual member functions (no `virtual ... getChunk` / `getChunk ... override` exists anywhere). Either the specification wording must be changed to describe the static helper plus per-backend `getChunk` callback, or the storage method must actually become virtual as described.
+- DI-5 [NEW] CR document defect: the DI-3 note at the end of the Deferred issue section (doc/change-requests/CR-013-lazy-chunked-dummy-allocation.md:532) is truncated mid-sentence. The line ends with "...DummyMultiplexedRegisterAccessor has no getBufferLock(), so the lock is..." and the file stops there without a trailing newline, so the DI-3 entry's resolution (the lock is taken through an accessor of the same backend, `device->muxedBackdoor->getBufferLock()`) is missing, exactly the kind of truncation DI-2 was created to fix. DI-3's actual code fix in tests/executables_src/testDummyRegisterAccessor.cpp:273-276 is present and correct; only the note text and the missing final newline need restoring.
