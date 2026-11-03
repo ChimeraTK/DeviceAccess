@@ -146,13 +146,16 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     std::vector<UserType> cookedValues(derived->nElementsPerChannel());
     std::vector<Traw> rawValues(derived->nElementsPerChannel());
 
-    // The backdoor accessors take the backend lock per element access themselves, so no explicit buffer lock is held
-    // across the rawToCooked conversion (which acquires a math plugin lock) any more.
+    // The backdoor accessors take no lock themselves, so the caller must hold the buffer lock around the element
+    // accesses. Keep its scope as limited as possible (see #12332): the rawToCooked conversion acquires a lock via the
+    // math plugin decorator, which would cause a lock order inversion if the buffer lock were still held.
     {
+      auto bufferLock = derived->acc.getBufferLock();
+
       for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
         rawValues[i] = derived->acc[i + derived->myOffset()];
       }
-    }
+    } // end of bufferLock scope
 
     for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
       if(!getRaw) {
@@ -168,9 +171,12 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
 
   void setRemoteValue() {
     auto v = generateValue<typename Derived::rawUserType>(true)[0];
-    for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
-      derived->acc[i + derived->myOffset()] = v[i];
-    }
+    { // scope for the buffer lock
+      auto bufferLock = derived->acc.getBufferLock();
+      for(size_t i = 0; i < derived->nElementsPerChannel(); ++i) {
+        derived->acc[i + derived->myOffset()] = v[i];
+      }
+    } // release the buffer lock before triggering another thread
     if(derived->isPush()) {
       dynamic_cast<ExceptionDummy&>(derived->acc.getBackend()).triggerInterrupt(6);
     }

@@ -181,6 +181,10 @@ class DummyRegisterTest {
   /// test the deduction guide of the chunked raw accessor
   void testChunkedBackdoorRawAccessorDeductionGuide();
 
+  /// test the locking contract of the backdoor accessors: the caller holds the buffer lock, and getBufferLock() is not
+  /// deprecated
+  void testChunkedBackdoorLockingContract();
+
  private:
   boost::shared_ptr<TestableDummyBackend> device;
   friend class DummyRegisterTestSuite;
@@ -200,6 +204,7 @@ class DummyRegisterTestSuite : public test_suite {
     add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorRawAccessorValueSemantics, dummyDeviceTest));
     add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorRawAccessorNonDefaultRawType, dummyDeviceTest));
     add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorRawAccessorDeductionGuide, dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testChunkedBackdoorLockingContract, dummyDeviceTest));
   }
 };
 
@@ -518,13 +523,20 @@ void DummyRegisterTest::testChunkedBackdoorByteAlignedRegister() {
   const uint64_t neighbourAddress = 16;
   backend->write(bar, neighbourAddress, &neighbourValue, sizeof(int32_t));
 
-  // Write through the accessor: elements are 4 bytes wide starting at byte offset 3.
-  backend->misaligned[0] = 0x11111111;
-  backend->misaligned[1] = 0x22222222;
-  backend->misaligned[2] = 0x33333333;
-  BOOST_CHECK(int(backend->misaligned[0]) == 0x11111111);
-  BOOST_CHECK(int(backend->misaligned[1]) == 0x22222222);
-  BOOST_CHECK(int(backend->misaligned[2]) == 0x33333333);
+  // Write through the accessor: elements are 4 bytes wide starting at byte offset 3. The backdoor accessor takes no
+  // lock, so the caller holds the buffer lock around the element accesses.
+  {
+    auto bufferLock = backend->misaligned.getBufferLock();
+    backend->misaligned[0] = 0x11111111;
+    backend->misaligned[1] = 0x22222222;
+    backend->misaligned[2] = 0x33333333;
+  }
+  {
+    auto bufferLock = backend->misaligned.getBufferLock();
+    BOOST_CHECK(int(backend->misaligned[0]) == 0x11111111);
+    BOOST_CHECK(int(backend->misaligned[1]) == 0x22222222);
+    BOOST_CHECK(int(backend->misaligned[2]) == 0x33333333);
+  }
 
   // The bytes after the register were not modified by the byte-granular element accesses.
   int32_t neighbour = 0;
@@ -552,15 +564,21 @@ void DummyRegisterTest::testChunkedBackdoorRegisterSpanningChunkBoundary() {
   backend->open();
 
   // The register starts two words before the chunk boundary and has 4 elements, so it straddles it.
-  backend->boundary[0] = 0x0a0a0a0a;
-  backend->boundary[1] = 0x0b0b0b0b;
-  backend->boundary[2] = 0x0c0c0c0c;
-  backend->boundary[3] = 0x0d0d0d0d;
+  {
+    auto bufferLock = backend->boundary.getBufferLock();
+    backend->boundary[0] = 0x0a0a0a0a;
+    backend->boundary[1] = 0x0b0b0b0b;
+    backend->boundary[2] = 0x0c0c0c0c;
+    backend->boundary[3] = 0x0d0d0d0d;
+  }
 
-  BOOST_CHECK(int(backend->boundary[0]) == 0x0a0a0a0a);
-  BOOST_CHECK(int(backend->boundary[1]) == 0x0b0b0b0b);
-  BOOST_CHECK(int(backend->boundary[2]) == 0x0c0c0c0c);
-  BOOST_CHECK(int(backend->boundary[3]) == 0x0d0d0d0d);
+  {
+    auto bufferLock = backend->boundary.getBufferLock();
+    BOOST_CHECK(int(backend->boundary[0]) == 0x0a0a0a0a);
+    BOOST_CHECK(int(backend->boundary[1]) == 0x0b0b0b0b);
+    BOOST_CHECK(int(backend->boundary[2]) == 0x0c0c0c0c);
+    BOOST_CHECK(int(backend->boundary[3]) == 0x0d0d0d0d);
+  }
 
   backend->close();
   std::remove(mapFile.c_str());
@@ -577,45 +595,51 @@ void DummyRegisterTest::testChunkedBackdoorRawAccessorValueSemantics() {
 
   auto raw = backend->getRawAccessor("MODULE", "MISALIGNED");
 
-  raw = 100;
-  BOOST_CHECK(int(raw) == 100);
+  // The backdoor accessor takes no lock itself: the caller holds the buffer lock, and can perform all the accesses
+  // below under the single lock.
+  {
+    auto bufferLock = raw.getBufferLock();
 
-  raw += 5;
-  BOOST_CHECK(int(raw) == 105);
-  raw -= 3;
-  BOOST_CHECK(int(raw) == 102);
-  raw *= 2;
-  BOOST_CHECK(int(raw) == 204);
-  raw /= 4;
-  BOOST_CHECK(int(raw) == 51);
-  raw %= 10;
-  BOOST_CHECK(int(raw) == 1);
+    raw = 100;
+    BOOST_CHECK(int(raw) == 100);
 
-  raw = 0x0f0f;
-  raw &= 0x00ff;
-  BOOST_CHECK(int(raw) == 0x000f);
-  raw |= 0x00f0;
-  BOOST_CHECK(int(raw) == 0x00ff);
-  raw ^= 0x000f;
-  BOOST_CHECK(int(raw) == 0x00f0);
-  raw <<= 4;
-  BOOST_CHECK(int(raw) == 0x0f00);
-  raw >>= 4;
-  BOOST_CHECK(int(raw) == 0x00f0);
+    raw += 5;
+    BOOST_CHECK(int(raw) == 105);
+    raw -= 3;
+    BOOST_CHECK(int(raw) == 102);
+    raw *= 2;
+    BOOST_CHECK(int(raw) == 204);
+    raw /= 4;
+    BOOST_CHECK(int(raw) == 51);
+    raw %= 10;
+    BOOST_CHECK(int(raw) == 1);
 
-  raw = 10;
-  BOOST_CHECK(++raw == 11);
-  BOOST_CHECK(--raw == 10);
-  BOOST_CHECK(raw++ == 10);
-  BOOST_CHECK(int(raw) == 11);
-  BOOST_CHECK(raw-- == 11);
-  BOOST_CHECK(int(raw) == 10);
+    raw = 0x0f0f;
+    raw &= 0x00ff;
+    BOOST_CHECK(int(raw) == 0x000f);
+    raw |= 0x00f0;
+    BOOST_CHECK(int(raw) == 0x00ff);
+    raw ^= 0x000f;
+    BOOST_CHECK(int(raw) == 0x00f0);
+    raw <<= 4;
+    BOOST_CHECK(int(raw) == 0x0f00);
+    raw >>= 4;
+    BOOST_CHECK(int(raw) == 0x00f0);
 
-  raw = 0x1234;
-  // NOLINTNEXTLINE(hicpp-signed-bitwise)
-  BOOST_CHECK((raw & 0x00ff) == 0x0034);
-  // NOLINTNEXTLINE(hicpp-signed-bitwise)
-  BOOST_CHECK((~raw) == ~0x1234);
+    raw = 10;
+    BOOST_CHECK(++raw == 11);
+    BOOST_CHECK(--raw == 10);
+    BOOST_CHECK(raw++ == 10);
+    BOOST_CHECK(int(raw) == 11);
+    BOOST_CHECK(raw-- == 11);
+    BOOST_CHECK(int(raw) == 10);
+
+    raw = 0x1234;
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    BOOST_CHECK((raw & 0x00ff) == 0x0034);
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    BOOST_CHECK((~raw) == ~0x1234);
+  }
 
   // The memory itself holds the last written value.
   int32_t word = 0;
@@ -642,19 +666,23 @@ void DummyRegisterTest::testChunkedBackdoorRawAccessorNonDefaultRawType() {
 
   BOOST_CHECK(raw.getNumberOfElements() == 4U);
 
-  raw[0] = int16_t(0x1234);
-  raw[1] = int16_t(0x5678);
-  raw[2] = int16_t(-1);
-  raw[3] = int16_t(-32768);
+  {
+    auto bufferLock = raw.getBufferLock();
 
-  BOOST_CHECK(raw[0].get() == int16_t(0x1234));
-  BOOST_CHECK(raw[1].get() == int16_t(0x5678));
-  BOOST_CHECK(raw[2].get() == int16_t(-1));
-  BOOST_CHECK(raw[3].get() == int16_t(-32768));
+    raw[0] = int16_t(0x1234);
+    raw[1] = int16_t(0x5678);
+    raw[2] = int16_t(-1);
+    raw[3] = int16_t(-32768);
 
-  // Value semantics with the narrower raw type.
-  raw[0] += int16_t(1);
-  BOOST_CHECK(raw[0].get() == int16_t(0x1235));
+    BOOST_CHECK(raw[0].get() == int16_t(0x1234));
+    BOOST_CHECK(raw[1].get() == int16_t(0x5678));
+    BOOST_CHECK(raw[2].get() == int16_t(-1));
+    BOOST_CHECK(raw[3].get() == int16_t(-32768));
+
+    // Value semantics with the narrower raw type.
+    raw[0] += int16_t(1);
+    BOOST_CHECK(raw[0].get() == int16_t(0x1235));
+  }
 
   backend->close();
   std::remove(mapFile.c_str());
@@ -674,8 +702,48 @@ void DummyRegisterTest::testChunkedBackdoorRawAccessorDeductionGuide() {
   DummyRegisterRawAccessor deduced(backend, "MODULE", "MISALIGNED");
   static_assert(std::is_same_v<decltype(deduced), DummyRegisterRawAccessor<int32_t>>);
 
-  deduced[0] = 0x0badf00d;
-  BOOST_CHECK(int(deduced[0]) == 0x0badf00d);
+  {
+    auto bufferLock = deduced.getBufferLock();
+    deduced[0] = 0x0badf00d;
+    BOOST_CHECK(int(deduced[0]) == 0x0badf00d);
+  }
+
+  backend->close();
+  std::remove(mapFile.c_str());
+}
+
+/**********************************************************************************************************************/
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) registered via BOOST_CLASS_TEST_CASE, so it cannot be static
+void DummyRegisterTest::testChunkedBackdoorLockingContract() {
+  std::cout << "testChunkedBackdoorLockingContract" << std::endl;
+
+  std::string mapFile = writeChunkedBackdoorJmap();
+  auto backend = boost::make_shared<ChunkedBackdoorDummyBackend>(mapFile);
+  backend->open();
+
+  auto accessor = backend->getRawAccessor("MODULE", "MISALIGNED");
+
+  // getBufferLock() is not deprecated: this translation unit treats a deprecation warning as an error, so the function
+  // would not compile if the accessor were marked [[deprecated]].
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wdeprecated-declarations"
+  auto bufferLock = accessor.getBufferLock();
+#pragma GCC diagnostic pop
+
+  // Several element accesses under the one caller-held lock, including a chunk materialisation on first write. The
+  // chunk materialisation takes the same lock internally, so a self-locking accessor would deadlock here.
+  for(int i = 0; i < 3; ++i) {
+    accessor[i] = int32_t(0x100 + i);
+  }
+  for(int i = 0; i < 3; ++i) {
+    BOOST_CHECK(int(accessor[i]) == 0x100 + i);
+  }
+
+  bufferLock.unlock();
+
+  // Without a lock held, the same accessor works as well (the accessors themselves never lock).
+  accessor[0] = int32_t(0x7a7a7a7a);
+  BOOST_CHECK(int(accessor[0]) == 0x7a7a7a7a);
 
   backend->close();
   std::remove(mapFile.c_str());

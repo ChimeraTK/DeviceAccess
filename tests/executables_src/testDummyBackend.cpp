@@ -79,12 +79,15 @@ class TestableDummyBackend : public DummyBackend {
   }
 
   /// Write an int32_t word through the deprecated `_barContents[bar][wordIndex]` compatibility shim. It is a member
-  /// function so that the inherited protected member is accessed from within the subclass, as legacy code does.
+  /// function so that the inherited protected member is accessed from within the subclass, as legacy code does. The
+  /// shim's accessor takes no lock, so the caller holds the buffer lock, exactly as legacy code did.
   void writeBarContentsWord(uint64_t bar, uint64_t wordIndex, int32_t value) {
     // test the deprecated legacy indexing without warning about it...
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    _barContents[bar][wordIndex] = value;
+    auto accessor = _barContents[bar];
+    auto bufferLock = accessor.getBufferLock();
+    accessor[wordIndex] = value;
 #pragma GCC diagnostic pop
   }
 
@@ -93,7 +96,9 @@ class TestableDummyBackend : public DummyBackend {
     // test the deprecated legacy indexing without warning about it...
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    int32_t value = _barContents[bar][wordIndex];
+    auto accessor = _barContents[bar];
+    auto bufferLock = accessor.getBufferLock();
+    int32_t value = accessor[wordIndex];
 #pragma GCC diagnostic pop
     return value;
   }
