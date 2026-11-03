@@ -6,7 +6,7 @@ allocates the address space lazily in fixed-size byte chunks, gives each
 materialised SharedDummyBackend chunk its own shared-memory object, and reworks
 the backdoor accessors accordingly.
 
-Status: IN PROGRESS (from DONE)
+Status: PLANNED
 
 ## Requirements
 
@@ -35,6 +35,10 @@ valid and materialises chunks on demand.
 internal buffers. They return value-semantic proxies which handle the chunk
 discontinuities and support arbitrary byte-aligned registers (multi-byte
 access via `memcpy`).
+- The locking contract of the backdoor accessors stays as it is: the accessors
+take no lock, the caller holds the buffer lock and may perform many accesses
+under one lock. `getBufferLock()` stays available and undeprecated on
+`DummyRegisterAccessor` and `DummyRegisterRawAccessor`.
 - `DummyBackend` keeps a deprecated library-side compatibility shim for legacy
 downstream code that indexes the internal bar contents directly as
 `_barContents[bar][wordIndex]`. The shim is a protected member, so legacy
@@ -89,7 +93,8 @@ lock:
 - `DummyBackend::read`/`write`/`writeRegisterWithoutCallback` hold
 `DummyBackend::mutex`, as today;
 - `SharedDummyBackend::read`/`write` hold the interprocess mutex;
-- each backdoor element access takes `DummyBackend::mutex` itself.
+- each backdoor element access takes no lock; the caller holds
+`DummyBackend::mutex` through `getBufferLock()` (see "Backdoor accessors").
 - Every `(bar, address)` access is valid, even outside any map-defined range.
 - `getBarSizesInBytesFromRegisterMapping()` and the per-bar sizes derived from
 it are removed, together with the sizing they served.
@@ -311,16 +316,25 @@ not supported.
 `uint8_t` or `address` to `uint32_t`, so slabs above 4 GiB are not truncated.
 - The backdoor accessors exist only on `DummyBackend` and take a `DummyBackend&`
 argument; `SharedDummyBackend` derives from `DummyBackendBase` and has none.
-Each element access takes `DummyBackend::mutex`, materialises the chunk
-through the transfer helper and copies the element bytes. All
-SharedDummyBackend materialisation goes through its own `read`/`write` under
-the interprocess mutex.
-- The backdoor accessors no longer expose pointers into the buffers, so the
-buffer lock has lost its purpose: `getBufferLock()` is removed from
-`DummyRegisterAccessor` and `DummyRegisterRawAccessor`. This is an accepted
-API break. Tests that held it drop the explicit locking, and the short
-per-element lock scope also removes the lock-order inversion with the math
-plugin conversion.
+Each element access materialises the chunk through the transfer helper and
+copies the element bytes; it takes no lock. All SharedDummyBackend
+materialisation goes through its own `read`/`write` under the interprocess
+mutex.
+- Locking stays with the caller, as before the change:
+- `getBufferLock()` is kept on `DummyRegisterAccessor` and
+`DummyRegisterRawAccessor` and returns `std::unique_lock<std::mutex>` on
+`DummyBackend::mutex`. It is not deprecated.
+- Every element access, and with it every chunk materialisation it triggers,
+requires the caller to hold that lock. The proxies themselves take none.
+- The documentation keeps the warning that the lock must be released as soon
+as possible, since it blocks all other functionality of the backend.
+- The contract is kept for two reasons: downstream projects rely on this API,
+and it lets a caller perform many accesses under one lock instead of one lock
+per element.
+- Accepted consequence: an element access performed while another lock is held
+can invert the lock order, as it could before the change.
+- `DummyMultiplexedRegisterAccessor` has no `getBufferLock()`, as before the
+change; a caller locking for it uses an accessor of the same backend.
 
 ### Deprecated bar-contents compatibility shim
 
@@ -355,9 +369,10 @@ read/write goes through the transfer helper and so materialises chunks and
 copies exactly the element's bytes. `memcpy` keeps the access byte-granular.
 - Bar bounds: any bar is valid, consistent with the "any address is valid"
 rule; the shim bounds-checks nothing.
-- Locking: each element access takes `DummyBackend::mutex`, exactly like the
-other backdoor accessors. The shim exists only on `DummyBackend`, the only
-backend with backdoor accessors and hence the only one with this storage path.
+- Locking: the shim's accessor takes no lock, exactly like the other backdoor
+accessors, so legacy code holds the buffer lock around it, as it did before.
+The shim exists only on `DummyBackend`, the only backend with backdoor
+accessors and hence the only one with this storage path.
 
 ### Alternatives considered
 
@@ -384,6 +399,10 @@ a Linux-only filesystem dependency.
 - Create the chunk segment first and link it afterwards: rejected, a crash in
 between leaks the segment, which is not yet reachable from the chain and whose
 name no process knows.
+- Lock the storage inside the backdoor accessors, one lock per element access,
+with the caller holding nothing: rejected, it breaks the locking contract that
+downstream projects rely on, and it rules out performing many accesses under
+one lock, which is the common case.
 - Chunk the interrupt storage as well: rejected, it is already bounded
 (`maxInterruptEntries`, `SHARED_MEMORY_N_MAX_MEMBER`) and fails loudly when
 full, and the dispatcher caches pointers into the array; a larger limit is a
@@ -434,6 +453,9 @@ and never attach to each other's segment.
 - Backdoor accessors:
 - byte-aligned registers (odd byte offsets, misaligned pitch) work; registers
 spanning a chunk boundary work;
+- element accesses performed under a caller-held `getBufferLock()` work, and
+several accesses can be made under one such lock; `getBufferLock()` compiles
+without a deprecation warning;
 - existing accessor behaviour in `testDummyRegisterAccessor` is preserved;
 - the raw accessor works with value semantics and still compiles and updates
 the memory for:
@@ -460,6 +482,11 @@ layer, so the tests go together with the removed `setReadOnly`,
 - `DummyRegisterTest::testRegisterAccessor` in `testDummyRegisterAccessor` is
 rewritten against the public API (ordinary accessors) instead of the backdoor
 accessor, which it currently exercises against itself;
+- tests that access the bar contents through a backdoor accessor, the
+deprecated shim included, hold the buffer lock via `getBufferLock()`; this
+restores the explicit locking in `testLMapBackendUnified`,
+`testNumericAddressedBackendUnified` and
+`testNumericAddressedBackendRegisterAccessor`;
 - tests that assert sizes or full reservation (`testDummyBackend`,
 `testDummyRegisterAccessor`) assert lazily materialised content only and use
 the renamed chunk map `_barChunks`;
