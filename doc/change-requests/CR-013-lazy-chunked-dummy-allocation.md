@@ -486,7 +486,9 @@ accessor, which it currently exercises against itself;
 deprecated shim included, hold the buffer lock via `getBufferLock()`; this
 restores the explicit locking in `testLMapBackendUnified`,
 `testNumericAddressedBackendUnified` and
-`testNumericAddressedBackendRegisterAccessor`;
+`testNumericAddressedBackendRegisterAccessor`; `testDummyRegisterAccessor`'s
+`testMuxedRegisterAccessor` locks through an accessor of the same backend,
+since `DummyMultiplexedRegisterAccessor` has no `getBufferLock()`;
 - tests that assert sizes or full reservation (`testDummyBackend`,
 `testDummyRegisterAccessor`) assert lazily materialised content only and use
 the renamed chunk map `_barChunks`;
@@ -526,3 +528,9 @@ initialiser;
 ## Deferred issue
 
 - DI-1 [IMPLEMENTED] The internal locking of the dummy backdoor accessors breaks
+the caller-owned buffer-lock contract that downstream projects rely on, and it
+prevents a caller from performing several accesses under one lock. The internal
+lock is dropped and `getBufferLock()` is restored on `DummyRegisterAccessor` and
+`DummyRegisterRawAccessor`.
+- DI-2 [NEW] CR document defect: the DI-1 note at doc/change-requests/CR-013-lazy-chunked-dummy-allocation.md:528 is truncated mid-sentence ('...accessors breaks'). Both the deferred issue's description (the caller-owned buffer-lock contract being broken) and its resolution (drop the internal lock, restore getBufferLock()) are missing. Restore the full text (original wording given in doc_updates).
+- DI-3 [NEW] testMuxedRegisterAccessor (tests/executables_src/testDummyRegisterAccessor.cpp:263-509) accesses the bar contents through the backdoor accessors WITHOUT holding the buffer lock: the raw backdoor 'muxedBackdoor' at lines 323, 351, 375, 462 and 485, and 'someMuxedRegister' element accesses at 380-412 and 431-457. This contradicts the specification (every element access requires the caller to hold the lock; DummyMultiplexedRegisterAccessor has no getBufferLock(), so the lock is taken via an accessor of the same backend) and the test-plan bullet 'tests that access the bar contents through a backdoor accessor, the deprecated shim included, hold the buffer lock via getBufferLock()'. Every other adapted site (testDummyBackend.cpp:89,100; testDummyRegisterAccessor.cpp:529,535,568,576,601,670,706,730; testLMapBackendUnified.cpp:153,175; testNumericAddressedBackendUnified.cpp:919,940; testNumericAddressedBackendRegisterAccessor.cpp:298,311,326,340,351,374,392,410) does hold it, so this one was missed. Fix by wrapping the element accesses in a scope holding 'muxedBackdoor->getBufferLock()'.
