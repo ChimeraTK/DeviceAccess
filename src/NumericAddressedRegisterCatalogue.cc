@@ -300,19 +300,36 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void NumericAddressedRegisterCatalogue::addRegister(const NumericAddressedRegisterInfo& registerInfo) {
-    if(registerInfo.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) {
-      _listOfInterrupts.insert(registerInfo.interruptId);
-      RegisterPath canonicalName = "!" + std::to_string(registerInfo.interruptId.front());
-      std::vector<size_t> canonicalID = {registerInfo.interruptId.front()};
-      _canonicalInterrupts[canonicalName] = canonicalID;
-      for(auto subId = ++registerInfo.interruptId.begin(); subId != registerInfo.interruptId.end(); ++subId) {
-        canonicalName += ":" + std::to_string(*subId);
-        canonicalID.push_back(*subId);
-        _canonicalInterrupts[canonicalName] = canonicalID;
-      }
+  void NumericAddressedRegisterCatalogue::addInterruptBookkeeping(const NumericAddressedRegisterInfo& registerInfo) {
+    if(registerInfo.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
+      return;
     }
+    _listOfInterrupts.insert(registerInfo.interruptId);
+    // Build the canonical interrupt path for every prefix of the id and map each one to the id prefix it names: !I for
+    // the primary interrupt, !I:M, !I:M:N, ... for the sub levels. This is what resolves a canonical interrupt path to
+    // its (hierarchical) interrupt id.
+    RegisterPath canonicalName = "!" + std::to_string(registerInfo.interruptId.front());
+    std::vector<size_t> canonicalID = {registerInfo.interruptId.front()};
+    _canonicalInterrupts[canonicalName] = canonicalID;
+    for(auto subId = ++registerInfo.interruptId.begin(); subId != registerInfo.interruptId.end(); ++subId) {
+      canonicalName += ":" + std::to_string(*subId);
+      canonicalID.push_back(*subId);
+      _canonicalInterrupts[canonicalName] = canonicalID;
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  void NumericAddressedRegisterCatalogue::addRegister(const NumericAddressedRegisterInfo& registerInfo) {
+    addInterruptBookkeeping(registerInfo);
     BackendRegisterCatalogue<NumericAddressedRegisterInfo>::addRegister(registerInfo);
+  }
+
+  /********************************************************************************************************************/
+
+  void NumericAddressedRegisterCatalogue::modifyRegister(const NumericAddressedRegisterInfo& registerInfo) {
+    addInterruptBookkeeping(registerInfo);
+    BackendRegisterCatalogue<NumericAddressedRegisterInfo>::modifyRegister(registerInfo);
   }
 
   /********************************************************************************************************************/
