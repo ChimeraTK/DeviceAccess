@@ -270,6 +270,11 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(device->someMuxedRegister.getNumberOfElements() == 4096);
   BOOST_CHECK(device->someMuxedRegister.getNumberOfSequences() == 16);
 
+  // The backdoor accessors take no lock: the caller holds the buffer lock around every element access.
+  // DummyMultiplexedRegisterAccessor has no getBufferLock(), so the lock is taken through an accessor of the same
+  // backend, the raw backdoor accessor. All element accesses below happen under this single lock.
+  auto bufferLock = device->muxedBackdoor->getBufferLock();
+
   // the area offset is 1000 bytes into the bar; the accessor addresses it by byte offset directly
 
   // since our register does not have a fixed type, we use this union/struct to
@@ -503,6 +508,8 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     BOOST_CHECK(mixedReg.cooked.r14 == 10 * 14 + i);
     BOOST_CHECK(mixedReg.cooked.r15 == (unsigned int)(10 * 15 + i));
   }
+
+  bufferLock.unlock();
 
   // close the device
   device->close();
