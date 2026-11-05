@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: READY TO IMPLEMENT (from TESTS PASSED)
+Status: IMPLEMENTED (from TESTS PASSED)
 
 ## Requirements
 
@@ -379,17 +379,17 @@ entry. The error comes from the type lookup, before any ISR is opened.
 
 ## Deferred issue
 
-- DI-1 [NEW] Compiler warning -Wunused-result at
+- DI-1 [IMPLEMENTED] Compiler warning -Wunused-result at
   tests/executables_src/testMuxedInterruptDistributorFactory.cpp:96: the
   [[nodiscard]] return value of Device::getVoidRegisterAccessor is discarded
   inside BOOST_CHECK_THROW (clang-tidy expands the macro and points at the
   nodiscard declaration). This violates the project's no-warnings policy;
   discard the value explicitly (e.g. (void)) or restructure the check.
-- DI-2 [NEW] Garbled comment sentence at src/JsonMapFileParser.cc:724-728: '...
-  so the ids exist while the map file is parsed and the derived registers are
-  missing from getListOfInterrupts() and their canonical interrupt paths
-  otherwise would not resolve.' The clause reads as the opposite of the intent
-  and the 'otherwise' is misplaced. Rewrite as two sentences, e.g. '... so the
-  ids exist while the map file is parsed. Otherwise the derived registers would
-  be missing from getListOfInterrupts() and their canonical interrupt paths
-  would not resolve.'
+- DI-2 [IMPLEMENTED] Garbled comment sentence at
+  src/JsonMapFileParser.cc:724-728: '... so the ids exist while the map file is
+  parsed and the derived registers are missing from getListOfInterrupts() and
+  their canonical interrupt paths otherwise would not resolve.' The clause reads
+  as the opposite of the intent and the 'otherwise' is misplaced. Rewrite as two
+  sentences, e.g. '... so the ids exist while the map file is parsed. Otherwise
+  the derived registers would be missing from getListOfInterrupts() and their
+  canonical interrupt paths would not resolve.'

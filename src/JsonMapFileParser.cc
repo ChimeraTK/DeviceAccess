@@ -722,9 +722,9 @@ namespace ChimeraTK::detail {
       }
 
       // Augment the catalogue from the interrupt handler description: every 'INTC' entry, used or not, makes the
-      // qualifying children of its <path>/ISR interrupt registers now, so the ids exist while the map file is parsed
-      // and the derived registers are missing from getListOfInterrupts() and their canonical interrupt paths
-      // otherwise would not resolve. It runs after the bit-range scan so isBitRange is final, and before the catalogue
+      // qualifying children of its <path>/ISR interrupt registers now, so the ids exist while the map file is parsed.
+      // Otherwise the derived registers would be missing from getListOfInterrupts() and their canonical interrupt
+      // paths would not resolve. It runs after the bit-range scan so isBitRange is final, and before the catalogue
       // and metadata are returned.
       InterruptHandlerEntry interruptHandlerForAugmentation;
       interruptHandlerForAugmentation.subhandler = data.at("interruptHandler");

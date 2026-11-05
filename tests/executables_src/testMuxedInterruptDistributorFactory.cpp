@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(testCreateUnknownControllerTypeThrows) {
   device.activateAsyncRead();
 
   BOOST_CHECK_THROW(
-      device.getVoidRegisterAccessor("!0:0", {ChimeraTK::AccessMode::wait_for_new_data}), ChimeraTK::logic_error);
+      (void)device.getVoidRegisterAccessor("!0:0", {ChimeraTK::AccessMode::wait_for_new_data}), ChimeraTK::logic_error);
 
   device.close();
   std::remove(mapFile.c_str());
