@@ -5,6 +5,8 @@
 #include <nlohmann/json.hpp>
 
 #include <optional>
+#include <string>
+#include <utility>
 
 namespace nlohmann {
 
@@ -30,3 +32,13 @@ namespace nlohmann {
   };
 
 } // namespace nlohmann
+
+namespace ChimeraTK {
+
+  /**
+   * Extract the controller type (the first key of the descriptor) and its description (the dumped value) from an
+   * interrupt handler entry's controller object. The convention lives here so it is defined in one place.
+   */
+  std::pair<std::string, std::string> interruptControllerNameAndDescription(nlohmann::json const& descriptor);
+
+} // namespace ChimeraTK

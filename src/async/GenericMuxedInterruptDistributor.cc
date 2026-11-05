@@ -4,6 +4,7 @@
 
 #include "async/SubDomain.h"
 #include "DummyBackendBase.h"
+#include "NumericAddressedRegisterCatalogue.h"
 
 #include <nlohmann/json.hpp>
 
@@ -12,6 +13,7 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <thread>
 #include <vector>
@@ -776,6 +778,95 @@ namespace ChimeraTK::async {
 
     return std::make_unique<GenericMuxedInterruptDistributor>(parent, registerPath, optionRegisterSettings);
   } // create
+
+  /********************************************************************************************************************/
+
+  void GenericMuxedInterruptDistributor::augmentCatalogue(std::vector<size_t> const& interruptId,
+      std::string const& controllerDescription, NumericAddressedRegisterCatalogue& catalogue) {
+    /*
+     * Parse and validate the controller description the same way create() does, so descriptor errors keep their
+     * messages and gain the handler id. Only the register path is needed here, the option combination is validated
+     * when a handler uses the entry (see Requirements).
+     */
+    auto parseResult = parseAndValidateJsonDescriptionStrV0(interruptId, controllerDescription);
+    std::string registerPath = parseResult.second;
+
+    RegisterPath path(registerPath.c_str());
+    RegisterPath isrPath = path / "ISR";
+    isrPath.setAltSeparator(".");
+
+    if(!catalogue.hasRegister(isrPath)) {
+      std::ostringstream oss;
+      oss << "INTC " << controllerIDToStr(interruptId) << " references missing ISR register '" << isrPath << "'";
+      throw ChimeraTK::logic_error(oss.str());
+    }
+
+    auto isrRegister = catalogue.getBackendRegister(isrPath);
+
+    // ISR must be a scalar register: a channel slice below ISR would be indistinguishable from a bit field, so no
+    // channels may appear below ISR. A multi-element register is rejected for the same reason. A scalar register
+    // carries exactly one channel spanning the whole element word, whereas a register declared with a 'channels'
+    // dictionary carries one channel per named channel, whose width is the channel's own width rather than the
+    // element pitch. Requiring the single channel to span the element word therefore also rejects a 'channels'
+    // dictionary that happens to declare exactly one channel.
+    if(isrRegister.nElements != 1 || isrRegister.channels.size() != 1 || isrRegister.channels.front().bitOffset != 0 ||
+        isrRegister.channels.front().width != isrRegister.elementPitchBits) {
+      std::ostringstream oss;
+      oss << "INTC " << controllerIDToStr(interruptId) << " ISR register '" << isrPath
+          << "' must be a scalar register without a channel layout";
+      throw ChimeraTK::logic_error(oss.str());
+    }
+
+    // Scan the catalogue for the children of ISR (the registers with exactly one path component more) and retype each
+    // qualifying 1-bit child in place. Enumerate via the paths, so the children are found by path component. A first
+    // pass over the registers below ISR rejects any register deeper than one level, so the no-deeper-levels rule is
+    // checked independently of the order in which the catalogue is enumerated; the second pass then validates and
+    // retypes the direct children.
+    auto isrComponents = isrPath.getComponents();
+    std::vector<RegisterPath> children;
+    for(auto const& reg : catalogue) {
+      RegisterPath regPath(reg.getRegisterName());
+      regPath.setAltSeparator(".");
+      auto regComponents = regPath.getComponents();
+      // Only the registers below ISR are relevant; the ISR register itself and unrelated registers are skipped.
+      if(regComponents.size() <= isrComponents.size() || !regPath.startsWith(isrPath)) {
+        continue;
+      }
+      if(regComponents.size() > isrComponents.size() + 1) {
+        std::ostringstream oss;
+        oss << "INTC " << controllerIDToStr(interruptId) << " ISR register '" << isrPath
+            << "' must not have deeper levels than one, but found '" << regPath << "'";
+        throw ChimeraTK::logic_error(oss.str());
+      }
+      children.push_back(regPath);
+    }
+
+    std::set<size_t> bitPositionsSeen;
+    for(auto const& childPath : children) {
+      auto child = catalogue.getBackendRegister(childPath);
+      // A qualifying child is one channel of width 1, one element, at the same bar and address as ISR.
+      if(child.nElements != 1 || child.channels.size() != 1 || child.bar != isrRegister.bar ||
+          child.address != isrRegister.address || child.channels.front().width != 1) {
+        std::ostringstream oss;
+        oss << "INTC " << controllerIDToStr(interruptId) << " ISR child '" << childPath
+            << "' is not a 1-bit bit field of the ISR register";
+        throw ChimeraTK::logic_error(oss.str());
+      }
+      auto bitPosition = child.channels.front().bitOffset;
+      if(!bitPositionsSeen.insert(bitPosition).second) {
+        std::ostringstream oss;
+        oss << "INTC " << controllerIDToStr(interruptId) << " ISR bit position " << bitPosition
+            << " is covered by more than one child of '" << isrPath << "'";
+        throw ChimeraTK::logic_error(oss.str());
+      }
+      // Retype in place, keeping channels, address, size, bit-range flag, path and the BUF0/BUF1 views as they are.
+      NumericAddressedRegisterInfo retyped = catalogue.getBackendRegister(childPath);
+      retyped.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
+      retyped.interruptId = interruptId;
+      retyped.interruptId.push_back(bitPosition);
+      catalogue.modifyRegister(retyped);
+    }
+  } // augmentCatalogue
 
   /********************************************************************************************************************/
   void GenericMuxedInterruptDistributor::activate(VersionNumber version) {

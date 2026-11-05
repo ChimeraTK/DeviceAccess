@@ -3,13 +3,15 @@
 
 #include "JsonMapFileParser.h"
 
-#include "JsonExtensions.h" // IWYU pragma: keep - used indirectly by nlohmann json
+#include "async/MuxedInterruptDistributor.h"
+#include "JsonExtensions.h"
 #include "SupportedUserTypes.h"
 
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <charconv>
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -569,18 +571,45 @@ namespace ChimeraTK::detail {
 
     std::map<std::string, InterruptHandlerEntry> subhandler;
 
-    void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata) const {
+    /**
+     * The single traversal of the entry tree: when intId is non-empty it visits the entry with its qualified id and
+     * its raw object, then recurses into subhandler, appending std::stoll(subIntId) to the id. Holds the subhandler
+     * layout and the qualified-id construction in one place, shared by fill and augmentCatalogue.
+     */
+    void forEachEntry(std::vector<size_t> const& intId,
+        std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const& visitor) const {
       if(!intId.empty()) {
-        json jsonIntId;
-        jsonIntId = intId;
-        metadata.addMetadata("!" + jsonIntId.dump(), raw.dump());
+        visitor(intId, raw);
       }
-
       for(const auto& [subIntId, handler] : subhandler) {
         std::vector<size_t> qualifiedSubIntId = intId;
         qualifiedSubIntId.push_back(std::stoll(subIntId));
-        handler.fill(qualifiedSubIntId, metadata);
+        handler.forEachEntry(qualifiedSubIntId, visitor);
       }
+    }
+
+    void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata) const {
+      forEachEntry(intId, [&metadata](std::vector<size_t> const& id, nlohmann::json const& rawEntry) {
+        json jsonIntId;
+        jsonIntId = id;
+        metadata.addMetadata("!" + jsonIntId.dump(), rawEntry.dump());
+      });
+    }
+
+    /**
+     * Dispatch every entry that carries a controller object to the catalogue augmenter of its controller type. The
+     * traversal runs the visitor and the recursion independently, so a nesting-only entry without a controller object
+     * still reaches its subhandlers.
+     */
+    void augmentCatalogue(NumericAddressedRegisterCatalogue& catalogue) const {
+      forEachEntry({}, [&catalogue](std::vector<size_t> const& id, nlohmann::json const& rawEntry) {
+        if(rawEntry.empty()) {
+          return;
+        }
+        auto [controllerType, controllerDescription] = interruptControllerNameAndDescription(rawEntry);
+        async::MuxedInterruptDistributorFactory::getInstance().augmentCatalogue(
+            id, controllerType, controllerDescription, catalogue);
+      });
     }
 
     // NOLINTNEXTLINE(readability-identifier-naming)
@@ -692,6 +721,15 @@ namespace ChimeraTK::detail {
         }
       }
 
+      // Augment the catalogue from the interrupt handler description: every 'INTC' entry, used or not, makes the
+      // qualifying children of its <path>/ISR interrupt registers now, so the ids exist while the map file is parsed
+      // and the derived registers are missing from getListOfInterrupts() and their canonical interrupt paths
+      // otherwise would not resolve. It runs after the bit-range scan so isBitRange is final, and before the catalogue
+      // and metadata are returned.
+      InterruptHandlerEntry interruptHandlerForAugmentation;
+      interruptHandlerForAugmentation.subhandler = data.at("interruptHandler");
+      interruptHandlerForAugmentation.augmentCatalogue(catalogue);
+
       // Validate every 'selectedBy' selector register referenced by any channel: (a) the referenced selector
       // register must exist in the catalogue, and (b) it must not itself be conditionally enabled by a 'selectedBy'
       // (a selector must be unconditionally readable, otherwise gating would depend on another gate).
@@ -732,9 +770,7 @@ namespace ChimeraTK::detail {
       }
 
       // backwards compatibility: interrupt handler description is expected to be in metadata
-      InterruptHandlerEntry interruptHandler;
-      interruptHandler.subhandler = data.at("interruptHandler");
-      interruptHandler.fill({}, metadata);
+      interruptHandlerForAugmentation.fill({}, metadata);
 
       return {std::move(catalogue), std::move(metadata)};
     }

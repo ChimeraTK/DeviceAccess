@@ -58,6 +58,14 @@ namespace ChimeraTK::async {
     static std::unique_ptr<GenericMuxedInterruptDistributor> create(std::string const& description, // THE JSON SNIPPET
         const boost::shared_ptr<SubDomain<std::nullptr_t>>& parent);
 
+    /**
+     * Catalogue augmenter registered by MuxedInterruptDistributorFactory for the "INTC" controller type. It parses and
+     * validates the controller description, finds <path>/ISR in the catalogue and retypes each qualifying 1-bit child
+     * bit field into an interrupt register carrying the id [interruptId..., bit position].
+     */
+    static void augmentCatalogue(std::vector<size_t> const& interruptId, std::string const& controllerDescription,
+        NumericAddressedRegisterCatalogue& catalogue);
+
    protected:
     bool _ierIsReallyImaskr;
     bool _haveSieAndCie;

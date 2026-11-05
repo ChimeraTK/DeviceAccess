@@ -264,7 +264,7 @@ A child entry does not have to carry an address of its own: it inherits the addr
 
 \subsection jmap_interrupts Interrupts
 
-The \c interruptHandler top-level object describes interrupt controllers which are used to multiplex multiple interrupt sources in firmware into the same hardware interrupt request. Each key is an interrupt id and each entry carries a controller with its configuration and optionally nested \c subhandler entries. The content of the controller entry is backend-specific and extensible: the backend defines the controller type (e.g. \c INTC) and the data structure it carries, and the parser passes the entry on to the metadata verbatim without interpreting it:
+The \c interruptHandler top-level object describes interrupt controllers which are used to multiplex multiple interrupt sources in firmware into the same hardware interrupt request. Each key is an interrupt id and each entry carries a controller with its configuration and optionally nested \c subhandler entries. The content of the controller entry is backend-specific and extensible: the backend defines the controller type (e.g. \c INTC) and the data structure it carries. The parser passes the entry on to the metadata verbatim, but for a controller type that augments the catalogue it also interprets the entry at parse time (see \ref jmap_interrupts_isr):
 \verbatim
 "interruptHandler": {
   "3": {
@@ -311,6 +311,29 @@ When interrupts shall be used to trigger data read-out, they can be added to nor
 \endverbatim
 This will create a push-type register (supporting ChimeraTK::AccessMode::wait_for_new_data) that will receive new values when the interrupt \c 3:0:2 arrives by polling the data from the specified address. See \ref design_AsyncNDRegisterAccessor_NumericAddressed for more details.
 
+\subsection jmap_interrupts_isr Interrupts derived from the ISR bit fields of an INTC controller
+
+For an \c INTC controller at path \c P, the 1-bit child bit fields of its \c P/ISR status register become interrupt registers implicitly, so that individual interrupts of the controller can be referred to by name instead of by their numeric id. Each qualifying child carries the interrupt id \c [<handler id>, <bit position>], where the bit position is the child's bit offset in the \c ISR word. Such a child is readable with \c wait_for_new_data and is notified when its \c ISR bit is set, exactly like a register declared with \c triggeredByInterrupt. Example:
+\verbatim
+"addressSpace": {
+  "MY_INTC": {
+    "children": {
+      "ISR": {
+        "bytesPerElement": 4,
+        "numberOfElements": 1,
+        "address": { "channel": 4, "offset": 0 },
+        "children": {
+          "CHANNEL_0_IRQ": { "representation": { "width": 1, "bitShift": 0 } },
+          "CHANNEL_3_IRQ": { "representation": { "width": 1, "bitShift": 3 } }
+        }
+      }
+    }
+  }
+}
+\endverbatim
+With the handler entry above ("3": { "INTC": { "path": "MY_INTC", ... } }), the child \c MY_INTC/ISR/CHANNEL_3_IRQ becomes the interrupt \c 3:3.
+
+The \c ISR register must be a scalar register: one element, one channel and no \c channels dictionary. It must not be double-buffered, and deeper levels below \c ISR are not allowed. Every child of \c ISR must be a qualifying 1-bit bit field at the same bar and address as \c ISR, and two children must not cover the same bit position. An \c ISR without any child is allowed and changes nothing; an \c INTC handler whose \c P/ISR does not exist is an error while parsing the map file. All of these conditions are validated while parsing the map file.
 
 \subsection jmap_2d 2D multiplexed registers
 

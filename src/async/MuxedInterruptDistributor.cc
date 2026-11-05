@@ -6,6 +6,8 @@
 #include "async/GenericMuxedInterruptDistributor.h"
 #include "async/SubDomain.h"
 #include "async/TriggeredPollDistributor.h"
+#include "JsonExtensions.h"
+#include "NumericAddressedRegisterCatalogue.h"
 
 #include <nlohmann/json.hpp> // https://json.nlohmann.me/features/element_access/
 
@@ -19,8 +21,9 @@ namespace ChimeraTK::async {
 
   MuxedInterruptDistributorFactory::MuxedInterruptDistributorFactory() {
     // we already know about the build-in handlers
-    _creatorFunctions["INTC"] = GenericMuxedInterruptDistributor::create;
-    _creatorFunctions["dummy"] = DummyMuxedInterruptDistributor::create;
+    _controllerTypes["INTC"] = {
+        GenericMuxedInterruptDistributor::create, GenericMuxedInterruptDistributor::augmentCatalogue};
+    _controllerTypes["dummy"] = {DummyMuxedInterruptDistributor::create, nullptr};
   }
 
   /********************************************************************************************************************/
@@ -44,9 +47,7 @@ namespace ChimeraTK::async {
 
           if(interruptId == subdomainID) {
             auto jdescriptor = nlohmann::json::parse(metaDataEntry.second);
-            auto controllerType = jdescriptor.begin().key();
-            auto controllerDescription = jdescriptor.front().dump();
-            return {controllerType, controllerDescription};
+            return interruptControllerNameAndDescription(jdescriptor);
           }
         }
         catch(json::parse_error& e) {
@@ -71,11 +72,26 @@ namespace ChimeraTK::async {
     std::string name, description;
     std::tie(name, description) =
         getInterruptControllerNameAndDescriptionFromCatalogue(parent->getId(), *parent->getBackend());
-    auto creatorFunctionIter = _creatorFunctions.find(name);
-    if(creatorFunctionIter == _creatorFunctions.end()) {
+    auto recordIter = _controllerTypes.find(name);
+    if(recordIter == _controllerTypes.end()) {
       throw ChimeraTK::logic_error("Unknown interrupt controller type \"" + name + "\"");
     }
-    return creatorFunctionIter->second(description, std::move(parent));
+    return recordIter->second.creator(description, std::move(parent));
+  }
+
+  /********************************************************************************************************************/
+
+  void MuxedInterruptDistributorFactory::augmentCatalogue(std::vector<size_t> const& interruptId,
+      std::string const& controllerType, std::string const& controllerDescription,
+      NumericAddressedRegisterCatalogue& catalogue) {
+    auto recordIter = _controllerTypes.find(controllerType);
+    if(recordIter == _controllerTypes.end()) {
+      return;
+    }
+    if(!recordIter->second.augmenter) {
+      return;
+    }
+    recordIter->second.augmenter(interruptId, controllerDescription, catalogue);
   }
 
   /********************************************************************************************************************/

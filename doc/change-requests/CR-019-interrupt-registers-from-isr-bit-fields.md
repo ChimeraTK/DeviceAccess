@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: READY TO IMPLEMENT
+Status: IMPLEMENTED
 
 ## Requirements
 
@@ -164,11 +164,20 @@ NumericAddressedRegisterCatalogue& catalogue)` (new)
   - A non-scalar `ISR`, i.e. one with several elements or with a channel
     layout, throws a `logic_error`: a channel slice below `ISR` would be
     indistinguishable from a bit field, so no channels may appear below
-    `ISR`.
+    `ISR`. A scalar register carries exactly one channel that spans the whole
+    element word (`bitOffset` 0 and `width` equal to the element pitch),
+    whereas a register declared with a `channels` dictionary carries one
+    channel per named channel, whose `width` is the channel's own width. The
+    check requires the single channel to span the element word, so it also
+    rejects a `channels` dictionary that happens to declare exactly one
+    channel.
   - Children are the catalogue registers with exactly one path component
     more than `ISR`.
   - A register more than one path component below `ISR` throws a
-    `logic_error`, so no deeper levels are allowed.
+    `logic_error`, so no deeper levels are allowed. A first pass over the
+    registers below `ISR` rejects any deeper register, so the rule holds
+    independently of the order in which the catalogue is enumerated; the
+    second pass then validates and retypes the direct children.
   - A child qualifies as one channel of width 1, one element, at the same bar
     and address as `ISR`. The bit position is the channel's bit offset, which
     for a bit field is its `representation.bitShift`.
@@ -264,6 +273,16 @@ ids have to exist while the map file is parsed.
 double-buffered `ISR` still parses: rejected. The child scan enumerates the
 catalogue by path component and does not special-case the buffer views, so a
 double-buffered `ISR` is an error (see Requirements).
+- Detecting a `channels` layout below `ISR` by `channels.size() != 1` alone:
+rejected. A `channels` dictionary with a single channel leaves the register
+with one channel and one element, indistinguishable from a scalar by count.
+The check instead requires the single channel to span the whole element word
+(`bitOffset` 0 and `width` equal to the element pitch), which a scalar
+register always satisfies and a `channels` register does not, since its
+channel `width` is the channel's own width. Detecting the layout by
+`elementPitchBits` was rejected as well: a `channels` register may set an
+explicit `pitch` that coincides with a scalar element size, while the
+channel-word comparison holds in all cases.
 
 ## Test plan
 
