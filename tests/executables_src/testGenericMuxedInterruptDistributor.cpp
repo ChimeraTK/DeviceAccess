@@ -709,4 +709,53 @@ BOOST_FIXTURE_TEST_CASE(testCieWriteable, CieWritableTestFixture) {}
 
 /**********************************************************************************************************************/
 
+/**
+ * Derived interrupt registers from INTC ISR bit fields, end to end on a backend.
+ *
+ * The irq_test.mapp fixture used by the other cases is a *.mapp file and never derives interrupt registers, so this
+ * case uses simpleJsonFile.jmap, whose INTC handler [0] refers to DAQ/ISR and whose DAQ/ISR carries the 1-bit
+ * children DAQ_READY (bit 0), SECOND_INTERRUPT (bit 1) and THIRD_INTERRUPT (bit 2). The dummy backend exposes a
+ * hidden DUMMY_INTERRUPT_0 trigger for the primary handler [0]. Setting one ISR bit and triggering the handler must
+ * wake exactly the accessor of the matching derived register.
+ */
+BOOST_AUTO_TEST_CASE(testDerivedInterruptRegistersEndToEnd) {
+  static constexpr std::string_view jsonCdd{"(dummy?map=simpleJsonFile.jmap)"};
+
+  Device device{std::string{jsonCdd}};
+  auto catalogue = device.getRegisterCatalogue();
+
+  // The derived registers exist under the ISR and are reachable through their canonical interrupt path. Obtaining a
+  // void accessor for the canonical path below proves they are interrupt registers.
+  BOOST_TEST(catalogue.hasRegister("DAQ/ISR/DAQ_READY"));
+  BOOST_TEST(catalogue.hasRegister("DAQ/ISR/THIRD_INTERRUPT"));
+
+  device.open();
+  device.activateAsyncRead();
+
+  auto accBit0 = device.getVoidRegisterAccessor("!0:0", {ChimeraTK::AccessMode::wait_for_new_data});
+  auto accBit2 = device.getVoidRegisterAccessor("!0:2", {ChimeraTK::AccessMode::wait_for_new_data});
+  // Pop the initial values sent on activation.
+  BOOST_TEST(readWithTimeout(accBit0));
+  BOOST_TEST(readWithTimeout(accBit2));
+
+  auto isr = device.getScalarRegisterAccessor<uint32_t>("DAQ/ISR");
+  auto trigger = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0");
+
+  // Bit 0 belongs to the first derived register only.
+  isr.setAndWrite(0x1);
+  trigger.write();
+  BOOST_TEST(readWithTimeout(accBit0));
+  BOOST_TEST(!accBit2.readNonBlocking());
+
+  // Bit 2 belongs to the third derived register (...THIRD_INTERRUPT, id [0, 2]) only.
+  isr.setAndWrite(0x4);
+  trigger.write();
+  BOOST_TEST(readWithTimeout(accBit2));
+  BOOST_TEST(!accBit0.readNonBlocking());
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
