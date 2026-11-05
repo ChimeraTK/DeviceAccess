@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: TESTS PASSED
+Status: READY TO IMPLEMENT (from TESTS PASSED)
 
 ## Requirements
 
@@ -86,24 +86,24 @@ while other handler types keep the verbatim behaviour.
 ### NumericAddressedRegisterCatalogue (modified) in include/NumericAddressedRegisterCatalogue.h (modified), src/NumericAddressedRegisterCatalogue.cc (modified)
 
 - `void modifyRegister(NumericAddressedRegisterInfo const& info)` (new)
-  - Replaces a register in place and keeps the insertion order.
-  - It updates the derived interrupt bookkeeping first and then calls the
-    base `modifyRegister`.
-  - Reason: the base primitive touches neither set, so the derived registers
-    would otherwise be missing from `getListOfInterrupts()` and their canonical
-    interrupt paths would not resolve.
+- Replaces a register in place and keeps the insertion order.
+- It updates the derived interrupt bookkeeping first and then calls the
+base `modifyRegister`.
+- Reason: the base primitive touches neither set, so the derived registers
+would otherwise be missing from `getListOfInterrupts()` and their canonical
+interrupt paths would not resolve.
 - `void addInterruptBookkeeping(NumericAddressedRegisterInfo const& info)`
 (new)
-  - Extracts the interrupt bookkeeping of `addRegister` into a private
-    helper.
-  - Both `addRegister` and `modifyRegister` call the helper, so the logic
-    stays in one place.
-  - The helper inserts the interrupt id into `_listOfInterrupts` and the
-    canonical interrupt paths `!I`, `!I:M`, ... into `_canonicalInterrupts`.
-  - The helper only inserts, so it does not support retyping a register away
-    from interrupt access.
-  - A pre-existing interrupt id is not an error: the insertion is idempotent,
-    so two registers can share one id.
+- Extracts the interrupt bookkeeping of `addRegister` into a private
+helper.
+- Both `addRegister` and `modifyRegister` call the helper, so the logic
+stays in one place.
+- The helper inserts the interrupt id into `_listOfInterrupts` and the
+canonical interrupt paths `!I`, `!I:M`, ... into `_canonicalInterrupts`.
+- The helper only inserts, so it does not support retyping a register away
+from interrupt access.
+- A pre-existing interrupt id is not an error: the insertion is idempotent,
+so two registers can share one id.
 - The derived `modifyRegister` hides the non-virtual base method, so callers
 on the concrete type also run the bookkeeping; for a non-interrupt register
 the helper does nothing. This mirrors the existing non-virtual `addRegister`
@@ -113,36 +113,36 @@ override.
 ### async::MuxedInterruptDistributorFactory (modified) in include/async/MuxedInterruptDistributor.h (modified), src/async/MuxedInterruptDistributor.cc (modified)
 
 - Registry record (new)
-  - One entry per controller type, so the existing creator and the optional
-    catalogue augmenter share one lookup key and one registration point.
-  - Replaces the `_creatorFunctions` map.
-  - The optional augmenter is the extension point for further controller
-    types: a type that augments supplies its own. Only the built-in `INTC`
-    registers one today; a public registration API is a separate change
-    request (see Requirements).
-  - The augmenter member has this type:
-    `std::function<void(std::vector<size_t> const&, std::string const&,
-    NumericAddressedRegisterCatalogue&)>`; it is empty for a type that does
-    not augment the catalogue.
+- One entry per controller type, so the existing creator and the optional
+catalogue augmenter share one lookup key and one registration point.
+- Replaces the `_creatorFunctions` map.
+- The optional augmenter is the extension point for further controller
+types: a type that augments supplies its own. Only the built-in `INTC`
+registers one today; a public registration API is a separate change
+request (see Requirements).
+- The augmenter member has this type:
+`std::function<void(std::vector<size_t> const&, std::string const&,
+NumericAddressedRegisterCatalogue&)>`; it is empty for a type that does
+not augment the catalogue.
 - Private constructor (modified)
-  - Registers the built-in types: `INTC` with its creator and augmenter,
-    `dummy` with its creator only.
+- Registers the built-in types: `INTC` with its creator and augmenter,
+`dummy` with its creator only.
 - `void augmentCatalogue(std::vector<size_t> const& interruptId,
 std::string const& controllerType, std::string const& controllerDescription,
 NumericAddressedRegisterCatalogue& catalogue)` (new)
-  - Dispatches one handler entry to the augmenter of its controller type.
-  - Looks the record up by `controllerType` and calls its augmenter with the
-    id and the description.
-  - An unknown type and a type with an empty augmenter are skipped, so the
-    dispatcher is a no-op for `dummy` and for any type that is not
-    registered. An unknown type stays an error at distributor creation.
-  - Takes the controller type and the description as strings, so the header
-    needs neither `nlohmann::json` nor the catalogue's definition; the
-    catalogue is only forward-declared.
+- Dispatches one handler entry to the augmenter of its controller type.
+- Looks the record up by `controllerType` and calls its augmenter with the
+id and the description.
+- An unknown type and a type with an empty augmenter are skipped, so the
+dispatcher is a no-op for `dummy` and for any type that is not
+registered. An unknown type stays an error at distributor creation.
+- Takes the controller type and the description as strings, so the header
+needs neither `nlohmann::json` nor the catalogue's definition; the
+catalogue is only forward-declared.
 - `getInterruptControllerNameAndDescriptionFromCatalogue` (modified)
-  - Extracts the controller type and the description through the shared free
-    function `interruptControllerNameAndDescription`, so the convention lives
-    in one place.
+- Extracts the controller type and the description through the shared free
+function `interruptControllerNameAndDescription`, so the convention lives
+in one place.
 - Dependencies: the augmenter of `INTC`,
 `async::GenericMuxedInterruptDistributor::augmentCatalogue`, and the shared
 `interruptControllerNameAndDescription`.
@@ -152,100 +152,100 @@ NumericAddressedRegisterCatalogue& catalogue)` (new)
 - `static void augmentCatalogue(std::vector<size_t> const& interruptId,
 std::string const& controllerDescription,
 NumericAddressedRegisterCatalogue& catalogue)` (new)
-  - The augmenter `MuxedInterruptDistributorFactory` stores for `INTC`.
-  - Reads `path` from the controller description by reusing the parsing and
-    validation of `create`, so descriptor errors keep their messages and gain
-    the handler id.
-  - Descriptors of all entries are validated at parse time, no longer only
-    when a handler is used.
-  - Finds `path / "ISR"` in the catalogue; the separators are synonymous. A
-    missing register throws a `logic_error` naming the handler id and the
-    register.
-  - A non-scalar `ISR`, i.e. one with several elements or with a channel
-    layout, throws a `logic_error`: a channel slice below `ISR` would be
-    indistinguishable from a bit field, so no channels may appear below
-    `ISR`. A scalar register carries exactly one channel that spans the whole
-    element word (`bitOffset` 0 and `width` equal to the element pitch),
-    whereas a register declared with a `channels` dictionary carries one
-    channel per named channel, whose `width` is the channel's own width. The
-    check requires the single channel to span the element word, so it also
-    rejects a `channels` dictionary that happens to declare exactly one
-    channel.
-  - Children are the catalogue registers with exactly one path component
-    more than `ISR`.
-  - A register more than one path component below `ISR` throws a
-    `logic_error`, so no deeper levels are allowed. A first pass over the
-    registers below `ISR` rejects any deeper register, so the rule holds
-    independently of the order in which the catalogue is enumerated; the
-    second pass then validates and retypes the direct children.
-  - A child qualifies as one channel of width 1, one element, at the same bar
-    and address as `ISR`. The bit position is the channel's bit offset, which
-    for a bit field is its `representation.bitShift`.
-  - A child that is not such a bit field throws a `logic_error`.
-  - Retyping is in place: a copy of the register info with interrupt access
-    and the interrupt id, written back through the catalogue's
-    `modifyRegister`.
-  - Channels, address, size, bit-range flag, path and the `BUF0`/`BUF1`
-    views stay as they are.
-  - Two children with the same bit position throw a `logic_error`.
-  - An `ISR` without children returns without a change.
-  - The catalogue parameter is by reference, so the header needs only a forward
-    declaration of `NumericAddressedRegisterCatalogue`, not its definition.
+- The augmenter `MuxedInterruptDistributorFactory` stores for `INTC`.
+- Reads `path` from the controller description by reusing the parsing and
+validation of `create`, so descriptor errors keep their messages and gain
+the handler id.
+- Descriptors of all entries are validated at parse time, no longer only
+when a handler is used.
+- Finds `path / "ISR"` in the catalogue; the separators are synonymous. A
+missing register throws a `logic_error` naming the handler id and the
+register.
+- A non-scalar `ISR`, i.e. one with several elements or with a channel
+layout, throws a `logic_error`: a channel slice below `ISR` would be
+indistinguishable from a bit field, so no channels may appear below
+`ISR`. A scalar register carries exactly one channel that spans the whole
+element word (`bitOffset` 0 and `width` equal to the element pitch),
+whereas a register declared with a `channels` dictionary carries one
+channel per named channel, whose `width` is the channel's own width. The
+check requires the single channel to span the element word, so it also
+rejects a `channels` dictionary that happens to declare exactly one
+channel.
+- Children are the catalogue registers with exactly one path component
+more than `ISR`.
+- A register more than one path component below `ISR` throws a
+`logic_error`, so no deeper levels are allowed. A first pass over the
+registers below `ISR` rejects any deeper register, so the rule holds
+independently of the order in which the catalogue is enumerated; the
+second pass then validates and retypes the direct children.
+- A child qualifies as one channel of width 1, one element, at the same bar
+and address as `ISR`. The bit position is the channel's bit offset, which
+for a bit field is its `representation.bitShift`.
+- A child that is not such a bit field throws a `logic_error`.
+- Retyping is in place: a copy of the register info with interrupt access
+and the interrupt id, written back through the catalogue's
+`modifyRegister`.
+- Channels, address, size, bit-range flag, path and the `BUF0`/`BUF1`
+views stay as they are.
+- Two children with the same bit position throw a `logic_error`.
+- An `ISR` without children returns without a change.
+- The catalogue parameter is by reference, so the header needs only a forward
+declaration of `NumericAddressedRegisterCatalogue`, not its definition.
 - Dependencies: `NumericAddressedRegisterCatalogue::modifyRegister` (new) and
 `GenericMuxedInterruptDistributor::create`.
 
 ### free function `interruptControllerNameAndDescription` (new) in include/JsonExtensions.h (modified)
 
 - `std::pair<std::string, std::string> interruptControllerNameAndDescription(
-  nlohmann::json const& descriptor)` (new)
-  - Returns the controller type (the first key of the descriptor) and its
-    dumped value (the description).
-  - Used by both
-    `MuxedInterruptDistributorFactory::getInterruptControllerNameAndDescriptionFromCatalogue`
-    and `detail::InterruptHandlerEntry::augmentCatalogue`, so the convention
-    lives in one place.
+nlohmann::json const& descriptor)` (new)
+- Returns the controller type (the first key of the descriptor) and its
+dumped value (the description).
+- Used by both
+`MuxedInterruptDistributorFactory::getInterruptControllerNameAndDescriptionFromCatalogue`
+and `detail::InterruptHandlerEntry::augmentCatalogue`, so the convention
+lives in one place.
 - Dependencies: none new.
 
 ### detail::InterruptHandlerEntry (modified) in src/JsonMapFileParser.cc (modified)
 
 - `void forEachEntry(std::vector<size_t> const& intId,
-  std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const&
-  visitor) const` (new)
-  - The single traversal of the entry tree: when `intId` is non-empty it visits
-    the entry with its qualified id and its `raw` object, then recurses into
-    `subhandler`, appending `std::stoll(subIntId)` to the id.
-  - Holds the `subhandler` layout and the qualified-id construction in one
-    place, shared by `fill` and `augmentCatalogue`.
+std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const&
+visitor) const` (new)
+- The single traversal of the entry tree: when `intId` is non-empty it visits
+the entry with its qualified id and its `raw` object, then recurses into
+`subhandler`, appending `std::stoll(subIntId)` to the id.
+- Holds the `subhandler` layout and the qualified-id construction in one
+place, shared by `fill` and `augmentCatalogue`.
 - `void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata)
-  const` (modified)
-  - Becomes a `forEachEntry` call whose visitor adds `"!" + id.dump()` mapped to
-    `raw.dump()` to the metadata. Behaviour unchanged.
+const` (modified)
+- Becomes a `forEachEntry` call whose visitor adds `"!" + id.dump()` mapped to
+`raw.dump()` to the metadata. Behaviour unchanged.
 - `void augmentCatalogue(NumericAddressedRegisterCatalogue& catalogue) const`
 (new)
-  - Calls `forEachEntry` from the root with an empty id.
-  - The visitor dispatches only for an entry whose controller object is
-    non-empty. The root entry carries an empty object as well as an empty id,
-    so nothing dispatches for it.
-  - A nesting-only entry without a controller object still reaches its
-    subhandlers: the traversal runs the visitor and the recursion
-    independently, so skipping the dispatch does not stop the walk.
-  - Extracts the controller type and the description through the shared free
-    function `interruptControllerNameAndDescription`, rather than repeating the
-    convention.
-  - A nested entry contributes its own full id, so its children carry the
-    subhandler's full id.
+- Calls `forEachEntry` from the root with an empty id.
+- The visitor dispatches only for an entry whose controller object is
+non-empty. The root entry carries an empty object as well as an empty id,
+so nothing dispatches for it.
+- A nesting-only entry without a controller object still reaches its
+subhandlers: the traversal runs the visitor and the recursion
+independently, so skipping the dispatch does not stop the walk.
+- Extracts the controller type and the description through the shared free
+function `interruptControllerNameAndDescription`, rather than repeating the
+convention.
+- A nested entry contributes its own full id, so its children carry the
+subhandler's full id.
 - Dependencies: the `MuxedInterruptDistributorFactory` dispatcher.
 
 ### detail::JsonMapFileParser::Imp (modified) in src/JsonMapFileParser.cc (modified)
 
 - `parse` (modified)
-  - Augments once the address space is in the catalogue and the bit-range
-    scan has run, so `isBitRange` is final, and before catalogue and metadata
-    are returned.
-  - It calls `InterruptHandlerEntry::augmentCatalogue` for the handler entry
-    of the map file, so every `INTC` entry is augmented, used or not, at
-    parse time.
-  - The ids have to exist while the map file is parsed (see Requirements).
+- Augments once the address space is in the catalogue and the bit-range
+scan has run, so `isBitRange` is final, and before catalogue and metadata
+are returned.
+- It calls `InterruptHandlerEntry::augmentCatalogue` for the handler entry
+of the map file, so every `INTC` entry is augmented, used or not, at
+parse time.
+- The ids have to exist while the map file is parsed (see Requirements).
 - Dependencies: `InterruptHandlerEntry::augmentCatalogue`.
 
 ### Alternatives considered
@@ -287,92 +287,109 @@ channel-word comparison holds in all cases.
 ## Test plan
 
 - `tests/simpleJsonFile.jmap` (modified)
-  - Every `INTC` handler gains an `ISR` and an `IER`: `DAQ` gains both, with
-    named 1-bit children under its `ISR`, and subhandler `[3,1]` receives a
-    `MY_INTC.SUB1` block with its own `ISR` and `IER`.
-    - Covers the derivation for every `INTC` handler (Requirements) and the
-      `<path>/ISR` lookup and `IER` access in
-      `async::GenericMuxedInterruptDistributor` (Specifications).
-    - Both registers are required because the INTC distributor constructor
-      opens `<path>/ISR` and `<path>/IER` (default options ISR+IER) and checks
-      the `IER` is writeable.
-    - Adding the block keeps the metadata `path` of subhandler `[3,1]`
-      unchanged, so the existing metadata assertions stay valid. Repointing
-      `[3,1]` at another existing block would change the emitted `path` and
-      break `tests/executables_src/testJsonMapFileParser.cpp:697`.
+- Every `INTC` handler gains an `ISR` and an `IER`: `DAQ` gains both, with
+named 1-bit children under its `ISR`, and subhandler `[3,1]` receives a
+`MY_INTC.SUB1` block with its own `ISR` and `IER`.
+- Covers the derivation for every `INTC` handler (Requirements) and the
+`<path>/ISR` lookup and `IER` access in
+`async::GenericMuxedInterruptDistributor` (Specifications).
+- Both registers are required because the INTC distributor constructor
+opens `<path>/ISR` and `<path>/IER` (default options ISR+IER) and checks
+the `IER` is writeable.
+- Adding the block keeps the metadata `path` of subhandler `[3,1]`
+unchanged, so the existing metadata assertions stay valid. Repointing
+`[3,1]` at another existing block would change the emitted `path` and
+break `tests/executables_src/testJsonMapFileParser.cpp:697`.
 - `tests/executables_src/testJsonMapFileParser.cpp` (modified)
-  - Children of an `ISR`: 1-bit children become interrupt registers with the
-    expected ids, unchanged path, address and bit position, present in the list
-    of interrupts, and resolvable through the canonical interrupt path.
-    - Covers the derivation and the canonical-path bookkeeping in
-      `NumericAddressedRegisterCatalogue` and
-      `async::GenericMuxedInterruptDistributor` (Specifications).
-  - Nested subhandler: children of a subhandler `ISR` carry the subhandler's
-    full id.
-    - Covers nested-entry handling in
-      `detail::InterruptHandlerEntry::augmentCatalogue` (Specifications).
-  - A child that is not a 1-bit value (wider, multi-channel, multi-element):
-    parse-time `logic_error`, with a temporary map file.
-    - Covers the qualifying-child requirement (Requirements).
-  - Deeper levels below `ISR`: a child that has a child of its own gives a
-    parse-time `logic_error`, with a temporary map file.
-    - Covers the no-deeper-levels requirement (Requirements).
-  - A non-scalar `ISR` (several elements, or declared with `channels`):
-    parse-time `logic_error`, with a temporary map file.
-    - Covers the scalar-`ISR` requirement (Requirements).
-  - `ISR` without any child: parses, no error, catalogue unchanged.
-    - Covers the empty-`ISR` requirement (Requirements).
-  - Missing `ISR`: parse-time `logic_error`, with a map file written to a
-    temporary file that lacks the `ISR`.
-    - Covers the missing-`P/ISR` requirement (Requirements).
-  - Duplicate bit position: two children with the same bit position give a
-    parse-time `logic_error`, with a temporary map file.
-    - Covers the duplicate-bit-position requirement (Requirements).
-  - A derived id that is already present: a declared interrupt register
-    carrying `triggeredByInterrupt` `[<handler id>, <bit position>]` parses
-    without error and both registers carry the id.
-    - Covers the shared-interrupt-id requirement (Requirements).
-  - Update the interrupt-list assertion in `TestGoodMapFileParse`:
-    `loi.size() == 3` with the ids at lines 701-703 to the derived ids the map
-    change adds, and re-check the other catalogue assertions in the same test
-    for the new registers.
-    - The map change adds derived interrupt ids to `_listOfInterrupts`, so the
-      existing assertion would fail.
+- Children of an `ISR`: 1-bit children become interrupt registers with the
+expected ids, unchanged path, address and bit position, present in the list
+of interrupts, and resolvable through the canonical interrupt path.
+- Covers the derivation and the canonical-path bookkeeping in
+`NumericAddressedRegisterCatalogue` and
+`async::GenericMuxedInterruptDistributor` (Specifications).
+- Nested subhandler: children of a subhandler `ISR` carry the subhandler's
+full id.
+- Covers nested-entry handling in
+`detail::InterruptHandlerEntry::augmentCatalogue` (Specifications).
+- A child that is not a 1-bit value (wider, multi-channel, multi-element):
+parse-time `logic_error`, with a temporary map file.
+- Covers the qualifying-child requirement (Requirements).
+- Deeper levels below `ISR`: a child that has a child of its own gives a
+parse-time `logic_error`, with a temporary map file.
+- Covers the no-deeper-levels requirement (Requirements).
+- A non-scalar `ISR` (several elements, or declared with `channels`):
+parse-time `logic_error`, with a temporary map file.
+- Covers the scalar-`ISR` requirement (Requirements).
+- `ISR` without any child: parses, no error, catalogue unchanged.
+- Covers the empty-`ISR` requirement (Requirements).
+- Missing `ISR`: parse-time `logic_error`, with a map file written to a
+temporary file that lacks the `ISR`.
+- Covers the missing-`P/ISR` requirement (Requirements).
+- Duplicate bit position: two children with the same bit position give a
+parse-time `logic_error`, with a temporary map file.
+- Covers the duplicate-bit-position requirement (Requirements).
+- A derived id that is already present: a declared interrupt register
+carrying `triggeredByInterrupt` `[<handler id>, <bit position>]` parses
+without error and both registers carry the id.
+- Covers the shared-interrupt-id requirement (Requirements).
+- Update the interrupt-list assertion in `TestGoodMapFileParse`:
+`loi.size() == 3` with the ids at lines 701-703 to the derived ids the map
+change adds, and re-check the other catalogue assertions in the same test
+for the new registers.
+- The map change adds derived interrupt ids to `_listOfInterrupts`, so the
+existing assertion would fail.
 - Consumers of `tests/simpleJsonFile.jmap` (modified as needed)
-  - Re-check and, if required, update the suites that also load the extended
-    fixture: `tests/executables_src/testDeviceToJmap.cc` (CR-005 round-trip
-    catalogue comparison), `tests/executables_src/testLMapBackend.cpp`
-    (`logicalnamemap.dmap`), `tests/executables_src/testDoubleBufferAccessor.cc`
-    and `tests/executables_src/testGetSetAsCoocked.cpp`.
-    - The fixture change adds registers and derived interrupt ids that reach
-      these suites; the plan previously updated only
-      `testJsonMapFileParser.cpp`.
+- Re-check and, if required, update the suites that also load the extended
+fixture: `tests/executables_src/testDeviceToJmap.cc` (CR-005 round-trip
+catalogue comparison), `tests/executables_src/testLMapBackend.cpp`
+(`logicalnamemap.dmap`), `tests/executables_src/testDoubleBufferAccessor.cc`
+and `tests/executables_src/testGetSetAsCoocked.cpp`.
+- The fixture change adds registers and derived interrupt ids that reach
+these suites; the plan previously updated only
+`testJsonMapFileParser.cpp`.
 - `tests/executables_src/testGenericMuxedInterruptDistributor.cpp` (modified)
-  - Add a jmap-based CDD for the case below: the file's current
-    `tests/irq_test.mapp` fixture is `*.mapp` and never derives interrupts.
-    Reuse `tests/simpleJsonFile.jmap` where suitable; otherwise copy the nearest
-    jmap carrying an `INTC` block to a temporary file and adapt it.
-  - Derived interrupt end to end: a `wait_for_new_data` accessor on a derived
-    interrupt register is notified when the corresponding ISR bit is set
-    (dummy backend interrupt trigger).
-    - Confirms the id-to-ISR-bit mapping and the runtime behaviour of the
-      derived registers (Requirements); the parser test does not exercise a
-      backend.
+- Add a jmap-based CDD for the case below: the file's current
+`tests/irq_test.mapp` fixture is `*.mapp` and never derives interrupts.
+Reuse `tests/simpleJsonFile.jmap` where suitable; otherwise copy the nearest
+jmap carrying an `INTC` block to a temporary file and adapt it.
+- Derived interrupt end to end: a `wait_for_new_data` accessor on a derived
+interrupt register is notified when the corresponding ISR bit is set
+(dummy backend interrupt trigger).
+- Confirms the id-to-ISR-bit mapping and the runtime behaviour of the
+derived registers (Requirements); the parser test does not exercise a
+backend.
 - `tests/executables_src/testMuxedInterruptDistributorFactory.cpp` (new)
-  - Dispatcher no-op: `augmentCatalogue` called with an unknown controller
-    type, and with the built-in `dummy` type that has no augmenter, leaves the
-    catalogue unchanged.
-    - Covers the skip of an unknown type and of a type with an empty augmenter
-      in `async::MuxedInterruptDistributorFactory` (Specifications).
-  - Creating a distributor for an unknown controller type still throws
-    `logic_error`.
-    - Guards the boundary between the dispatcher's lookup-miss (skip) and
-      creation's lookup-miss (throw), which the shared record lookup could
-      break (Specifications).
-    - Not covered elsewhere: the interrupt tests only declare the registered
-      types, `INTC` (`tests/irq_test.mapp`) and `dummy`
-      (`tests/testHierarchicalInterrupts.map`), while the parser test whose
-      map carries a backend-specific type (`MyINTC`) never opens a backend.
-    - The setup needs a backend whose metadata declares an unregistered type,
-      e.g. a dummy backend over a map with a backend-specific controller
-      entry. The error comes from the type lookup, before any ISR is opened.
+- Dispatcher no-op: `augmentCatalogue` called with an unknown controller
+type, and with the built-in `dummy` type that has no augmenter, leaves the
+catalogue unchanged.
+- Covers the skip of an unknown type and of a type with an empty augmenter
+in `async::MuxedInterruptDistributorFactory` (Specifications).
+- Creating a distributor for an unknown controller type still throws
+`logic_error`.
+- Guards the boundary between the dispatcher's lookup-miss (skip) and
+creation's lookup-miss (throw), which the shared record lookup could
+break (Specifications).
+- Not covered elsewhere: the interrupt tests only declare the registered
+types, `INTC` (`tests/irq_test.mapp`) and `dummy`
+(`tests/testHierarchicalInterrupts.map`), while the parser test whose
+map carries a backend-specific type (`MyINTC`) never opens a backend.
+- The setup needs a backend whose metadata declares an unregistered type,
+e.g. a dummy backend over a map with a backend-specific controller
+entry. The error comes from the type lookup, before any ISR is opened.
+
+## Deferred issue
+
+- DI-1 [NEW] Compiler warning -Wunused-result at
+  tests/executables_src/testMuxedInterruptDistributorFactory.cpp:96: the
+  [[nodiscard]] return value of Device::getVoidRegisterAccessor is discarded
+  inside BOOST_CHECK_THROW (clang-tidy expands the macro and points at the
+  nodiscard declaration). This violates the project's no-warnings policy;
+  discard the value explicitly (e.g. (void)) or restructure the check.
+- DI-2 [NEW] Garbled comment sentence at src/JsonMapFileParser.cc:724-728: '...
+  so the ids exist while the map file is parsed and the derived registers are
+  missing from getListOfInterrupts() and their canonical interrupt paths
+  otherwise would not resolve.' The clause reads as the opposite of the intent
+  and the 'otherwise' is misplaced. Rewrite as two sentences, e.g. '... so the
+  ids exist while the map file is parsed. Otherwise the derived registers would
+  be missing from getListOfInterrupts() and their canonical interrupt paths
+  would not resolve.'
