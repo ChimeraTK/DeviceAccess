@@ -199,20 +199,32 @@ NumericAddressedRegisterCatalogue& catalogue)` (new)
 
 ### detail::InterruptHandlerEntry (modified) in src/JsonMapFileParser.cc (modified)
 
+- `void forEachEntry(std::vector<size_t> const& intId,
+  std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const&
+  visitor) const` (new)
+  - The single traversal of the entry tree: when `intId` is non-empty it visits
+    the entry with its qualified id and its `raw` object, then recurses into
+    `subhandler`, appending `std::stoll(subIntId)` to the id.
+  - Holds the `subhandler` layout and the qualified-id construction in one
+    place, shared by `fill` and `augmentCatalogue`.
+- `void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata)
+  const` (modified)
+  - Becomes a `forEachEntry` call whose visitor adds `"!" + id.dump()` mapped to
+    `raw.dump()` to the metadata. Behaviour unchanged.
 - `void augmentCatalogue(NumericAddressedRegisterCatalogue& catalogue) const`
 (new)
-  - Recurses over the entry and its subhandlers unconditionally, like `fill`:
-    the recursion is not gated on the entry's controller object, so a
-    nesting-only entry without a controller object still reaches its
-    subhandlers.
-  - Dispatches only for an entry whose controller object is non-empty. The root
-    entry carries an empty object as well as an empty id, so nothing dispatches
-    for it.
-  - Computes the qualified interrupt id as `fill` does.
+  - Calls `forEachEntry` from the root with an empty id.
+  - The visitor dispatches only for an entry whose controller object is
+    non-empty. The root entry carries an empty object as well as an empty id,
+    so nothing dispatches for it.
+  - A nesting-only entry without a controller object still reaches its
+    subhandlers: the traversal runs the visitor and the recursion
+    independently, so skipping the dispatch does not stop the walk.
   - Extracts the controller type and the description through the shared free
     function `interruptControllerNameAndDescription`, rather than repeating the
     convention.
-  - A nested entry uses its own `path` and its full id.
+  - A nested entry contributes its own full id, so its children carry the
+    subhandler's full id.
 - Dependencies: the `MuxedInterruptDistributorFactory` dispatcher.
 
 ### detail::JsonMapFileParser::Imp (modified) in src/JsonMapFileParser.cc (modified)
