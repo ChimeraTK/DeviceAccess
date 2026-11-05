@@ -287,5 +287,10 @@ catalogue by path component and does not special-case the buffer views.
     `logic_error`.
     - Guards the note that an unknown type stays an error at distributor
       creation (Specifications).
-    - Not covered elsewhere: no existing test builds a distributor through
-      the factory; the parser tests only parse map files.
+    - Not covered elsewhere: the interrupt tests only declare the registered
+      types, `INTC` (`tests/irq_test.mapp`) and `dummy`
+      (`tests/testHierarchicalInterrupts.map`), while the parser test whose
+      map carries a backend-specific type (`MyINTC`) never opens a backend.
+    - The setup needs a backend whose metadata declares an unregistered type,
+      e.g. a dummy backend over a map with a backend-specific controller
+      entry. The error comes from the type lookup, before any ISR is opened.
