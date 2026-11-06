@@ -28,6 +28,18 @@ namespace ChimeraTK::async {
 
   /********************************************************************************************************************/
 
+  /**
+   * Extract the controller type (the first key of the descriptor) and its description (the dumped value) of an
+   * interrupt handler entry's controller object. The convention lives here so it is defined in one place.
+   */
+  static std::pair<std::string, std::string> getInterruptControllerNameAndDescription(json const& descriptor) {
+    auto controllerType = descriptor.begin().key();
+    auto controllerDescription = descriptor.front().dump();
+    return {controllerType, controllerDescription};
+  }
+
+  /********************************************************************************************************************/
+
   MuxedInterruptDistributorFactory& MuxedInterruptDistributorFactory::getInstance() {
     static MuxedInterruptDistributorFactory instance;
     return instance;
@@ -47,7 +59,7 @@ namespace ChimeraTK::async {
 
           if(interruptId == subdomainID) {
             auto jdescriptor = nlohmann::json::parse(metaDataEntry.second);
-            return interruptControllerNameAndDescription(jdescriptor);
+            return getInterruptControllerNameAndDescription(jdescriptor);
           }
         }
         catch(json::parse_error& e) {

@@ -803,12 +803,7 @@ namespace ChimeraTK::async {
 
     auto isrRegister = catalogue.getBackendRegister(isrPath);
 
-    // ISR must be a scalar register: a channel slice below ISR would be indistinguishable from a bit field, so no
-    // channels may appear below ISR. A multi-element register is rejected for the same reason. A scalar register
-    // carries exactly one channel spanning the whole element word, whereas a register declared with a 'channels'
-    // dictionary carries one channel per named channel, whose width is the channel's own width rather than the
-    // element pitch. Requiring the single channel to span the element word therefore also rejects a 'channels'
-    // dictionary that happens to declare exactly one channel.
+    // ISR must be a scalar register.
     if(isrRegister.nElements != 1 || isrRegister.channels.size() != 1 || isrRegister.channels.front().bitOffset != 0 ||
         isrRegister.channels.front().width != isrRegister.elementPitchBits) {
       std::ostringstream oss;
@@ -817,11 +812,8 @@ namespace ChimeraTK::async {
       throw ChimeraTK::logic_error(oss.str());
     }
 
-    // Scan the catalogue for the children of ISR (the registers with exactly one path component more) and retype each
-    // qualifying 1-bit child in place. Enumerate via the paths, so the children are found by path component. A first
-    // pass over the registers below ISR rejects any register deeper than one level, so the no-deeper-levels rule is
-    // checked independently of the order in which the catalogue is enumerated; the second pass then validates and
-    // retypes the direct children.
+    // First pass: reject any register deeper than one level below ISR, so the no-deeper-levels rule holds
+    // independently of the order in which the catalogue is enumerated.
     auto isrComponents = isrPath.getComponents();
     std::vector<RegisterPath> children;
     for(auto const& reg : catalogue) {
@@ -841,6 +833,7 @@ namespace ChimeraTK::async {
       children.push_back(regPath);
     }
 
+    // Second pass: validate the direct children and modify the qualifying bit fields in place.
     std::set<size_t> bitPositionsSeen;
     for(auto const& childPath : children) {
       auto child = catalogue.getBackendRegister(childPath);
@@ -859,12 +852,13 @@ namespace ChimeraTK::async {
             << " is covered by more than one child of '" << isrPath << "'";
         throw ChimeraTK::logic_error(oss.str());
       }
-      // Retype in place, keeping channels, address, size, bit-range flag, path and the BUF0/BUF1 views as they are.
-      NumericAddressedRegisterInfo retyped = catalogue.getBackendRegister(childPath);
-      retyped.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
-      retyped.interruptId = interruptId;
-      retyped.interruptId.push_back(bitPosition);
-      catalogue.modifyRegister(retyped);
+      // Modify the register entry in place, keeping channels, address, size, bit-range flag, path and the BUF0/BUF1
+      // views as they are.
+      NumericAddressedRegisterInfo modified = catalogue.getBackendRegister(childPath);
+      modified.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
+      modified.interruptId = interruptId;
+      modified.interruptId.push_back(bitPosition);
+      catalogue.modifyRegister(modified);
     }
   } // augmentCatalogue
 

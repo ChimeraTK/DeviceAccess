@@ -185,7 +185,7 @@ namespace ChimeraTK {
     /**
      * Replaces the register information for the matching register, keeping the insertion order of the iterated
      * catalogue. In addition to the base class behaviour, the derived interrupt bookkeeping is updated, so a register
-     * retyped to interrupt access becomes part of getListOfInterrupts() and is reachable through its canonical
+     * modified to interrupt access becomes part of getListOfInterrupts() and is reachable through its canonical
      * interrupt path.
      */
     void modifyRegister(const NumericAddressedRegisterInfo& registerInfo);

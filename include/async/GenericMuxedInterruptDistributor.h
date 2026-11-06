@@ -60,8 +60,8 @@ namespace ChimeraTK::async {
 
     /**
      * Catalogue augmenter registered by MuxedInterruptDistributorFactory for the "INTC" controller type. It parses and
-     * validates the controller description, finds <path>/ISR in the catalogue and retypes each qualifying 1-bit child
-     * bit field into an interrupt register carrying the id [interruptId..., bit position].
+     * validates the controller description, finds <path>/ISR in the catalogue and modifies each qualifying 1-bit child
+     * bit field in place into an interrupt register carrying the id [interruptId..., bit position].
      */
     static void augmentCatalogue(std::vector<size_t> const& interruptId, std::string const& controllerDescription,
         NumericAddressedRegisterCatalogue& catalogue);

@@ -22,6 +22,19 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
+  /**
+   * Extract the controller type (the first key of the descriptor) and its description (the dumped value) of an
+   * interrupt handler entry's controller object. File-local: only the map file parser interprets the controller
+   * descriptors, so the json handling stays out of JsonExtensions.h.
+   */
+  static std::pair<std::string, std::string> getInterruptControllerNameAndDescription(json const& descriptor) {
+    auto controllerType = descriptor.begin().key();
+    auto controllerDescription = descriptor.front().dump();
+    return {controllerType, controllerDescription};
+  }
+
+  /********************************************************************************************************************/
+
   struct JsonAddressSpaceEntry;
 
   struct JsonMapFileParser::Imp {
@@ -577,40 +590,16 @@ namespace ChimeraTK::detail {
      * layout and the qualified-id construction in one place, shared by fill and augmentCatalogue.
      */
     void forEachEntry(std::vector<size_t> const& intId,
-        std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const& visitor) const {
-      if(!intId.empty()) {
-        visitor(intId, raw);
-      }
-      for(const auto& [subIntId, handler] : subhandler) {
-        std::vector<size_t> qualifiedSubIntId = intId;
-        qualifiedSubIntId.push_back(std::stoll(subIntId));
-        handler.forEachEntry(qualifiedSubIntId, visitor);
-      }
-    }
+        std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const& visitor) const;
 
-    void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata) const {
-      forEachEntry(intId, [&metadata](std::vector<size_t> const& id, nlohmann::json const& rawEntry) {
-        json jsonIntId;
-        jsonIntId = id;
-        metadata.addMetadata("!" + jsonIntId.dump(), rawEntry.dump());
-      });
-    }
+    void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata) const;
 
     /**
      * Dispatch every entry that carries a controller object to the catalogue augmenter of its controller type. The
      * traversal runs the visitor and the recursion independently, so a nesting-only entry without a controller object
      * still reaches its subhandlers.
      */
-    void augmentCatalogue(NumericAddressedRegisterCatalogue& catalogue) const {
-      forEachEntry({}, [&catalogue](std::vector<size_t> const& id, nlohmann::json const& rawEntry) {
-        if(rawEntry.empty()) {
-          return;
-        }
-        auto [controllerType, controllerDescription] = interruptControllerNameAndDescription(rawEntry);
-        async::MuxedInterruptDistributorFactory::getInstance().augmentCatalogue(
-            id, controllerType, controllerDescription, catalogue);
-      });
-    }
+    void augmentCatalogue(NumericAddressedRegisterCatalogue& catalogue) const;
 
     // NOLINTNEXTLINE(readability-identifier-naming)
     friend void from_json(const json& j, InterruptHandlerEntry& e) {
@@ -650,6 +639,43 @@ namespace ChimeraTK::detail {
       }
     }
   };
+
+  /********************************************************************************************************************/
+
+  void InterruptHandlerEntry::forEachEntry(std::vector<size_t> const& intId,
+      std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const& visitor) const {
+    if(!intId.empty()) {
+      visitor(intId, raw);
+    }
+    for(const auto& [subIntId, handler] : subhandler) {
+      std::vector<size_t> qualifiedSubIntId = intId;
+      qualifiedSubIntId.push_back(std::stoll(subIntId));
+      handler.forEachEntry(qualifiedSubIntId, visitor);
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  void InterruptHandlerEntry::fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata) const {
+    forEachEntry(intId, [&metadata](std::vector<size_t> const& id, nlohmann::json const& rawEntry) {
+      json jsonIntId;
+      jsonIntId = id;
+      metadata.addMetadata("!" + jsonIntId.dump(), rawEntry.dump());
+    });
+  }
+
+  /********************************************************************************************************************/
+
+  void InterruptHandlerEntry::augmentCatalogue(NumericAddressedRegisterCatalogue& catalogue) const {
+    forEachEntry({}, [&catalogue](std::vector<size_t> const& id, nlohmann::json const& rawEntry) {
+      if(rawEntry.empty()) {
+        return;
+      }
+      auto [controllerType, controllerDescription] = getInterruptControllerNameAndDescription(rawEntry);
+      async::MuxedInterruptDistributorFactory::getInstance().augmentCatalogue(
+          id, controllerType, controllerDescription, catalogue);
+    });
+  }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
