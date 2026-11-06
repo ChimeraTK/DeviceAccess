@@ -308,9 +308,13 @@ of interrupts, and resolvable through the canonical interrupt path.
 full id.
 - Covers nested-entry handling in
 `detail::InterruptHandlerEntry::augmentCatalogue` (Specifications).
-- A child that is not a 1-bit value (wider, multi-channel, multi-element):
-parse-time `logic_error`, with a temporary map file.
-- Covers the qualifying-child requirement (Requirements).
+- A child that is not a 1-bit value, with a temporary map file: parse-time
+`logic_error`. One case each for a wider child, a multi-element child
+(`numberOfElements` 2), a child declared with a `channels` dictionary, and a
+child carrying its own address different from `ISR`'s.
+- Covers the qualifying-child requirement (Requirements); the condition has
+one part per rejected shape, so a case per part guards against a regression
+dropping any single part.
 - Deeper levels below `ISR`: a child that has a child of its own gives a
 parse-time `logic_error`, with a temporary map file.
 - Covers the no-deeper-levels requirement (Requirements).
@@ -494,3 +498,18 @@ entry. The error comes from the type lookup, before any ISR is opened.
   tests/executables_src/testGenericMuxedInterruptDistributor.cpp before
   activateIER (:189), testMerActive (:376), testSieCieMulti1 (:440),
   testSieCieMulti2 (:478), testGieActive (:504), testMieActive (:519).
+- DI-17 [NEW] Coverage gap: the ISR child-qualification check
+  (src/async/GenericMuxedInterruptDistributor.cc:841 rejects a child when
+  nElements != 1, channels.size() != 1, bar != ISR.bar, address != ISR.address,
+  or width != 1) only exercises the width branch (TestIsrChildNotOneBit,
+  tests/executables_src/testJsonMapFileParser.cpp:793, a 3-bit child). The Test
+  plan bullet 'A child that is not a 1-bit value (wider, multi-channel,
+  multi-element)' and the matching Requirements bullet ('a wider, multi-channel
+  or multi-element child, or one at its own address') also list a multi-element
+  child, a multi-channel (channels-dictionary) child and a child at its own
+  bar/address; none is tested. A regression dropping the nElements,
+  channels.size(), bar or address part of the condition (the same class as DI-4)
+  would still pass the whole suite. Add temporary-map cases for a child with
+  numberOfElements 2, a child declared with a channels dictionary, and a child
+  carrying its own address (different from ISR's); extend the Test plan bullet
+  to the own-address case as well.
