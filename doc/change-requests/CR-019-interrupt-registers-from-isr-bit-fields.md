@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: TESTS PASSED (from IMPLEMENTATION REVIEWED)
+Status: STYLE REVIEWED (from IMPLEMENTATION REVIEWED)
 
 ## Requirements
 
@@ -419,7 +419,7 @@ entry. The error comes from the type lookup, before any ISR is opened.
   used entries would still pass. Add a case that removes an UNUSED handler
   entry's ISR, e.g. MY_INTC/SUB1/ISR for handler [3,1] (no register references
   [3,1]), and expects a parse-time logic_error.
-- DI-5 [IMPLEMENTED] tests/executables_src/testMuxedInterruptDistributorFactory.cpp:31
+- DI-5 [DONE] tests/executables_src/testMuxedInterruptDistributorFactory.cpp:31
   and :40: clang-tidy-22 reports llvm-prefer-static-over-anonymous-namespace for
   the new free functions 'snapshot' (:31) and 'checkUnchanged' (:40), both
   declared in the anonymous namespace at :21. The check is enabled in the
