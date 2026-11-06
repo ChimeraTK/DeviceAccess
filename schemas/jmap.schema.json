@@ -73,6 +73,7 @@
         {
           "properties": {
             "triggeredByInterrupt": {
+              "type": "array",
               "minItems": 2
             }
           },
@@ -108,10 +109,18 @@
           "description": "RO/WO, or RW (default). Mutually exclusive with 'triggeredByInterrupt'."
         },
         "triggeredByInterrupt": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "integer", "minimum": 0 },
-          "description": "Non-empty list of interrupt IDs that trigger this register, e.g. [3, 9, 0]. The last entry is the raw hardware interrupt (not checked); every preceding entry must resolve through the 'interruptHandler' chain: the first is a top-level key, each following one a 'subhandler' key of the previous entry. A single-entry array like [13] is just the hardware interrupt and needs no handler entry. Implies INTERRUPT/read-only; exclusive with 'access'."
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "integer", "minimum": 0 }
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ],
+          "description": "Either a non-empty list of interrupt IDs that trigger this register, e.g. [3, 9, 0], or a non-empty string naming another interrupt register whose resolved id triggers this register. For the id array, the last entry is the raw hardware interrupt (not checked); every preceding entry must resolve through the 'interruptHandler' chain: the first is a top-level key, each following one a 'subhandler' key of the previous entry. A single-entry array like [13] is just the hardware interrupt and needs no handler entry. Implies INTERRUPT/read-only; exclusive with 'access'."
         },
         "numberOfElements": {
           "type": "integer",
