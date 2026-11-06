@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: TESTS REVIEWED
+Status: IN PROGRESS (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -430,3 +430,48 @@ entry. The error comes from the type lookup, before any ISR is opened.
   purpose. Restrict both functions with 'static' (the CatalogueSnapshot type may
   stay in the anonymous namespace); this is not a clang-format fix, so it could
   not be auto-applied here.
+- DI-6 [NEW] Move the shared helper interruptControllerNameAndDescription out of
+  include/JsonExtensions.h and src/JsonExtensions.cc into a static function in
+  src/JsonMapFileParser.cc; JsonExtensions.h must stay independent of the
+  library's actual use of json (future: the json snippets will no longer be
+  stored as catalogue metadata but parsed entirely in the map file parser). Fold
+  the CR Specifications subsection that currently documents it as a free
+  function in include/JsonExtensions.h (modified) accordingly, and update both
+  call sites:
+  MuxedInterruptDistributorFactory::getInterruptControllerNameAndDescriptionFromCatalogue
+  (src/async/MuxedInterruptDistributor.cc:50) and
+  detail::InterruptHandlerEntry::augmentCatalogue
+  (src/JsonMapFileParser.cc:609).
+- DI-7 [NEW] All added functions must be implemented out-of-line. In
+  src/JsonMapFileParser.cc the InterruptHandlerEntry members forEachEntry
+  (:579), fill (:591) and augmentCatalogue (:604) are currently defined inline
+  in the struct body and must become declarations with out-of-line definitions.
+  Check every other added function (the rest, e.g.
+  NumericAddressedRegisterCatalogue::modifyRegister/addInterruptBookkeeping,
+  MuxedInterruptDistributorFactory::augmentCatalogue,
+  GenericMuxedInterruptDistributor::augmentCatalogue, are already out-of-line).
+- DI-8 [NEW] Shorten the comment for the scalar-ISR check at
+  src/async/GenericMuxedInterruptDistributor.cc:805-810 to exactly "ISR must be
+  a scalar register"; the longer justification stays in the CR document, not in
+  the code.
+- DI-9 [NEW] Split the comment for the catalogue child scan
+  (src/async/GenericMuxedInterruptDistributor.cc:819-823, "Scan the catalogue
+  for the children of ISR ...") into two parts, one for each loop (the
+  deeper-level rejection pass and the direct-child validation/modify pass). The
+  two parts together must not become significantly longer than the current
+  comment.
+- DI-10 [NEW] Replace the misleading "retype"/"retyping" wording, which is not a
+  type change, with something like "modify register entry in place".
+  Occurrences: comments at src/async/GenericMuxedInterruptDistributor.cc:819 and
+  :861, the local variable at :862 (retyped) and :866
+  (catalogue.modifyRegister(retyped)), and the CR Specifications ("Retyping is
+  in place", "then validates and retypes the direct children").
+- DI-11 [NEW] Rebase the branch
+  mhier-agent/CR-019-interrupt-registers-from-isr-bit-fields onto the latest
+  master, resolving conflicts carefully, including logical conflicts.
+- DI-12 [NEW] Add the missing full-line comment separator bars (/*****...*/) at
+  least between the test cases in the touched test files, and check other places
+  for missing bars.
+- DI-13 [NEW] De-duplicate tests/executables_src/testJsonMapFileParser.cpp: keep
+  the dedicated test cases, but stop re-testing everything again in
+  TestGoodMapFileParse (many assertions there duplicate the dedicated cases).
