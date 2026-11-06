@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: IMPLEMENTATION REVIEWED (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -498,7 +498,7 @@ entry. The error comes from the type lookup, before any ISR is opened.
   tests/executables_src/testGenericMuxedInterruptDistributor.cpp before
   activateIER (:189), testMerActive (:376), testSieCieMulti1 (:440),
   testSieCieMulti2 (:478), testGieActive (:504), testMieActive (:519).
-- DI-17 [NEW] Coverage gap: the ISR child-qualification check
+- DI-17 [FOLDED-IN] Coverage gap: the ISR child-qualification check
   (src/async/GenericMuxedInterruptDistributor.cc:841 rejects a child when
   nElements != 1, channels.size() != 1, bar != ISR.bar, address != ISR.address,
   or width != 1) only exercises the width branch (TestIsrChildNotOneBit,
