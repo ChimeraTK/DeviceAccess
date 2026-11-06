@@ -897,6 +897,28 @@ BOOST_AUTO_TEST_CASE(TestIsrWithChannels) {
   std::remove(tmpFile.c_str());
 }
 
+// A double-buffered ISR is an error at parse time: the auto-generated BUF0/BUF1 buffer views are children of ISR
+// that are not bit fields, so the child scan rejects them.
+BOOST_AUTO_TEST_CASE(TestIsrDoubleBuffered) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give DAQ/ISR a doubleBuffering block, reusing the DAQ.DOUBLE_BUF enable/read-buffer registers.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["doubleBuffering"] = {
+      {"secondaryBufferAddress", {{"type", "IO"}, {"channel", 5}, {"offset", 12}}},
+      {"enableRegister", "DAQ.DOUBLE_BUF.ENA"}, {"readBufferRegister", "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID"}};
+
+  std::string tmpFile = "isrDoubleBuffered_" + std::to_string(getpid()) + ".jmap";
+  try {
+    parseInjectedInterruptMap(tmpFile, map);
+    BOOST_FAIL("a double-buffered ISR must fail to parse");
+  }
+  catch(ChimeraTK::logic_error const& e) {
+    // Rejected as a non-qualifying ISR child, not for another reason such as a malformed doubleBuffering block.
+    BOOST_TEST(std::string(e.what()).find("is not a 1-bit bit field") != std::string::npos);
+  }
+  std::remove(tmpFile.c_str());
+}
+
 // An ISR without any child is not an error: it parses and the catalogue is unchanged.
 BOOST_AUTO_TEST_CASE(TestIsrWithoutChildrenParses) {
   std::ifstream base("simpleJsonFile.jmap");
@@ -928,6 +950,20 @@ BOOST_AUTO_TEST_CASE(TestIsrMissing) {
   map["addressSpace"]["DAQ"]["children"].erase("ISR");
 
   std::string tmpFile = "isrMissing_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+// An INTC handler entry whose <path>/ISR does not exist is an error at parse time for used and unused entries alike.
+// The nested subhandler [3, 1] refers to MY_INTC.SUB1/ISR but no register references [3, 1], so a regression that
+// validated only used entries would still pass with this missing.
+BOOST_AUTO_TEST_CASE(TestIsrMissingUnusedHandler) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Remove the register the unused subhandler [3, 1] refers to.
+  map["addressSpace"]["MY_INTC"]["children"]["SUB1"]["children"].erase("ISR");
+
+  std::string tmpFile = "isrMissingUnused_" + std::to_string(getpid()) + ".jmap";
   BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
   std::remove(tmpFile.c_str());
 }

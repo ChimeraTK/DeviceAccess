@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: IMPLEMENTED (from IMPLEMENTATION REVIEWED)
+Status: READY TO TEST (from IMPLEMENTATION REVIEWED)
 
 ## Requirements
 
@@ -400,7 +400,7 @@ entry. The error comes from the type lookup, before any ISR is opened.
   ids exist while the map file is parsed. Otherwise the derived registers would
   be missing from getListOfInterrupts() and their canonical interrupt paths
   would not resolve.'
-- DI-3 [FOLDED-IN] Coverage gap: the requirement 'ISR must not be
+- DI-3 [IMPLEMENTED] Coverage gap: the requirement 'ISR must not be
   double-buffered ... a double-buffered ISR is an error while parsing the map
   file' (Requirements; see also the matching 'Alternatives considered' entry)
   has no test. The Test plan lists every other derivation/validation case but
@@ -411,7 +411,7 @@ entry. The error comes from the type lookup, before any ISR is opened.
   would pass the whole suite. Add a temporary-map case that puts a
   'doubleBuffering' block on DAQ/ISR (reusing the DAQ.DOUBLE_BUF
   enable/read-buffer registers) and expects a parse-time logic_error.
-- DI-4 [FOLDED-IN] Coverage gap: the requirement that an INTC handler entry
+- DI-4 [IMPLEMENTED] Coverage gap: the requirement that an INTC handler entry
   whose P/ISR does not exist is an error 'for used and unused entries alike' is
   only tested for the used handler [0]. TestIsrMissing
   (testJsonMapFileParser.cpp) removes DAQ/ISR, which IS used (VOID_INTERRUPT_0
