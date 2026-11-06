@@ -162,7 +162,11 @@ namespace ChimeraTK {
     return (address == rhs.address) && (bar == rhs.bar) && (nElements == rhs.nElements) && (channels == rhs.channels) &&
         (pathName == rhs.pathName) && (elementPitchBits == rhs.elementPitchBits) &&
         (registerAccess == rhs.registerAccess) && (getNumberOfDimensions() == rhs.getNumberOfDimensions()) &&
-        (interruptId == rhs.interruptId);
+        (interruptId == rhs.interruptId) &&
+        ((!registerGatedBy && !rhs.registerGatedBy) ||
+            (registerGatedBy && rhs.registerGatedBy &&
+                (registerGatedBy->val == rhs.registerGatedBy->val &&
+                    registerGatedBy->regPath == rhs.registerGatedBy->regPath)));
   }
 
   /********************************************************************************************************************/
@@ -182,9 +186,8 @@ namespace ChimeraTK {
   bool NumericAddressedRegisterInfo::ChannelInfo::operator==(const ChannelInfo& rhs) const {
     return bitOffset == rhs.bitOffset && dataType == rhs.dataType && width == rhs.width &&
         nFractionalBits == rhs.nFractionalBits && signedFlag == rhs.signedFlag && rawType == rhs.rawType &&
-        ((!selectedBy && !rhs.selectedBy) ||
-            (selectedBy && rhs.selectedBy &&
-                (selectedBy->val == rhs.selectedBy->val && selectedBy->regPath == rhs.selectedBy->regPath)));
+        ((!gatedBy && !rhs.gatedBy) ||
+            (gatedBy && rhs.gatedBy && (gatedBy->val == rhs.gatedBy->val && gatedBy->regPath == rhs.gatedBy->regPath)));
   }
 
   /********************************************************************************************************************/

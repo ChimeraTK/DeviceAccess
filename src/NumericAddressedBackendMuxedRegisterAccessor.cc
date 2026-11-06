@@ -133,6 +133,21 @@ namespace ChimeraTK {
     // allocate the raw io buffer. Make it one element larger to make sure we can access the last byte via int32_t*
     _ioBuffer.resize(
         static_cast<size_t>(_registerInfo.elementPitchBits) / 8 * _registerInfo.nElements / sizeof(int32_t) + 1);
+
+    // Build the register-level gate of this block, if the register carries one. The gate accessor is obtained the same
+    // way as for the other accessors: through the public entry point (so a backend override stays in play), without
+    // wait_for_new_data (so it is synchronous for any correct backend) and with a scalar check. The parser already
+    // rejects a gating register that is itself gated, so no gate chain and hence no recursion occurs.
+    if(_registerInfo.registerGatedBy.has_value()) {
+      const auto& gatedBy = *_registerInfo.registerGatedBy;
+      auto gateInfo = _ioDevice->getRegisterInfo(gatedBy.regPath);
+      if(gateInfo.getNumberOfChannels() != 1 || gateInfo.nElements > 1) {
+        throw ChimeraTK::logic_error("gatedBy: the gating register '" + gatedBy.regPath + "' of register '" +
+            registerPathName + "' must be a scalar register.");
+      }
+      _gateAccessor = _ioDevice->getRegisterAccessor<uint64_t>(gatedBy.regPath, 0, 0, {});
+      _gateValue = gatedBy.val;
+    }
   }
 
   /********************************************************************************************************************/
@@ -145,6 +160,13 @@ namespace ChimeraTK {
     nbt = ((nbt - 1) / 4 + 1) * 4; // round up to multiple of 4 bytes
 
     _ioDevice->read(_registerInfo.bar, _registerInfo.address, _ioBuffer.data(), nbt);
+
+    // Read the register-level gate next to the raw block read, so all hardware access happens in the transfer phase.
+    // Evaluate it here (the gating register is fresh) and keep the result for doPostRead.
+    if(_gateAccessor) {
+      _gateAccessor->read();
+      _gateClosed = (_gateAccessor->accessData(0) != _gateValue);
+    }
   }
 
   /********************************************************************************************************************/
@@ -161,8 +183,9 @@ namespace ChimeraTK {
       // wait_for_new_data. It is basically synchronous.
       this->_versionNumber = {};
 
-      // we just read good data. Set validity back to ok if someone marked it faulty for writing.
-      this->_dataValidity = DataValidity::ok;
+      // A closed register-level gate marks the whole block faulty (its payload is unspecified); an open gate reports
+      // good data. This also overwrites a validity that someone marked faulty for writing.
+      this->_dataValidity = _gateClosed ? DataValidity::faulty : DataValidity::ok;
     }
   }
 

@@ -614,9 +614,9 @@ def _build_2d_descriptor(container_name: str, container: RegisterDescr, channels
     ``_fill_entry_from_reg`` detects the ``channels`` key and emits these
     fields instead of the standard scalar/1D fields.
 
-    Since a classic .map file carries no reference to a DAQ-tab selector
-    register, the channels are emitted without a per-channel ``selectedBy``
-    (single-tab layout, unconditional channels).
+    Since a classic .map file carries no reference to a DAQ-tab gating
+    register, the channels are emitted without a per-channel ``gatedBy``
+    (single-tab layout, ungated channels).
     """
     bytes_per_block = sum(reg['nBytes'] for _, reg in channels)
     n_blocks = container['nBytes'] // bytes_per_block if bytes_per_block else 0

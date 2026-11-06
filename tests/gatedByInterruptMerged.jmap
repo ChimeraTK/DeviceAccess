@@ -1,0 +1,53 @@
+{
+  "mapFormatVersion": "1.0",
+  "interruptHandler": {
+    "1": {
+      "INTC": {
+        "path": "DAQ",
+        "version": 1
+      }
+    }
+  },
+  "metadata": {},
+  "addressSpace": {
+    "CTRL": {
+      "_": "Two distinct gating registers.",
+      "children": {
+        "SEL_A": {
+          "_": "Plain writable scalar gating register for INT_A.",
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        },
+        "SEL_B": {
+          "_": "Plain writable scalar gating register for INT_B.",
+          "address": { "offset": 4 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "DATA": {
+      "_": "Two gated registers at one address served by the same interrupt, gated by different gating registers.",
+      "children": {
+        "SCRATCH": {
+          "_": "Plain writable register at the payload address: lets the test place the raw value that an interrupt reads.",
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        },
+        "INT_A": {
+          "_": "Gated by CTRL.SEL_A == 1.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL_A", "value": 1 },
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        },
+        "INT_B": {
+          "_": "Gated by CTRL.SEL_B == 1.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL_B", "value": 1 },
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        }
+      }
+    }
+  }
+}

@@ -8,7 +8,8 @@ namespace ChimeraTK {
   DoubleBufferAccessor<UserType>::DoubleBufferAccessor(
       NumericAddressedRegisterInfo::DoubleBufferInfo doubleBufferConfig,
       const boost::shared_ptr<DeviceBackend>& backend, std::shared_ptr<detail::CountedRecursiveMutex> mutex,
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
+      std::optional<NumericAddressedRegisterInfo::GatedBy> gatedBy)
   : NDRegisterAccessor<UserType>(registerPathName, flags), _doubleBufferInfo(std::move(doubleBufferConfig)),
     _backend(boost::dynamic_pointer_cast<NumericAddressedBackend>(backend)), _mutex(std::move(mutex)),
     _transferLock(*_mutex, std::defer_lock) {
@@ -16,6 +17,20 @@ namespace ChimeraTK {
         backend->getRegisterAccessor<uint32_t>(_doubleBufferInfo.enableRegisterPath, 1, _doubleBufferInfo.index, {});
     _currentBufferNumberReg = backend->getRegisterAccessor<uint32_t>(
         _doubleBufferInfo.inactiveBufferRegisterPath, 1, _doubleBufferInfo.index, {});
+
+    // Build the gate, if the register carries one. The gate accessor is obtained through the public entry point (so a
+    // backend override stays in play) and without wait_for_new_data (so it is synchronous for any correct backend). The
+    // gating register must be scalar; the parser already rejects a gating register that is itself gated, so no gate
+    // chain and hence no recursion occurs.
+    if(gatedBy.has_value()) {
+      auto gateInfo = _backend->getRegisterInfo(gatedBy->regPath);
+      if(gateInfo.getNumberOfChannels() != 1 || gateInfo.nElements > 1) {
+        throw ChimeraTK::logic_error("gatedBy: the gating register '" + gatedBy->regPath + "' of register '" +
+            registerPathName + "' must be a scalar register.");
+      }
+      _gateAccessor = backend->getRegisterAccessor<uint64_t>(gatedBy->regPath, 0, 0, {});
+      _gateValue = gatedBy->val;
+    }
 
     auto buf0Name = registerPathName + ".BUF0";
     auto buf1Name = registerPathName + ".BUF1";
@@ -68,6 +83,19 @@ namespace ChimeraTK {
     else {
       _buffer1->readTransfer();
     }
+    // Read the gate next to the buffer read, so all hardware access happens in the transfer phase. The result is the
+    // active inner buffer's gate (the buffer whose transfer just happened), which isGateClosed() reports.
+    if(_gateAccessor) {
+      _gateAccessor->read();
+      _gateClosed = (_gateAccessor->accessData(0) != _gateValue);
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool DoubleBufferAccessor<UserType>::isGateClosed() const {
+    return _gateClosed;
   }
 
   template<typename UserType>
@@ -92,6 +120,11 @@ namespace ChimeraTK {
     }
     else {
       this->_dataValidity = _buffer1->dataValidity();
+    }
+    // A closed gate marks the whole read faulty, whatever the active inner buffer reported: the payload read through a
+    // closed gate is unspecified, so only DataValidity::faulty is guaranteed.
+    if(_gateAccessor && _gateClosed) {
+      this->_dataValidity = DataValidity::faulty;
     }
 
     // Note: TransferElement Spec E.6.1 dictates that the version number and data validity needs to be set before this

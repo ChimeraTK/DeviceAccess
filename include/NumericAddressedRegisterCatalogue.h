@@ -37,16 +37,18 @@ namespace ChimeraTK {
     enum class Type { VOID = 0, FIXED_POINT = 1, IEEE754 = 2, ASCII = 3 };
 
     /**
-     * Per-channel information that contains a pair of register and value determining a condition
-     * under which this register is considered active.
+     * Gate metadata: a pair of register and value. While the gating register holds the value, the gate is open and
+     * the gated register, channel slice or consumer reports valid data; otherwise the gate is closed and its data is
+     * faulty.
      */
 
     /* Unfortunately, register is a reserved keyword so we use regPath.
      * And since this is used as a std::optional, which has a value() method would make "value" a weird name
      */
-    struct SelectedBy {
-      RegisterPath regPath; /**< Path of register that determines if a Channel/Register is considered active */
-      int64_t val;          /**< Value of that register that determines if that Channel/Register is active */
+    struct GatedBy {
+      RegisterPath regPath; /**< Path of the gating register that determines whether the gate of a Channel/Register is
+                               open */
+      uint64_t val;         /**< Value of that register that opens the gate of that Channel/Register */
     };
 
     /**
@@ -60,7 +62,7 @@ namespace ChimeraTK {
       int32_t nFractionalBits; /**< Number of fractional bits */
       bool signedFlag;         /**< Signed/Unsigned flag */
       DataType rawType;
-      std::optional<SelectedBy> selectedBy{std::nullopt};
+      std::optional<GatedBy> gatedBy{std::nullopt};
       bool operator==(const ChannelInfo& rhs) const;
       bool operator!=(const ChannelInfo& rhs) const;
       [[nodiscard]] DataType getRawType() const;
@@ -144,6 +146,12 @@ namespace ChimeraTK {
 
     /** Define per-channel information (bit interpretation etc.), 1D/scalars have exactly one entry. */
     std::vector<ChannelInfo> channels;
+
+    /**
+     * Register-level gate of a 2D register. It is recorded separately from the per-channel gates, is not inherited by
+     * the channels, and gates only the full-register accessor of the block.
+     */
+    std::optional<GatedBy> registerGatedBy{std::nullopt};
 
     DataDescriptor dataDescriptor;
 

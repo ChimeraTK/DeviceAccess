@@ -1,0 +1,53 @@
+{
+  "mapFormatVersion": "1.0",
+  "interruptHandler": {
+    "1": {
+      "PAYLOAD": {
+        "path": "DAQ",
+        "version": 1
+      }
+    },
+    "2": {
+      "GATING": {
+        "path": "CTRL",
+        "version": 1
+      }
+    }
+  },
+  "metadata": {},
+  "addressSpace": {
+    "CTRL": {
+      "_": "Gating register that itself supports wait_for_new_data.",
+      "children": {
+        "SEL_INT": {
+          "_": "Interrupt-triggered scalar gating register. The gate accessor must remain synchronous and create no subscription.",
+          "triggeredByInterrupt": [ 2 ],
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        },
+        "SEL_INT_SET": {
+          "_": "Plain writable register at the gating register's address: lets the test set the gate value.",
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "DATA": {
+      "_": "Interrupt-triggered payload register gated by CTRL.SEL_INT.",
+      "children": {
+        "INT_GATED": {
+          "_": "Gated by CTRL.SEL_INT == 1 and triggered by interrupt 1.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL_INT", "value": 1 },
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        },
+        "SCRATCH": {
+          "_": "Plain writable register at the payload address: lets the test place the raw value that an interrupt reads.",
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        }
+      }
+    }
+  }
+}

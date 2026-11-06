@@ -243,7 +243,7 @@
             "index": 0,
             "_": "Index inside control registers"
           },
-          "__": "The channels below are the layout of this 2D DAQ register. For registers whose layout is selected by a register value (multiple DAQ tabs), a 'selectedBy' dict is added as shown in the FD example below.",
+          "__": "The channels below are the layout of this 2D DAQ register. For registers whose layout is gated by a register value (multiple DAQ tabs), a 'gatedBy' dict is added as shown in the FD example below.",
           "numberOfElements": 16384,
           "pitch": 64,
           "channels": {
@@ -342,12 +342,12 @@
             "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
             "index": 1
           },
-          "_": "Each channel below is active only when the 'selectedBy' register (DAQ.MUX_SEL) equals its 'selectedBy' value.",
+          "_": "Each channel below is active only when the 'gatedBy' register (DAQ.MUX_SEL) equals its 'gatedBy' value.",
           "numberOfElements": 16384,
           "pitch": 64,
           "channels": {
             "AmplitudeCh0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 0
               },
@@ -363,7 +363,7 @@
               }
             },
             "PhaseCh0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 0
               },
@@ -379,7 +379,7 @@
               }
             },
             "RawCh0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 1
               },
@@ -395,7 +395,7 @@
               }
             },
             "RawCh1": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 1
               },
@@ -422,7 +422,7 @@
           "pitch": 64,
           "channels": {
             "AmplitudeCh0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 0
               },
@@ -438,7 +438,7 @@
               }
             },
             "PhaseCh0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 0
               },
@@ -454,7 +454,7 @@
               }
             },
             "StatusCh0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 2
               },
@@ -485,7 +485,7 @@
               }
             },
             "StatusCh1": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "DAQ.MUX_SEL",
                 "value": 2
               },
@@ -586,11 +586,11 @@
           }
         },
         "SINGLE_MUXED": {
-          "_": "A scalar (non-2D) register can carry a register-level 'selectedBy' too: the whole register is only active while DAQ.MUX_SEL equals the 'value'. For scalar/1D registers the selector is given on the register itself (not per channel, which is a 2D concept).",
+          "_": "A scalar (non-2D) register can carry a register-level 'gatedBy' too: the whole register is only active while DAQ.MUX_SEL equals the 'value'. For scalar/1D registers the gate is given on the register itself (not per channel, which is a 2D concept).",
           "access": "RO",
           "bytesPerElement": 4,
           "numberOfElements": 1,
-          "selectedBy": {
+          "gatedBy": {
             "register": "DAQ.MUX_SEL",
             "value": 0
           },
@@ -603,11 +603,11 @@
           }
         },
         "SINGLE_MUXED_ALT": {
-          "_": "Alternative scalar register for SINGLE_MUXED: muxed alternatives share the same address (offset 1246) and differ only in the 'selectedBy' value (here 1 instead of 0). Only one is active at a time depending on DAQ.MUX_SEL.",
+          "_": "Alternative scalar register for SINGLE_MUXED: muxed alternatives share the same address (offset 1246) and differ only in the 'gatedBy' value (here 1 instead of 0). Only one is active at a time depending on DAQ.MUX_SEL.",
           "access": "RO",
           "bytesPerElement": 4,
           "numberOfElements": 1,
-          "selectedBy": {
+          "gatedBy": {
             "register": "DAQ.MUX_SEL",
             "value": 1
           },
@@ -724,7 +724,7 @@
     "SCALAR": {
       "access": "RO",
       "numberOfElements": 1,
-      "selectedBy": {
+      "gatedBy": {
         "register": "MUX",
         "value": 0
       },
@@ -750,7 +750,7 @@
           "pitch": 8,
           "channels": {
             "Sel0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "COLLISION.MUX",
                 "value": 0
               },
@@ -764,7 +764,7 @@
               }
             },
             "Sel1": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "COLLISION.MUX",
                 "value": 1
               },

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "../ClosedGateQuery.h"
 #include "../ScalarRegisterAccessor.h"
 #include "../TransferGroup.h"
 #include "AsyncAccessorManager.h"
@@ -29,6 +30,10 @@ namespace ChimeraTK::async {
 
     VersionNumber getVersion() const { return _version; }
 
+    /** The version on open of the backend the distributor polls. Used by the PolledAsyncVariable to tell an initial
+     * value (after (re)activation) apart from a regular update. */
+    VersionNumber getVersionOnOpen() const { return _backend->getVersionOnOpen(); }
+
     bool getForceFaulty() const { return _forceFaulty; }
 
    protected:
@@ -48,6 +53,10 @@ namespace ChimeraTK::async {
   struct PolledAsyncVariable : public AsyncVariableImpl<UserType> {
     void fillSendBuffer() final;
 
+    /** Suppresses the delivery through a closed gate, unless the value is the mandatory initial value after a
+     * (re)activation. The gate result is read through the ClosedGateQuery the polled accessor brings in. */
+    void send() final;
+
     /// The constructor takes an already created synchronous accessor and a reference to the owing distributor
     explicit PolledAsyncVariable(
         boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, TriggeredPollDistributor& owner);
@@ -61,6 +70,13 @@ namespace ChimeraTK::async {
     boost::shared_ptr<NDRegisterAccessor<UserType>> _syncAccessor;
 
     TriggeredPollDistributor& _owner;
+
+    /** The gate query of the polled accessor, or null if the accessor is not gated. Resolved once at construction. */
+    ClosedGateQuery* _gateQuery{nullptr};
+
+    /** The version number of the last value that was actually sent. Compared with the version on open to recognise the
+     * mandatory initial value after a (re)activation. */
+    VersionNumber _lastSentVersion{nullptr};
   };
 
   /********************************************************************************************************************/
@@ -102,6 +118,23 @@ namespace ChimeraTK::async {
   PolledAsyncVariable<UserType>::PolledAsyncVariable(
       boost::shared_ptr<NDRegisterAccessor<UserType>> syncAccessor_, TriggeredPollDistributor& owner)
   : AsyncVariableImpl<UserType>(syncAccessor_->getNumberOfChannels(), syncAccessor_->getNumberOfSamples()),
-    _syncAccessor(syncAccessor_), _owner(owner) {}
+    _syncAccessor(syncAccessor_), _owner(owner) {
+    _gateQuery = dynamic_cast<ClosedGateQuery*>(_syncAccessor.get());
+  }
+
+  /********************************************************************************************************************/
+  template<typename UserType>
+  void PolledAsyncVariable<UserType>::send() {
+    // The mandatory initial value after a (re)activation is produced without a gate evaluation and must be delivered
+    // even through a closed gate. It is recognised by the version falling behind the version on open.
+    const bool isInitialValue = _lastSentVersion < _owner.getVersionOnOpen();
+    if(!isInitialValue && _gateQuery != nullptr && _gateQuery->isGateClosed()) {
+      return;
+    }
+    // Snapshot the version before the base send, which moves (and hence resets) the send buffer.
+    const VersionNumber sentVersion = this->_sendBuffer.versionNumber;
+    AsyncVariableImpl<UserType>::send();
+    _lastSentVersion = sentVersion;
+  }
 
 } // namespace ChimeraTK::async

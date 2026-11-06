@@ -15,7 +15,7 @@
           "pitch": 8,
           "channels": {
             "Ch0": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "MQ.MUX",
                 "value": 0
               },
@@ -29,7 +29,7 @@
               }
             },
             "Ch1": {
-              "selectedBy": {
+              "gatedBy": {
                 "register": "MQ.MUX",
                 "value": 1
               },

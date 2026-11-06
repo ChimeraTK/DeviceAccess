@@ -135,9 +135,9 @@
         "doubleBuffering": {
           "$ref": "#/definitions/doubleBuffering"
         },
-        "selectedBy": {
-          "$ref": "#/definitions/selectedBy",
-          "description": "Register-level mux selector for scalar/1D (non-2D, no 'channels') registers: the whole register is active when the 'register' equals 'value'. For 2D registers use per-channel 'selectedBy' instead; having both is an error."
+        "gatedBy": {
+          "$ref": "#/definitions/gatedBy",
+          "description": "Register-level gate. For a scalar/1D (non-2D, no 'channels') register the whole register is valid only while the 'register' equals 'value'. For a 2D register it gates only the full-register accessor of the block; it is not inherited by the channels, which carry their own per-channel 'gatedBy'."
         },
         "channels": {
           "type": "object",
@@ -200,15 +200,12 @@
           }
         },
         {
-          "description": "A 2D register ('channels' present) needs a 'pitch' and must not combine its channels with a register-level 'selectedBy' (channels are muxed individually). Its 'address' may be given explicitly or inherited from the parent.",
+          "description": "A 2D register ('channels' present) needs a 'pitch'. Its 'address' may be given explicitly or inherited from the parent.",
           "if": {
             "required": ["channels"]
           },
           "then": {
-            "required": ["pitch"],
-            "properties": {
-              "selectedBy": false
-            }
+            "required": ["pitch"]
           }
         },
         {
@@ -321,9 +318,9 @@
         "representation": {
           "$ref": "#/definitions/representation"
         },
-        "selectedBy": {
-          "$ref": "#/definitions/selectedBy",
-          "description": "Selects this channel by writing a value to a selection/mux register."
+        "gatedBy": {
+          "$ref": "#/definitions/gatedBy",
+          "description": "Gates this channel by a separate mux register: the channel is valid only while that register equals 'value'."
         },
         "children": {
           "type": "object",
@@ -392,17 +389,18 @@
         }
       }
     },
-    "selectedBy": {
+    "gatedBy": {
       "type": "object",
-      "description": "Selects a register or channel by writing a value to a separate selection/mux register. Active when that register equals 'value'.",
+      "description": "Gates a register or channel by a separate mux register. The target is valid only while that register equals 'value'.",
       "properties": {
         "register": {
           "type": "string",
-          "description": "Path of the selection/mux register, e.g. 'DAQ.MUX_SEL'."
+          "description": "Path of the gating register, e.g. 'DAQ.MUX_SEL'."
         },
         "value": {
           "type": "integer",
-          "description": "Value written to 'register' to select this channel/register."
+          "minimum": 0,
+          "description": "Value the gating register must hold for this channel/register to be valid."
         }
       },
       "required": ["register", "value"],

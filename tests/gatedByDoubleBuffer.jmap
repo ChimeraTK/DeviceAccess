@@ -1,0 +1,147 @@
+{
+  "mapFormatVersion": "1.0",
+  "interruptHandler": {
+    "1": {
+      "INTC": {
+        "path": "DAQ",
+        "version": 1
+      }
+    }
+  },
+  "metadata": {},
+  "addressSpace": {
+    "CTRL": {
+      "_": "Gating registers and the double-buffer control registers.",
+      "children": {
+        "SEL": {
+          "_": "Plain writable scalar gating register for the double-buffered scalar payload.",
+          "address": { "offset": 0 },
+          "representation": { "width": 32 }
+        },
+        "CH_SEL": {
+          "_": "Plain writable scalar gating register for the per-channel gates of the double-buffered 2D payload.",
+          "address": { "offset": 4 },
+          "representation": { "width": 32 }
+        },
+        "BLOCK_SEL": {
+          "_": "Plain writable scalar gating register for the register-level gate of the double-buffered 2D payload.",
+          "address": { "offset": 8 },
+          "representation": { "width": 32 }
+        }
+      }
+    },
+    "DAQ": {
+      "_": "Double-buffered payload registers carrying gatedBy conditions.",
+      "children": {
+        "DOUBLE_BUF": {
+          "children": {
+            "ENA": {
+              "_": "Double-buffering enable register, one flag per double-buffered register.",
+              "address": { "offset": 16 },
+              "numberOfElements": 3,
+              "representation": { "width": 1 }
+            },
+            "BUF_ID": {
+              "_": "Register holding the inactive buffer id, one value per double-buffered register.",
+              "address": { "offset": 32 },
+              "numberOfElements": 3,
+              "representation": { "width": 1 }
+            }
+          }
+        },
+        "SCRATCH": {
+          "_": "Plain writable register at the SCALAR payload address: lets the test place the value an interrupt reads.",
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_SECONDARY": {
+          "_": "Plain writable register at the SCALAR secondary buffer address: the other buffer a double-buffered read can select.",
+          "address": { "type": "DMA", "offset": "0x1100" },
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_BLOCK": {
+          "_": "Plain writable registers at the BLOCK primary buffer address: lets a test place the raw block the full-register accessor reads.",
+          "address": { "type": "DMA", "offset": "0x2000" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_BLOCK_SECONDARY": {
+          "_": "Plain writable registers at the BLOCK secondary buffer address: the other buffer a double-buffered read can select.",
+          "address": { "type": "DMA", "offset": "0x2100" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_PER_CHANNEL": {
+          "_": "Plain writable registers at the PER_CHANNEL primary buffer address: lets a test place the raw block the channel slices read.",
+          "address": { "type": "DMA", "offset": "0x3000" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "SCRATCH_PER_CHANNEL_SECONDARY": {
+          "_": "Plain writable registers at the PER_CHANNEL secondary buffer address: the other buffer a double-buffered read can select.",
+          "address": { "type": "DMA", "offset": "0x3100" },
+          "numberOfElements": 4,
+          "representation": { "width": 32 }
+        },
+        "SCALAR": {
+          "_": "Gated double-buffered scalar register (DAQ.SCALAR), gated by CTRL.SEL == 1.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.SEL", "value": 1 },
+          "address": { "type": "DMA", "offset": "0x1000" },
+          "doubleBuffering": {
+            "secondaryBufferAddress": { "type": "DMA", "offset": "0x1100" },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.BUF_ID",
+            "index": 0
+          },
+          "representation": { "width": 32 }
+        },
+        "BLOCK": {
+          "_": "Double-buffered 2D register with a register-level gate only (CTRL.BLOCK_SEL == 5); the channels carry no gate of their own.",
+          "triggeredByInterrupt": [ 1 ],
+          "gatedBy": { "register": "CTRL.BLOCK_SEL", "value": 5 },
+          "address": { "type": "DMA", "offset": "0x2000" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "doubleBuffering": {
+            "secondaryBufferAddress": { "type": "DMA", "offset": "0x2100" },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.BUF_ID",
+            "index": 1
+          },
+          "channels": {
+            "Ch0": { "bytesPerElement": 2, "offset": 0, "representation": { "type": "fixedPoint", "width": 16 } },
+            "Ch1": { "bytesPerElement": 2, "offset": 2, "representation": { "type": "fixedPoint", "width": 16 } }
+          }
+        },
+        "PER_CHANNEL": {
+          "_": "Double-buffered 2D register with per-channel gates (CTRL.CH_SEL == the channel's value).",
+          "triggeredByInterrupt": [ 1 ],
+          "address": { "type": "DMA", "offset": "0x3000" },
+          "numberOfElements": 4,
+          "pitch": 4,
+          "doubleBuffering": {
+            "secondaryBufferAddress": { "type": "DMA", "offset": "0x3100" },
+            "enableRegister": "DAQ.DOUBLE_BUF.ENA",
+            "readBufferRegister": "DAQ.DOUBLE_BUF.BUF_ID",
+            "index": 2
+          },
+          "channels": {
+            "Ch0": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 0 },
+              "bytesPerElement": 2,
+              "offset": 0,
+              "representation": { "type": "fixedPoint", "width": 16 }
+            },
+            "Ch1": {
+              "gatedBy": { "register": "CTRL.CH_SEL", "value": 1 },
+              "bytesPerElement": 2,
+              "offset": 2,
+              "representation": { "type": "fixedPoint", "width": 16 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

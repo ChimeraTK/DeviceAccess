@@ -725,6 +725,346 @@ BOOST_AUTO_TEST_CASE(TestMergeStridedChannelSlices) {
   }
 }
 
+BOOST_AUTO_TEST_CASE(TestGatedByScalarPolled) {
+  // A scalar register with a gatedBy reports valid data while its gating register holds the configured value and
+  // faulty data while it does not. The payload through a closed gate is unspecified and not asserted.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the payload address lets the test place the raw word the gated accessor reads.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  scratch[0] = 0x1234U;
+  scratch.write();
+  auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
+
+  // Open gate: CTRL.SEL == 1 is the configured value.
+  sel = 1;
+  sel.write();
+  plain.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plain) == 0x1234U);
+
+  // Closed gate: any other value of the gating register.
+  sel = 0;
+  sel.write();
+  plain.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Reopening restores good data.
+  sel = 1;
+  sel.write();
+  plain.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plain) == 0x1234U);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByAlternativesPolled) {
+  // Two registers share the same address and differ only in their gatedBy value, so changing the gating register
+  // returns the other alternative.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  scratch[0] = 0x1234U;
+  scratch.write();
+  auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
+  auto plainAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN_ALT");
+
+  // CTRL.SEL == 1 opens PLAIN and closes PLAIN_ALT.
+  sel = 1;
+  sel.write();
+  plain.read();
+  plainAlt.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plain) == 0x1234U);
+  BOOST_TEST(plainAlt.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // CTRL.SEL == 2 swaps the roles.
+  sel = 2;
+  sel.write();
+  plain.read();
+  plainAlt.read();
+  BOOST_TEST(plain.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_TEST(plainAlt.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(plainAlt) == 0x1234U);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByOneDArrayPolled) {
+  // A 1D register carries the same whole-register gate as a scalar one.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // The ARRAY payload sits at word offsets 4..6 of the scratch.
+  scratch[4] = 0x1111U;
+  scratch[5] = 0x2222U;
+  scratch[6] = 0x3333U;
+  scratch.write();
+  auto array = device.getOneDRegisterAccessor<uint32_t>("DATA/ARRAY");
+
+  sel = 1;
+  sel.write();
+  array.read();
+  BOOST_TEST(array.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(array[0] == 0x1111U);
+  BOOST_TEST(array[1] == 0x2222U);
+  BOOST_TEST(array[2] == 0x3333U);
+
+  sel = 0;
+  sel.write();
+  array.read();
+  BOOST_TEST(array.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByNonScalarGatingRegisterRejected) {
+  // A gating register that is not scalar (multi-element or 2D) is rejected with a clear error when the gated
+  // accessor is created.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  BOOST_CHECK_THROW(
+      std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_ARR"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      std::ignore = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_2D"), ChimeraTK::logic_error);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByBitRangeGatingRegisterPolled) {
+  // A bit-range gating register is accepted and gates correctly.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto brSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/BR_SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // The GATED_BY_BR payload sits at word offset 10 of the scratch.
+  scratch[10] = 0x55U;
+  scratch.write();
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_BR");
+
+  // CTRL.BR_SEL == 3 is the configured value.
+  brSel = 3;
+  brSel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x55U);
+
+  brSel = 1;
+  brSel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByBitRangeAccessorPolled) {
+  // A gated register whose own representation has a non-zero bitShift is a bit-range accessor itself. It reports
+  // faulty data while its gate is closed and the data while it is open.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // GATED_BIT_RANGE is the 8-bit field at bits 4..11 of word offset 9; the raw word carries the payload value 0x5.
+  scratch[9] = 0x5U << 4U;
+  scratch.write();
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BIT_RANGE");
+
+  // CTRL.SEL == 1 is the configured value.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
+
+  // Any other value closes the gate.
+  sel = 0;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Reopening restores good data.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x5U);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByBitRangeChildSlicePolled) {
+  // A bit-field child slice of a gated channel carries the channel's gate. It reports faulty data while the gate is
+  // closed and the data while it is open.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedBy2D.jmap)");
+
+  auto chSel = device.getScalarRegisterAccessor<uint32_t>("CTRL/CH_SEL");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DAQ/SCRATCH");
+  // The Flag bit is bit 2 of the first element of GATED_STATUS, i.e. of the first scratch word.
+  scratch[0] = 0x4U;
+  scratch.write();
+  auto flag = device.getScalarRegisterAccessor<uint32_t>("DAQ/GATED_STATUS/StatusCh0/Flag");
+
+  // The channel is gated by CTRL.CH_SEL == 1.
+  chSel = 1;
+  chSel.write();
+  flag.read();
+  BOOST_TEST(flag.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(flag) == 1U);
+
+  chSel = 0;
+  chSel.write();
+  flag.read();
+  BOOST_TEST(flag.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByUnsignedTopBitPolled) {
+  // An unsigned gate value with the top bit set gates correctly.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto top = device.getScalarRegisterAccessor<uint32_t>("CTRL/TOP");
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH");
+  // The GATED_BY_TOP payload sits at word offset 11 of the scratch.
+  scratch[11] = 0x77U;
+  scratch.write();
+  auto gated = device.getScalarRegisterAccessor<uint32_t>("DATA/GATED_BY_TOP");
+
+  // The configured value is 2^31, i.e. only the top bit set.
+  top = 0x80000000U;
+  top.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(static_cast<uint32_t>(gated) == 0x77U);
+
+  // The same register value with the top bit cleared closes the gate.
+  top = 0x7fffffffU;
+  top.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByAsciiPolled) {
+  // A gated ASCII ("string") register is gated like a numeric one: a polled read reports faulty data while its gate
+  // is closed and the data while it is open. The payload through a closed gate is unspecified and not asserted.
+  ChimeraTK::Device device;
+  device.open("(dummy?map=gatedByScalar.jmap)");
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  // A writable register at the payload address lets the test place the raw bytes the ASCII accessor reads.
+  auto scratch = device.getOneDRegisterAccessor<uint32_t>("DATA/SCRATCH_STR");
+  auto gated = device.getOneDRegisterAccessor<std::string>("DATA/STRING_GATED");
+
+  // "AB" in the first character slot, "CD" in the second.
+  scratch[0] = 0x4241U;
+  scratch[1] = 0x4443U;
+  scratch.write();
+
+  // Open gate: CTRL.SEL == 1 is the configured value.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "AB");
+  BOOST_TEST(gated[1] == "CD");
+
+  // Closed gate: any other value of the gating register.
+  sel = 0;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Reopening restores good data.
+  sel = 1;
+  sel.write();
+  gated.read();
+  BOOST_TEST(gated.dataValidity() == ChimeraTK::DataValidity::ok);
+  BOOST_TEST(gated[0] == "AB");
+}
+
+/**********************************************************************************************************************/
+
+// A backend that counts the reads of each hardware address, so a test can check that one gating register is read once
+// per transfer however many consumers it gates.
+class GatedReadCountBackend : public DummyBackend {
+ public:
+  explicit GatedReadCountBackend(const std::string& mapFileName) : DummyBackend(mapFileName) {}
+
+  void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
+    ++_readCount[address];
+    DummyBackend::read(bar, address, data, sizeInBytes);
+  }
+
+  /** Number of reads of the given hardware address since construction. */
+  size_t readsOf(uint64_t address) const {
+    auto it = _readCount.find(address);
+    return it == _readCount.end() ? 0 : it->second;
+  }
+
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return boost::make_shared<GatedReadCountBackend>(parameters.at("map"));
+  }
+
+ private:
+  std::map<uint64_t, size_t> _readCount;
+
+  struct Registerer {
+    Registerer() {
+      ChimeraTK::BackendFactory::getInstance().registerBackendType(
+          "GatedReadCountBackend", &GatedReadCountBackend::createInstance, {"map"});
+    }
+  };
+  static Registerer _registerer;
+};
+
+GatedReadCountBackend::Registerer GatedReadCountBackend::_registerer;
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestGatedByGatingRegisterReadOncePerTransfer) {
+  // Two gated consumers share one gating register. The gate accessors merge, so the gating register is read exactly
+  // once per transfer even though two gated consumers are served. This also holds after a transfer-group merge of the
+  // payload accessors.
+  ChimeraTK::Device device;
+  device.open("(GatedReadCountBackend?map=gatedByScalar.jmap)");
+
+  auto backend = boost::dynamic_pointer_cast<GatedReadCountBackend>(device.getBackend());
+  BOOST_REQUIRE(backend != nullptr);
+
+  auto sel = device.getScalarRegisterAccessor<uint32_t>("CTRL/SEL");
+  sel = 1;
+  sel.write();
+
+  // DATA/PLAIN and DATA/PLAIN_ALT share the gating register CTRL.SEL but sit at one address, so their payload
+  // elements merge in the transfer group.
+  auto plain = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN");
+  auto plainAlt = device.getScalarRegisterAccessor<uint32_t>("DATA/PLAIN_ALT");
+
+  ChimeraTK::TransferGroup group;
+  group.addAccessor(plain);
+  group.addAccessor(plainAlt);
+
+  const uint64_t selAddress = 0; // CTRL.SEL is the gating register at offset 0.
+  auto before = backend->readsOf(selAddress);
+  group.read();
+  // One gating register read for the whole transfer, however many consumers it gates.
+  BOOST_TEST(backend->readsOf(selAddress) == before + 1);
+}
+
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
