@@ -6,7 +6,6 @@
 #include "async/GenericMuxedInterruptDistributor.h"
 #include "async/SubDomain.h"
 #include "async/TriggeredPollDistributor.h"
-#include "JsonExtensions.h"
 #include "NumericAddressedRegisterCatalogue.h"
 
 #include <nlohmann/json.hpp> // https://json.nlohmann.me/features/element_access/

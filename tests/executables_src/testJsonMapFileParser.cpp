@@ -1362,6 +1362,8 @@ BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotFound) {
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
 }
 
+/**********************************************************************************************************************/
+
 // S2: a selector register that is itself conditionally enabled by a 'selectedBy' of its own must be rejected: a
 // selector drives the gate of another register and must therefore be readable unconditionally.
 BOOST_AUTO_TEST_CASE(TestSelectedBySelectorItselfGated) {
@@ -1417,10 +1419,14 @@ BOOST_AUTO_TEST_CASE(TestSelectedByReadWriteRejected) {
   BOOST_CHECK_THROW(parseSelectedByAccessFixture("RW"), ChimeraTK::logic_error);
 }
 
+/**********************************************************************************************************************/
+
 // PR2: 'selectedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
 BOOST_AUTO_TEST_CASE(TestSelectedByWriteOnlyRejected) {
   BOOST_CHECK_THROW(parseSelectedByAccessFixture("WO"), ChimeraTK::logic_error);
 }
+
+/**********************************************************************************************************************/
 
 // PR3: 'selectedBy' on a register with Access::READ_ONLY is accepted.
 BOOST_AUTO_TEST_CASE(TestSelectedByReadOnlyAccepted) {
@@ -1430,6 +1436,8 @@ BOOST_AUTO_TEST_CASE(TestSelectedByReadOnlyAccepted) {
   BOOST_TEST(reg.channels[0].selectedBy->regPath == "/APP/SEL");
   BOOST_TEST(reg.channels[0].selectedBy->val == 1);
 }
+
+/**********************************************************************************************************************/
 
 // PR4: 'selectedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
 // 'triggeredByInterrupt' (which implies read-only) instead of 'access'.

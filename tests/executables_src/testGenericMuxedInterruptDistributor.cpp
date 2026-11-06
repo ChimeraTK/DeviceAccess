@@ -183,6 +183,8 @@ BOOST_FIXTURE_TEST_CASE(inactiveIER, Inactive0) {
   BOOST_TEST(ier == 0x0);
 }
 
+/**********************************************************************************************************************/
+
 struct Active0 : public TestFixture {
   Active0() : TestFixture(0, true) {}
 };
@@ -370,6 +372,9 @@ struct MerInactiveTestFixture : public MasterEnableTest {
 BOOST_FIXTURE_TEST_CASE(testMerInactive, MerInactiveTestFixture) {
   run();
 }
+
+/**********************************************************************************************************************/
+
 struct MerActiveTestFixture : public MasterEnableTest {
   MerActiveTestFixture() : MasterEnableTest(3, "MER", true) {}
 };
@@ -437,6 +442,8 @@ BOOST_FIXTURE_TEST_CASE(testSieCie, Inactive5) {
   BOOST_TEST(cie.readAndGet() == 0x10);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testSieCieMulti1, Inactive5) {
   // Mixed activation: the second accessor is created AFTER activateAsyncRead
   auto sie = device.getScalarRegisterAccessor<int>("TEST5/SIE/DUMMY_READABLE");
@@ -475,6 +482,8 @@ BOOST_FIXTURE_TEST_CASE(testSieCieMulti1, Inactive5) {
   BOOST_TEST(cie.readAndGet() == 0x30);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testSieCieMulti2, Inactive5) {
   // Create both accessors first, then call activateAsyncRead()
   // No need to check the clear section again. It's the same as above.
@@ -498,6 +507,9 @@ struct GieInactiveTestFixture : public MasterEnableTest {
 BOOST_FIXTURE_TEST_CASE(testGieInactive, GieInactiveTestFixture) {
   run();
 }
+
+/**********************************************************************************************************************/
+
 struct GieActiveTestFixture : public MasterEnableTest {
   GieActiveTestFixture() : MasterEnableTest(6, "GIE", true) {}
 };
@@ -513,6 +525,9 @@ struct MieInactiveTestFixture : public MasterEnableTest {
 BOOST_FIXTURE_TEST_CASE(testMieInactive, MieInactiveTestFixture) {
   run();
 }
+
+/**********************************************************************************************************************/
+
 struct MieActiveTestFixture : public MasterEnableTest {
   MieActiveTestFixture() : MasterEnableTest(7, "MIE", true) {}
 };

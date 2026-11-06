@@ -4,7 +4,7 @@
 #include "JsonMapFileParser.h"
 
 #include "async/MuxedInterruptDistributor.h"
-#include "JsonExtensions.h"
+#include "JsonExtensions.h" // IWYU pragma: keep - used indirectly by nlohmann json
 #include "SupportedUserTypes.h"
 
 #include <nlohmann/json.hpp>
