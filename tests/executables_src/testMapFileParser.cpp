@@ -11,7 +11,9 @@ using namespace boost::unit_test_framework;
 #include "MapFileParser.h"
 #include "NumericAddressedRegisterCatalogue.h"
 
+#include <set>
 #include <sstream>
+#include <vector>
 
 using namespace ChimeraTK;
 using namespace boost::unit_test_framework;
@@ -23,7 +25,7 @@ BOOST_AUTO_TEST_SUITE(MapFileParserTestSuite)
 void printRegInfo(const ChimeraTK::NumericAddressedRegisterInfo& info, std::ostream& ostr = std::cout) {
   ostr << "Register " << info.pathName << ": at " << info.bar << "," << info.address << " nElems = " << info.nElements
        << " pitch = " << info.elementPitchBits << " access: " << int(info.registerAccess) << " int: [";
-  for(auto i : info.interruptId) {
+  for(auto i : info.numericInterruptId().value_or(std::vector<size_t>{})) {
     ostr << i << ",";
   }
   ostr << "]" << std::endl;
@@ -223,11 +225,14 @@ BOOST_AUTO_TEST_CASE(testGoodMappFileParse) {
   RegisterInfoents[18] =
       ChimeraTK::NumericAddressedRegisterInfo("LARGE_BAR.NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true);
   RegisterInfoents[19] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {3});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+      std::vector<size_t>{3});
   RegisterInfoents[20] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {2});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+      std::vector<size_t>{2});
   RegisterInfoents[21] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {6});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{6});
 
   compareCatalogue(regcat, RegisterInfoents);
 }
@@ -268,52 +273,58 @@ BOOST_AUTO_TEST_CASE(testInterruptMapFileParse) {
   std::vector<ChimeraTK::NumericAddressedRegisterInfo> RegisterInfoents(13);
 
   RegisterInfoents[0] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_VOID_1", 0x00, 0x0, 0x00, 0x0, 0, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {0});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+      std::vector<size_t>{0});
 
   RegisterInfoents[1] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_VOID_2", 0x00, 0x0, 0x00, 0x0, 0, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {1, 1});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+      std::vector<size_t>{1, 1});
 
   RegisterInfoents[2] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_VOID_3", 0x00, 0x0, 0x00, 0x0, 0, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {2, 2, 2});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+      std::vector<size_t>{2, 2, 2});
 
   RegisterInfoents[3] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_UINT_1", 0x01, 0x100, 0x04, 0x0, 32, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {20});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{20});
 
-  RegisterInfoents[4] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.SUB_INTERRUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32, 0, true,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {21, 1});
+  RegisterInfoents[4] = ChimeraTK::NumericAddressedRegisterInfo("APP0.SUB_INTERRUPT_INT_1", 0x01, 0x104, 0x04, 0x0, 32,
+      0, true, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{21, 1});
 
-  RegisterInfoents[5] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.SUB_SUB_INTERRUPT_INT_2", 0x01, 0x108, 0x04, 0x0, 32, 0, true,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {22, 3, 4});
+  RegisterInfoents[5] = ChimeraTK::NumericAddressedRegisterInfo("APP0.SUB_SUB_INTERRUPT_INT_2", 0x01, 0x108, 0x04, 0x0,
+      32, 0, true, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{22, 3, 4});
 
-  RegisterInfoents[6] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04, 0x0, 32, 24, true,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {3});
+  RegisterInfoents[6] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_FIXPOINT_SIGNED", 0x01, 0x200, 0x04,
+      0x0, 32, 24, true, NumericAddressedRegisterInfo::Access::INTERRUPT,
+      NumericAddressedRegisterInfo::Type::FIXED_POINT, std::vector<size_t>{3});
 
-  RegisterInfoents[7] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04, 0x0, 32, 24, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {3});
+  RegisterInfoents[7] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_FIXPOINT_UNSIGNED", 0x01, 0x220, 0x04,
+      0x0, 32, 24, false, NumericAddressedRegisterInfo::Access::INTERRUPT,
+      NumericAddressedRegisterInfo::Type::FIXED_POINT, std::vector<size_t>{3});
 
   RegisterInfoents[8] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_ARRAY_UINT", 0x03, 0x300, 12, 0x0, 32,
-      0, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {4});
+      0, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{4});
 
   RegisterInfoents[9] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_ARRAY_INT", 0x03, 0x400, 12, 0x0, 32, 0,
-      true, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {4});
+      true, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{4});
 
-  RegisterInfoents[10] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0, 32, 24, false,
-          NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {4});
+  RegisterInfoents[10] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_ARRAY_FIXPOINT", 0x03, 0x500, 12, 0x0,
+      32, 24, false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{4});
 
   RegisterInfoents[11] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_AREA_INT", 0x0, 0x0, 0x05, 96,
       {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32},
           {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32},
           {64, NumericAddressedRegisterInfo::Type::FIXED_POINT, 16, 0, false, DataType::int32}},
-      NumericAddressedRegisterInfo::Access::INTERRUPT, {5});
+      NumericAddressedRegisterInfo::Access::INTERRUPT, std::vector<size_t>{5});
 
-  RegisterInfoents[12] =
-      ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_AREA_INT.MULTIPLEXED_RAW", 0x0f, 0x0, 0x3c, 0x0, 32, 0,
-          true, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {5});
+  RegisterInfoents[12] = ChimeraTK::NumericAddressedRegisterInfo("APP0.INTERRUPT_AREA_INT.MULTIPLEXED_RAW", 0x0f, 0x0,
+      0x3c, 0x0, 32, 0, true, NumericAddressedRegisterInfo::Access::INTERRUPT,
+      NumericAddressedRegisterInfo::Type::FIXED_POINT, std::vector<size_t>{5});
 
   compareCatalogue(regcat, RegisterInfoents);
 }
@@ -376,11 +387,14 @@ BOOST_AUTO_TEST_CASE(testMapFileWithCommentsParse) {
   RegisterInfoents[18] =
       ChimeraTK::NumericAddressedRegisterInfo("LARGE_BAR.NUMBER", 0x01, 0x0, 0x04, 0x100000000, 32, 0, true);
   RegisterInfoents[19] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID1", 0x00, 0x0, 0x00, 0, 0, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {1, 3});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+      std::vector<size_t>{1, 3});
   RegisterInfoents[20] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_VOID2", 0x00, 0x0, 0x00, 0, 0, 0,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID, {1, 2});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
+      std::vector<size_t>{1, 2});
   RegisterInfoents[21] = ChimeraTK::NumericAddressedRegisterInfo("MODULE0.INTERRUPT_TYPE", 0x01, 0x68, 0x04, 1, 18, 5,
-      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT, {5, 6});
+      false, NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{5, 6});
 
   compareCatalogue(regcat, RegisterInfoents);
 }
@@ -509,6 +523,27 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
           NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, {});
 
   compareCatalogue(regcat, RegisterInfoents);
+}
+
+/**********************************************************************************************************************/
+
+// The parsed catalogue completes its interrupt bookkeeping before it is returned: every interrupt register of the map
+// file is in the list of interrupts and each of its canonical interrupt paths resolves to it. A *.mapp file carries
+// numeric ids only, so nothing has to be resolved, but the explicit finalisation step still runs.
+BOOST_AUTO_TEST_CASE(testInterruptBookkeepingFinalised) {
+  auto [regcat, mdcat] = ChimeraTK::MapFileParser::parse("interruptMapFile.map");
+
+  // The map file declares the ids [0], [1,1], [2,2,2], [20], [21,1], [22,3,4], [3], [4] and [5]; registers sharing an
+  // id collapse into one entry each.
+  const std::set<std::vector<size_t>> expectedInterrupts{
+      {0}, {1, 1}, {2, 2, 2}, {20}, {21, 1}, {22, 3, 4}, {3}, {4}, {5}};
+  BOOST_TEST((regcat.getListOfInterrupts() == expectedInterrupts));
+
+  // A hierarchical id resolves through each of its canonical interrupt paths.
+  BOOST_TEST((regcat.getBackendRegister("!22").numericInterruptId() == std::vector<size_t>{22}));
+  BOOST_TEST((regcat.getBackendRegister("!22:3").numericInterruptId() == std::vector<size_t>{22, 3}));
+  BOOST_TEST((regcat.getBackendRegister("!22:3:4").numericInterruptId() == std::vector<size_t>{22, 3, 4}));
+  BOOST_CHECK(regcat.hasRegister("!22:3:4"));
 }
 
 /**********************************************************************************************************************/

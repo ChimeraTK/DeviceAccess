@@ -20,6 +20,14 @@ namespace ChimeraTK {
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
    public:
+    /**
+     * Constructor taking a map file name or an already parsed catalogue.
+     *
+     * A catalogue passed in place of a map file name must already be finalised with
+     * NumericAddressedRegisterCatalogue::finaliseInterruptBookkeeping() once its last register has been added, or be
+     * empty: the backend never finalises a passed catalogue itself. A catalogue parsed from the map file name is
+     * finalised by the parser and needs no further call.
+     */
     explicit NumericAddressedBackend(const std::string& mapFileName = "",
         std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer =
             std::make_unique<NumericAddressedRegisterCatalogue>(),

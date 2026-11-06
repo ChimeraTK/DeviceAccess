@@ -19,6 +19,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <cassert>
 #include <filesystem>
 
 using json = nlohmann::json;
@@ -142,10 +143,14 @@ namespace ChimeraTK {
             "Register " + registerPathName + " does not support AccessMode::wait_for_new_data.");
       }
 
+      // An interrupt register without an id has no qualified async id, and taking front() of the empty vector would be
+      // undefined behaviour. Both parsers finalise the catalogues they produce, so only a hand-built catalogue that was
+      // never finalised reaches this.
+      auto qualifiedAsyncId = registerInfo.getQualifiedAsyncId();
+      assert(!qualifiedAsyncId.empty() && "Interrupt register without interrupt id; is its catalogue finalised?");
       return _asyncDomainsContainer.subscribe<NumericAddressedBackend, std::nullptr_t, UserType>(
-          boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()),
-          registerInfo.getQualifiedAsyncId().front(), _asyncIsActive, registerPathName, numberOfWords,
-          wordOffsetInRegister, flags);
+          boost::static_pointer_cast<NumericAddressedBackend>(shared_from_this()), qualifiedAsyncId.front(),
+          _asyncIsActive, registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
     return getSyncRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
   }

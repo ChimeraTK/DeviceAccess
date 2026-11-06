@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include <stdexcept>
 #include <utility>
 
@@ -20,16 +21,17 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint32_t nElements_,
       uint64_t address_, uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
-      Access dataAccess_, Type dataType_, std::vector<size_t> interruptId_,
+      Access dataAccess_, Type dataType_, std::optional<InterruptId> interruptId_,
       std::optional<DoubleBufferInfo> doubleBufferInfo_, bool isBitRange_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(nElements_ > 0 ? nBytes_ / nElements_ * 8 : 0),
-    bar(bar_), address(address_), registerAccess(dataAccess_), interruptId(std::move(interruptId_)),
-    doubleBuffer(std::move(doubleBufferInfo_)), isBitRange(isBitRange_),
-    channels({{0, dataType_, width_, nFractionalBits_, signedFlag_,
-        nElements_ > 0 ? ChimeraTK::DataType("int" + std::to_string(elementPitchBits)) :
-                         ChimeraTK::DataType(ChimeraTK::DataType::Void),
-        std::nullopt}}) {
+    bar(bar_), address(address_), registerAccess(dataAccess_), doubleBuffer(std::move(doubleBufferInfo_)),
+    isBitRange(isBitRange_), channels({{0, dataType_, width_, nFractionalBits_, signedFlag_,
+                                 nElements_ > 0 ? ChimeraTK::DataType("int" + std::to_string(elementPitchBits)) :
+                                                  ChimeraTK::DataType(ChimeraTK::DataType::Void),
+                                 std::nullopt}}) {
     assert(channels.size() == 1);
+
+    interruptId = std::move(interruptId_);
 
     // make sure . and / is treated as similar as possible
     pathName.setAltSeparator(".");
@@ -50,11 +52,13 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_,
       uint64_t address_, uint32_t nElements_, uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_,
-      Access dataAccess_, std::vector<size_t> interruptId_, std::optional<DoubleBufferInfo> doubleBufferInfo_)
+      Access dataAccess_, std::optional<InterruptId> interruptId_, std::optional<DoubleBufferInfo> doubleBufferInfo_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(elementPitchBits_), bar(bar_), address(address_),
-    registerAccess(dataAccess_), interruptId(std::move(interruptId_)), doubleBuffer(std::move(doubleBufferInfo_)),
-    isBitRange(false), channels(std::move(channelInfo_)) {
+    registerAccess(dataAccess_), doubleBuffer(std::move(doubleBufferInfo_)), isBitRange(false),
+    channels(std::move(channelInfo_)) {
     assert(!channels.empty());
+
+    interruptId = std::move(interruptId_);
 
     // make sure . and / is treated as similar as possible
     pathName.setAltSeparator(".");
@@ -174,7 +178,19 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   std::vector<size_t> NumericAddressedRegisterInfo::getQualifiedAsyncId() const {
-    return interruptId;
+    return numericInterruptId().value_or(std::vector<size_t>{});
+  }
+
+  /********************************************************************************************************************/
+
+  std::optional<std::vector<size_t>> NumericAddressedRegisterInfo::numericInterruptId() const {
+    if(!interruptId.has_value()) {
+      return std::nullopt;
+    }
+    if(const auto* numericId = std::get_if<std::vector<size_t>>(&*interruptId)) {
+      return *numericId;
+    }
+    return std::nullopt;
   }
 
   /********************************************************************************************************************/
@@ -270,7 +286,8 @@ namespace ChimeraTK {
     if(path.startsWith("!")) {
       auto canonicalInterrupt = _canonicalInterrupts.find(path);
       if(canonicalInterrupt == _canonicalInterrupts.end()) {
-        throw ChimeraTK::logic_error("Illegal canonical interrupt path: '" + (path) + "'");
+        throw ChimeraTK::logic_error("Illegal canonical interrupt path: '" + (path) +
+            "'. A missing call to finaliseInterruptBookkeeping() is a possible cause.");
       }
       return NumericAddressedRegisterInfo(path, 0, 0, 0, 0, 0, 0, false,
           NumericAddressedRegisterInfo::Access::INTERRUPT, NumericAddressedRegisterInfo::Type::VOID,
@@ -300,36 +317,95 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void NumericAddressedRegisterCatalogue::addInterruptBookkeeping(const NumericAddressedRegisterInfo& registerInfo) {
-    if(registerInfo.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
-      return;
+  void NumericAddressedRegisterCatalogue::finaliseInterruptBookkeeping() {
+    _listOfInterrupts.clear();
+    _canonicalInterrupts.clear();
+
+    // Resolve the register-name references first, so no register is indexed while its id is still a name. The paths
+    // are collected first, so the catalogue is not modified while it is iterated.
+    std::vector<RegisterPath> referringPaths;
+    for(const auto& registerInfo : *this) {
+      if(registerInfo.interruptId.has_value() && std::holds_alternative<std::string>(*registerInfo.interruptId)) {
+        referringPaths.push_back(registerInfo.pathName);
+      }
     }
-    _listOfInterrupts.insert(registerInfo.interruptId);
-    // Build the canonical interrupt path for every prefix of the id and map each one to the id prefix it names: !I for
-    // the primary interrupt, !I:M, !I:M:N, ... for the sub levels. This is what resolves a canonical interrupt path to
-    // its (hierarchical) interrupt id.
-    RegisterPath canonicalName = "!" + std::to_string(registerInfo.interruptId.front());
-    std::vector<size_t> canonicalID = {registerInfo.interruptId.front()};
-    _canonicalInterrupts[canonicalName] = canonicalID;
-    for(auto subId = ++registerInfo.interruptId.begin(); subId != registerInfo.interruptId.end(); ++subId) {
-      canonicalName += ":" + std::to_string(*subId);
-      canonicalID.push_back(*subId);
+    for(const auto& referringPath : referringPaths) {
+      auto referringRegister = getBackendRegister(referringPath);
+      RegisterPath targetPath = std::get<std::string>(*referringRegister.interruptId);
+      targetPath.setAltSeparator(".");
+      referringRegister.interruptId = resolveInterruptReference(targetPath);
+      modifyRegister(referringRegister);
+    }
+
+    for(const auto& registerInfo : *this) {
+      // An interrupt register without an id cannot be notified.
+      if(registerInfo.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
+        continue;
+      }
+      auto interruptId = registerInfo.numericInterruptId();
+      if(!interruptId.has_value() || interruptId->empty()) {
+        throw ChimeraTK::logic_error(std::format(
+            "NumericAddressedRegisterCatalogue::finaliseInterruptBookkeeping(): interrupt register '{}' has no "
+            "interrupt id.",
+            std::string(registerInfo.pathName)));
+      }
+      _listOfInterrupts.insert(*interruptId);
+      // Build the canonical interrupt path for every prefix of the id and map each one to the id prefix it names:
+      // !I for the primary interrupt, !I:M, !I:M:N, ... for the sub levels. This is what resolves a canonical
+      // interrupt path to its (hierarchical) interrupt id.
+      RegisterPath canonicalName = "!" + std::to_string(interruptId->front());
+      std::vector<size_t> canonicalID = {interruptId->front()};
       _canonicalInterrupts[canonicalName] = canonicalID;
+      for(auto subId = ++interruptId->begin(); subId != interruptId->end(); ++subId) {
+        canonicalName += ":" + std::to_string(*subId);
+        canonicalID.push_back(*subId);
+        _canonicalInterrupts[canonicalName] = canonicalID;
+      }
     }
   }
 
   /********************************************************************************************************************/
 
-  void NumericAddressedRegisterCatalogue::addRegister(const NumericAddressedRegisterInfo& registerInfo) {
-    addInterruptBookkeeping(registerInfo);
-    BackendRegisterCatalogue<NumericAddressedRegisterInfo>::addRegister(registerInfo);
-  }
+  std::vector<size_t> NumericAddressedRegisterCatalogue::resolveInterruptReference(
+      const RegisterPath& targetPath) const {
+    std::vector<RegisterPath> chain;
+    RegisterPath current = targetPath;
+    while(true) {
+      if(std::ranges::find(chain, current) != chain.end()) {
+        std::string chainText;
+        for(const auto& path : chain) {
+          chainText += std::format(" {} ->", std::string(path));
+        }
+        throw ChimeraTK::logic_error(
+            std::format("'triggeredByInterrupt' reference cycle:{}{}", chainText, std::string(current)));
+      }
+      chain.push_back(current);
 
-  /********************************************************************************************************************/
+      if(!hasRegister(current)) {
+        throw ChimeraTK::logic_error(
+            std::format("'triggeredByInterrupt' references non-existent register '{}'.", std::string(current)));
+      }
 
-  void NumericAddressedRegisterCatalogue::modifyRegister(const NumericAddressedRegisterInfo& registerInfo) {
-    addInterruptBookkeeping(registerInfo);
-    BackendRegisterCatalogue<NumericAddressedRegisterInfo>::modifyRegister(registerInfo);
+      // A target that names another reference continues the chain.
+      auto target = getBackendRegister(current);
+      if(target.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
+        throw ChimeraTK::logic_error(
+            std::format("'triggeredByInterrupt' target '{}' is not an interrupt register.", std::string(current)));
+      }
+      if(const auto* reference = target.interruptId ? std::get_if<std::string>(&*target.interruptId) : nullptr) {
+        current = *reference;
+        current.setAltSeparator(".");
+        continue;
+      }
+
+      // The end of the chain must carry a numeric id.
+      auto numericId = target.numericInterruptId();
+      if(!numericId.has_value() || numericId->empty()) {
+        throw ChimeraTK::logic_error(
+            std::format("'triggeredByInterrupt' target '{}' is not an interrupt register.", std::string(current)));
+      }
+      return *numericId;
+    }
   }
 
   /********************************************************************************************************************/
