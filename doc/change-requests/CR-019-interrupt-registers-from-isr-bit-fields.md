@@ -320,11 +320,18 @@ parse-time `logic_error`, with a temporary map file.
 - A non-scalar `ISR` (several elements, or declared with `channels`):
 parse-time `logic_error`, with a temporary map file.
 - Covers the scalar-`ISR` requirement (Requirements).
+- Double-buffered `ISR`: a temporary map puts a `doubleBuffering` block on
+`DAQ/ISR`, giving a parse-time `logic_error`.
+- Covers the double-buffered-`ISR` requirement (Requirements): the `BUF0`/`BUF1`
+children are not bit fields, so the child scan rejects them.
 - `ISR` without any child: parses, no error, catalogue unchanged.
 - Covers the empty-`ISR` requirement (Requirements).
 - Missing `ISR`: parse-time `logic_error`, with a map file written to a
-temporary file that lacks the `ISR`.
-- Covers the missing-`P/ISR` requirement (Requirements).
+temporary file that lacks the `ISR`; one case removes the `ISR` of a used
+handler (`DAQ`), another removes that of an unused handler entry
+(`MY_INTC.SUB1`, handler `[3,1]`, referenced by no register).
+- Covers the missing-`P/ISR` requirement (Requirements) for used and unused
+entries alike.
 - Duplicate bit position: two children with the same bit position give a
 parse-time `logic_error`, with a temporary map file.
 - Covers the duplicate-bit-position requirement (Requirements).
@@ -393,3 +400,22 @@ entry. The error comes from the type lookup, before any ISR is opened.
   sentences, e.g. '... so the ids exist while the map file is parsed. Otherwise
   the derived registers would be missing from getListOfInterrupts() and their
   canonical interrupt paths would not resolve.'
+- DI-3 [NEW] Coverage gap: the requirement 'ISR must not be double-buffered ...
+  a double-buffered ISR is an error while parsing the map file' (Requirements;
+  see also the matching 'Alternatives considered' entry) has no test. The Test
+  plan lists every other derivation/validation case but omits this one, and no
+  test exercises it (grep for doubleBuffer in
+  tests/executables_src/testJsonMapFileParser.cpp only shows the pre-existing
+  DAQ.DOUBLE_BUF assertions). A regression that special-cased the BUF0/BUF1
+  views so a double-buffered ISR parses (the exact alternative the CR rejected)
+  would pass the whole suite. Add a temporary-map case that puts a
+  'doubleBuffering' block on DAQ/ISR (reusing the DAQ.DOUBLE_BUF
+  enable/read-buffer registers) and expects a parse-time logic_error.
+- DI-4 [NEW] Coverage gap: the requirement that an INTC handler entry whose
+  P/ISR does not exist is an error 'for used and unused entries alike' is only
+  tested for the used handler [0]. TestIsrMissing (testJsonMapFileParser.cpp)
+  removes DAQ/ISR, which IS used (VOID_INTERRUPT_0 and FD declare
+  triggeredByInterrupt [0]), so a regression that validated only used entries
+  would still pass. Add a case that removes an UNUSED handler entry's ISR, e.g.
+  MY_INTC/SUB1/ISR for handler [3,1] (no register references [3,1]), and expects
+  a parse-time logic_error.
