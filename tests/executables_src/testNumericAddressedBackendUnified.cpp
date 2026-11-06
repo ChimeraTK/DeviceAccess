@@ -222,7 +222,9 @@ struct ShortRaw_base {
 
   // This register shares the address space with all our test registers. It gives us direct access to the 4 byte
   // address range, so we can test the correct placement of the unaligned values.
-  DummyRegisterRawAccessor acc{exceptionDummy, "", "/Integers/unsigned32"};
+  // Class template argument deduction does not apply in a non-static data member initialiser, so the default raw type
+  // is named explicitly here (a variable declaration would deduce it via the deduction guide).
+  DummyRegisterRawAccessor<int32_t> acc{exceptionDummy, "", "/Integers/unsigned32"};
 
   rawUserType get() { return (acc & derived->bitmask) >> derived->bitshift; }
 
@@ -910,9 +912,9 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     std::vector<UserType> cookedValues(derived->nElementsPerChannel());
     std::vector<Traw> rawValues(derived->nElementsPerChannel());
 
-    // Keep the scope of the dummy buffer lock as limited as possible (see #12332).
-    // The rawToCooked conversion will acquire a lock via the math plugin decorator,
-    // which will cause lock order inversion if you hold the dummy buffer lock at that point.
+    // The backdoor accessors take no lock themselves, so the caller must hold the buffer lock around the element
+    // accesses. Keep its scope as limited as possible (see #12332): the rawToCooked conversion acquires a lock via the
+    // math plugin decorator, which would cause a lock order inversion if the buffer lock were still held.
     {
       auto bufferLock = derived->acc.getBufferLock();
 
@@ -986,7 +988,7 @@ struct RegBitRangeDescriptor : OneDRegisterDescriptorBase<Derived> {
 
   void setRemoteValue() { derived->target.setRemoteValue(); }
 
-  /// Read the raw full word value from _barContents directly via the DummyRegisterAccessor
+  /// Read the raw full word value from the bar contents directly via the backdoor accessor.
   uint64_t debugReadRawFullWord() { return static_cast<uint64_t>(static_cast<uint32_t>(derived->target.acc)); }
 
   void setForceRuntimeError(bool enable, size_t caseIndex) { derived->target.setForceRuntimeError(enable, caseIndex); }

@@ -146,9 +146,9 @@ struct OneDRegisterDescriptorBase : RegisterDescriptorBase<Derived> {
     std::vector<UserType> cookedValues(derived->nElementsPerChannel());
     std::vector<Traw> rawValues(derived->nElementsPerChannel());
 
-    // Keep the scope of the dummy buffer lock as limited as possible (see #12332).
-    // The rawToCooked conversion will acquire a lock via the math pluging decorator,
-    // which will cause lock order inversion if you hold the dummy buffer lock at that point.
+    // The backdoor accessors take no lock themselves, so the caller must hold the buffer lock around the element
+    // accesses. Keep its scope as limited as possible (see #12332): the rawToCooked conversion acquires a lock via the
+    // math plugin decorator, which would cause a lock order inversion if the buffer lock were still held.
     {
       auto bufferLock = derived->acc.getBufferLock();
 

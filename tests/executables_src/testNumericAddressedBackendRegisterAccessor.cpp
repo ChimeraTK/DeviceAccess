@@ -293,8 +293,7 @@ BOOST_AUTO_TEST_CASE(testConversionTypes) {
   // Fixed point convertion, raw and coocked accessors
   // MODULE0.WORD_USER1 is fixed point, 16 bit, 3 fractional, signed
   auto user1Dummy = dummyBackend->getRawAccessor("MODULE0", "WORD_USER1");
-  // Demonstrate the correct usage of the raw accessor, with using the lock. It would not be strictly needed here
-  // because this is single threaded, but in general it is required.
+  // The backdoor accessors take no lock themselves: hold the buffer lock around each element access.
   {
     auto bufferLock = user1Dummy.getBufferLock();
     user1Dummy = 0x4321;
@@ -370,9 +369,10 @@ BOOST_AUTO_TEST_CASE(testConversionTypes) {
   floatTestCoocked[3] = 44.4;
   floatTestCoocked.write();
 
+  // std::bit_cast deduces the argument type, so the value-semantic proxy must be converted to int32_t first.
   {
     auto bufferLock = floatTestDummy.getBufferLock();
-    testValue = std::bit_cast<float>(floatTestDummy[3]);
+    testValue = std::bit_cast<float>(int32_t(floatTestDummy[3]));
   }
   BOOST_CHECK_CLOSE(testValue, 44.4, 0.0001);
 
@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE(testConversionTypes) {
 
   {
     auto bufferLock = floatTestDummy.getBufferLock();
-    testValue = std::bit_cast<float>(floatTestDummy[0]);
+    testValue = std::bit_cast<float>(int32_t(floatTestDummy[0]));
   }
   BOOST_CHECK_CLOSE(testValue, -2.5, 0.0001);
 
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(testConversionTypes) {
 
   {
     auto bufferLock = floatTestDummy.getBufferLock();
-    testValue = std::bit_cast<float>(floatTestDummy[1]);
+    testValue = std::bit_cast<float>(int32_t(floatTestDummy[1]));
   }
   BOOST_CHECK_CLOSE(testValue, 16.0, 0.001);
 }

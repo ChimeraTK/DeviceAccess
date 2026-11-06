@@ -8,15 +8,20 @@
 #include <boost/lambda/lambda.hpp>
 
 #include <algorithm>
+#include <cstring>
 #include <regex>
 #include <sstream>
 
 namespace ChimeraTK {
 
+  // The deprecated member is initialised here on purpose so legacy downstream code keeps working.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   DummyBackend::DummyBackend(const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
-  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName) {
-    resizeBarContents();
-  }
+  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(mapFileName), _barContents(this) {}
+#pragma GCC diagnostic pop
+
+  /********************************************************************************************************************/
 
   void DummyBackend::open() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -24,16 +29,34 @@ namespace ChimeraTK {
     setOpenedAndClearException();
   }
 
-  void DummyBackend::resizeBarContents() {
-    std::lock_guard<std::mutex> lock(mutex);
-    std::map<uint64_t, size_t> barSizesInBytes = getBarSizesInBytesFromRegisterMapping();
+  /********************************************************************************************************************/
 
-    for(auto& barSizesInByte : barSizesInBytes) {
-      // the size of the vector is in words, not in bytes -> convert fist with rounding up
-      auto nwords = (barSizesInByte.second + sizeof(int32_t) - 1) / sizeof(int32_t);
-      _barContents[barSizesInByte.first].resize(nwords, 0);
+  std::byte* DummyBackend::getChunk(uint64_t bar, uint64_t chunkIndex) {
+    // std::vector<std::byte> is value-initialised on first access because operator[] default-constructs the vector,
+    // which yields a zero-initialised, CHUNK_SIZE big buffer.
+    auto& chunk = _barChunks[{bar, chunkIndex}];
+    if(chunk.empty()) {
+      chunk.resize(CHUNK_SIZE, std::byte{0});
     }
+    return chunk.data();
   }
+
+  /********************************************************************************************************************/
+
+  uint64_t DummyBackend::getBarSizeInBytes(uint64_t bar) const {
+    uint64_t size = 0;
+    for(const auto& registerCatalogueEntry : _registerMap) {
+      const auto& registerInfo = _registerMap.getBackendRegister(registerCatalogueEntry.getRegisterName());
+      if(registerInfo.bar != bar) {
+        continue;
+      }
+      const uint64_t registerSize = static_cast<uint64_t>(registerInfo.nElements) * registerInfo.elementPitchBits / 8U;
+      size = std::max(size, registerInfo.address + registerSize);
+    }
+    return size;
+  }
+
+  /********************************************************************************************************************/
 
   void DummyBackend::closeImpl() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -41,22 +64,34 @@ namespace ChimeraTK {
     _opened = false;
   }
 
+  /********************************************************************************************************************/
+
   void DummyBackend::writeRegisterWithoutCallback(uint64_t bar, uint64_t address, int32_t data) {
     std::lock_guard<std::mutex> lock(mutex);
-    TRY_REGISTER_ACCESS(_barContents[bar].at(address / sizeof(int32_t)) = data;);
+    transferChunked(
+        bar, address, sizeof(int32_t), [this](uint64_t b, uint64_t chunkIndex) { return getChunk(b, chunkIndex); },
+        [&data](size_t size, std::byte* chunk, size_t bytesDone) {
+          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+          std::memcpy(chunk, reinterpret_cast<std::byte*>(&data) + bytesDone, size);
+        });
   }
 
+  /********************************************************************************************************************/
+
   void DummyBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
-    {
-      std::lock_guard<std::mutex> lock(mutex);
-      assert(_opened);
-      checkActiveException();
-      checkSizeIsMultipleOfWordSize(sizeInBytes);
-      unsigned int wordBaseIndex = address / sizeof(int32_t);
-      TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
-          ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
-    }
+    std::lock_guard<std::mutex> lock(mutex);
+    assert(_opened);
+    checkActiveException();
+    checkSizeIsMultipleOfWordSize(sizeInBytes);
+    transferChunked(
+        bar, address, sizeInBytes, [this](uint64_t b, uint64_t chunkIndex) { return getChunk(b, chunkIndex); },
+        [data](size_t size, const std::byte* chunk, size_t bytesDone) {
+          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+          std::memcpy(reinterpret_cast<std::byte*>(data) + bytesDone, chunk, size);
+        });
   }
+
+  /********************************************************************************************************************/
 
   void DummyBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     {
@@ -64,18 +99,19 @@ namespace ChimeraTK {
       assert(_opened);
       checkActiveException();
       checkSizeIsMultipleOfWordSize(sizeInBytes);
-      uint64_t wordBaseIndex = address / sizeof(int32_t);
-      TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
-        if(isReadOnly(bar, address + wordIndex * sizeof(int32_t))) {
-          continue;
-        }
-        _barContents[bar].at(wordBaseIndex + wordIndex) = data[wordIndex];
-      })
+      transferChunked(
+          bar, address, sizeInBytes, [this](uint64_t b, uint64_t chunkIndex) { return getChunk(b, chunkIndex); },
+          [data](size_t size, std::byte* chunk, size_t bytesDone) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+            std::memcpy(chunk, reinterpret_cast<const std::byte*>(data) + bytesDone, size);
+          });
     }
     // we call the callback functions after releasing the mutex in order to
     // avoid the risk of deadlocks.
     runWriteCallbackFunctionsForAddressRange(AddressRange(bar, address, sizeInBytes));
   }
+
+  /********************************************************************************************************************/
 
   std::string DummyBackend::readDeviceInfo() {
     std::stringstream info;
@@ -83,25 +119,15 @@ namespace ChimeraTK {
     return info.str();
   }
 
-  void DummyBackend::setReadOnly(uint64_t bar, uint64_t address, size_t sizeInWords) {
-    for(size_t i = 0; i < sizeInWords; ++i) {
-      _readOnlyAddresses.insert({bar, address + i * sizeof(int32_t)});
-    }
-  }
-
-  void DummyBackend::setReadOnly(AddressRange addressRange) {
-    setReadOnly(addressRange.bar, addressRange.offset, addressRange.sizeInBytes / sizeof(int32_t));
-  }
-
-  bool DummyBackend::isReadOnly(uint64_t bar, uint64_t address) const {
-    return (_readOnlyAddresses.find({bar, address}) != _readOnlyAddresses.end());
-  }
+  /********************************************************************************************************************/
 
   void DummyBackend::setWriteCallbackFunction(
       AddressRange addressRange, boost::function<void(void)> const& writeCallbackFunction) {
     _writeCallbackFunctions.insert(
         std::pair<AddressRange, boost::function<void(void)>>(addressRange, writeCallbackFunction));
   }
+
+  /********************************************************************************************************************/
 
   void DummyBackend::runWriteCallbackFunctionsForAddressRange(AddressRange addressRange) {
     std::list<boost::function<void(void)>> callbackFunctionsForThisRange =
@@ -110,6 +136,8 @@ namespace ChimeraTK {
       function();
     }
   }
+
+  /********************************************************************************************************************/
 
   std::list<boost::function<void(void)>> DummyBackend::findCallbackFunctionsForAddressRange(AddressRange addressRange) {
     // as callback functions are not sortable, we want to loop the multimap only
@@ -135,6 +163,8 @@ namespace ChimeraTK {
     return returnList;
   }
 
+  /********************************************************************************************************************/
+
   bool DummyBackend::isWriteRangeOverlap(AddressRange firstRange, AddressRange secondRange) {
     if(firstRange.bar != secondRange.bar) {
       return false;
@@ -144,17 +174,10 @@ namespace ChimeraTK {
     uint64_t endAddress =
         std::min(firstRange.offset + firstRange.sizeInBytes, secondRange.offset + secondRange.sizeInBytes);
 
-    // if at least one register is writable there is an overlap of writable
-    // registers
-    for(uint64_t address = startAddress; address < endAddress; address += sizeof(int32_t)) {
-      if(!isReadOnly(firstRange.bar, address)) {
-        return true;
-      }
-    }
-
-    // we looped all possible registers, none is writable
-    return false;
+    return startAddress < endAddress;
   }
+
+  /********************************************************************************************************************/
 
   boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(
       // FIXME #11279 Implement API breaking changes from linter warnings
@@ -169,9 +192,7 @@ namespace ChimeraTK {
     return returnInstance<DummyBackend>(address, parameters["map"], parameters["DataConsistencyKeys"]);
   }
 
-  DummyRegisterRawAccessor DummyBackend::getRawAccessor(const std::string& module, const std::string& register_name) {
-    return {shared_from_this(), module, register_name};
-  }
+  /********************************************************************************************************************/
 
   VersionNumber DummyBackend::triggerInterrupt(uint32_t interruptNumber) {
     auto asyncDomain = boost::dynamic_pointer_cast<async::DomainImpl<std::nullptr_t>>(
