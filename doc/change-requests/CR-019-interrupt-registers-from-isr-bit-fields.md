@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: IMPLEMENTATION REVIEWED
+Status: TESTS REVIEWED
 
 ## Requirements
 
@@ -400,25 +400,25 @@ entry. The error comes from the type lookup, before any ISR is opened.
   ids exist while the map file is parsed. Otherwise the derived registers would
   be missing from getListOfInterrupts() and their canonical interrupt paths
   would not resolve.'
-- DI-3 [IMPLEMENTED] Coverage gap: the requirement 'ISR must not be
-  double-buffered ... a double-buffered ISR is an error while parsing the map
-  file' (Requirements; see also the matching 'Alternatives considered' entry)
-  has no test. The Test plan lists every other derivation/validation case but
-  omits this one, and no test exercises it (grep for doubleBuffer in
+- DI-3 [DONE] Coverage gap: the requirement 'ISR must not be double-buffered ...
+  a double-buffered ISR is an error while parsing the map file' (Requirements;
+  see also the matching 'Alternatives considered' entry) has no test. The Test
+  plan lists every other derivation/validation case but omits this one, and no
+  test exercises it (grep for doubleBuffer in
   tests/executables_src/testJsonMapFileParser.cpp only shows the pre-existing
   DAQ.DOUBLE_BUF assertions). A regression that special-cased the BUF0/BUF1
   views so a double-buffered ISR parses (the exact alternative the CR rejected)
   would pass the whole suite. Add a temporary-map case that puts a
   'doubleBuffering' block on DAQ/ISR (reusing the DAQ.DOUBLE_BUF
   enable/read-buffer registers) and expects a parse-time logic_error.
-- DI-4 [IMPLEMENTED] Coverage gap: the requirement that an INTC handler entry
-  whose P/ISR does not exist is an error 'for used and unused entries alike' is
-  only tested for the used handler [0]. TestIsrMissing
-  (testJsonMapFileParser.cpp) removes DAQ/ISR, which IS used (VOID_INTERRUPT_0
-  and FD declare triggeredByInterrupt [0]), so a regression that validated only
-  used entries would still pass. Add a case that removes an UNUSED handler
-  entry's ISR, e.g. MY_INTC/SUB1/ISR for handler [3,1] (no register references
-  [3,1]), and expects a parse-time logic_error.
+- DI-4 [DONE] Coverage gap: the requirement that an INTC handler entry whose
+  P/ISR does not exist is an error 'for used and unused entries alike' is only
+  tested for the used handler [0]. TestIsrMissing (testJsonMapFileParser.cpp)
+  removes DAQ/ISR, which IS used (VOID_INTERRUPT_0 and FD declare
+  triggeredByInterrupt [0]), so a regression that validated only used entries
+  would still pass. Add a case that removes an UNUSED handler entry's ISR, e.g.
+  MY_INTC/SUB1/ISR for handler [3,1] (no register references [3,1]), and expects
+  a parse-time logic_error.
 - DI-5 [DONE] tests/executables_src/testMuxedInterruptDistributorFactory.cpp:31
   and :40: clang-tidy-22 reports llvm-prefer-static-over-anonymous-namespace for
   the new free functions 'snapshot' (:31) and 'checkUnchanged' (:40), both
