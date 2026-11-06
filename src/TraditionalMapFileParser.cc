@@ -71,6 +71,10 @@ namespace ChimeraTK::detail {
       }
     }
 
+    // The *.mapp parser writes numeric interrupt ids only, so nothing needs resolving, but the catalogue requires the
+    // explicit finalisation step to build its interrupt indexes.
+    _pmap.finaliseInterruptBookkeeping();
+
     return {std::move(_pmap), std::move(_metadataCatalogue)};
   }
 
@@ -345,6 +349,8 @@ namespace ChimeraTK::detail {
     channelLines.sort([](auto& a, auto& b) { return a.address < b.address; });
     make2DRegisterInfos(pl, channelLines, MEM_MULTIPLEXED_PREFIX);
   }
+
+  /********************************************************************************************************************/
 
   void TraditionalMapFileParser::make2DRegisterInfos(
       const ParsedLine& pl, std::list<ParsedLine>& channelLines, const std::string& prefix) {

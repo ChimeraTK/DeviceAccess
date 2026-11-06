@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <fstream>
 #include <list>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace ChimeraTK::detail {
 
@@ -42,7 +44,7 @@ namespace ChimeraTK::detail {
       bool signedFlag{true};      /**< Signed/Unsigned flag */
       NumericAddressedRegisterInfo::Access registerAccess{NumericAddressedRegisterInfo::Access::READ_WRITE};
       NumericAddressedRegisterInfo::Type type{NumericAddressedRegisterInfo::Type::FIXED_POINT};
-      std::vector<size_t> interruptID;
+      std::optional<std::vector<size_t>> interruptID;
     };
 
     /**

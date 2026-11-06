@@ -62,6 +62,9 @@ namespace ChimeraTK::async {
      * Catalogue augmenter registered by MuxedInterruptDistributorFactory for the "INTC" controller type. It parses and
      * validates the controller description, finds path / "ISR" in the catalogue and modifies each qualifying 1-bit
      * child bit field in place into an interrupt register carrying the id [interruptId..., bit position].
+     *
+     * The interrupt indexes are built only by finaliseInterruptBookkeeping(), inside the catalogue that is finalised
+     * after the augmentation. An augmenter run on an already finalised catalogue leaves them stale.
      */
     static void augmentCatalogue(std::vector<size_t> const& interruptId, std::string const& controllerDescription,
         NumericAddressedRegisterCatalogue& catalogue);

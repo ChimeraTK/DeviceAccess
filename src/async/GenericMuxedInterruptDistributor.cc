@@ -858,7 +858,7 @@ namespace ChimeraTK::async {
       }
       // A child of ISR is derived, so a declared interrupt on it is redundant and its own id would be silently
       // overwritten. The check tests the register access, not the id, so it also holds for a named reference whose
-      // id is not resolved yet (CR-020). Registers outside ISR are never checked, so shared ids stay allowed.
+      // id is not resolved yet. Registers outside ISR are never checked, so shared ids stay allowed.
       if(child.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) {
         throw ChimeraTK::logic_error(
             std::format("INTC {} ISR child '{}' must not declare its own interrupt access: an ISR child is derived",
@@ -873,8 +873,9 @@ namespace ChimeraTK::async {
       // views as they are.
       NumericAddressedRegisterInfo modified = catalogue.getBackendRegister(childPath);
       modified.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
-      modified.interruptId = interruptId;
-      modified.interruptId.push_back(bitPosition);
+      auto childId = interruptId;
+      childId.push_back(bitPosition);
+      modified.interruptId = childId;
       catalogue.modifyRegister(modified);
     }
   } // augmentCatalogue

@@ -14,7 +14,9 @@
 #include <charconv>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 using json = nlohmann::json;
@@ -56,6 +58,8 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
 
   JsonMapFileParser::JsonMapFileParser(std::string fileName) : _theImp(std::make_unique<Imp>(std::move(fileName))) {}
+
+  /********************************************************************************************************************/
 
   JsonMapFileParser::~JsonMapFileParser() = default;
 
@@ -136,7 +140,9 @@ namespace ChimeraTK::detail {
     std::string engineeringUnit;
     std::string description;
     Access access{Access::accessNotSet};
-    std::vector<size_t> triggeredByInterrupt;
+    // Whether the entry declares an interrupt: a numeric id array or a register name. A present field holds one of
+    // the two non-empty forms, which fill() enforces.
+    std::optional<NumericAddressedRegisterInfo::InterruptId> triggeredByInterrupt;
     size_t numberOfElements{1};
     size_t bytesPerElement{0};
 
@@ -301,7 +307,24 @@ namespace ChimeraTK::detail {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
 
-      if(triggeredByInterrupt.empty()) {
+      // An empty numeric array and an empty name declare no interrupt: the schema forbids both, but the parser does not
+      // validate against it, so they are rejected here instead of creating an id-less interrupt register.
+      if(triggeredByInterrupt.has_value()) {
+        if(const auto* numericId = std::get_if<std::vector<size_t>>(&*triggeredByInterrupt)) {
+          if(numericId->empty()) {
+            throw ChimeraTK::logic_error(
+                "Register " + info.pathName + ": 'triggeredByInterrupt' must not be an empty array.");
+          }
+        }
+        if(const auto* target = std::get_if<std::string>(&*triggeredByInterrupt)) {
+          if(target->empty()) {
+            throw ChimeraTK::logic_error(
+                "Register " + info.pathName + ": 'triggeredByInterrupt' must not be an empty register name.");
+          }
+        }
+      }
+
+      if(!triggeredByInterrupt.has_value()) {
         if(access != Access::accessNotSet) {
           info.registerAccess = NumericAddressedRegisterInfo::Access(access);
         }
@@ -314,7 +337,8 @@ namespace ChimeraTK::detail {
           throw ChimeraTK::logic_error(
               "Register " + info.pathName + ": 'access' and 'triggeredByInterrupt' are mutually exclusive.");
         }
-        info.interruptId = triggeredByInterrupt;
+        // The numeric id array, or the register name reference as written, which is resolved after the parse pass.
+        info.interruptId = *triggeredByInterrupt;
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
       }
 
@@ -362,13 +386,13 @@ namespace ChimeraTK::detail {
         if(address.type != AddressType::addressTypeNotSet) {
           throw ChimeraTK::logic_error("Address is set for void-typed register " + info.pathName);
         }
-        if(triggeredByInterrupt.empty()) {
+        if(!triggeredByInterrupt.has_value()) {
           throw ChimeraTK::logic_error(
               "Void-typed register " + parentName / name + " needs 'triggeredByInterrupt' entry.");
         }
         info.nElements = 0;
         info.dataDescriptor = DataDescriptor{DataDescriptor::FundamentalType::nodata};
-        info.interruptId = triggeredByInterrupt;
+        info.interruptId = *triggeredByInterrupt;
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
         info.channels.clear();
         info.channels.emplace_back(0, NumericAddressedRegisterInfo::Type::VOID, 0, 0, false);
@@ -775,6 +799,12 @@ namespace ChimeraTK::detail {
       InterruptHandlerEntry interruptHandlerForAugmentation;
       interruptHandlerForAugmentation.subhandler = data.at("interruptHandler");
       interruptHandlerForAugmentation.augmentCatalogue(catalogue);
+
+      // Finalise the interrupt bookkeeping: this resolves every 'triggeredByInterrupt' register-name reference and
+      // builds the interrupt indexes. It runs after the augmentation, so the implicit ISR ids exist and a derived
+      // register can be a target. Every id and canonical path is final before the 'selectedBy' validation and the
+      // metadata handling walk the catalogue.
+      catalogue.finaliseInterruptBookkeeping();
 
       // Validate every 'selectedBy' selector register referenced by any channel: (a) the referenced selector
       // register must exist in the catalogue, and (b) it must not itself be conditionally enabled by a 'selectedBy'

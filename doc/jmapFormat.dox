@@ -298,6 +298,20 @@ Plain interrupts have a \c representation of type \c "void" and must not have an
 
 \c PRIMARY_INTERRUPT_3 describes the primary interrupt (IRQ) 3, while \c SUB_INTERRUPT_3_0_2 will be the interrupt number 2 of the subhandler 0 inside the handler for the primary interrupt 3 (i.e. interrupt \c 3:0:2).
 
+Instead of the numeric id array, \c "triggeredByInterrupt" may name another interrupt register. The referring register then takes the interrupt id of the named register, so the two forms are interchangeable:
+
+\verbatim
+"addressSpace": {
+  "TRIGGERED_DATA": {
+    "address": { "offset": "0x8100" },
+    "triggeredByInterrupt": "PRIMARY_INTERRUPT_3",
+    "representation": { "width": 24, "fractionalBits": 10, "isSigned": true }
+  }
+}
+\endverbatim
+
+The named register must be an interrupt register (one that itself carries a \c "triggeredByInterrupt", declared explicitly or derived from an INTC ISR bit field, see \ref jmap_interrupts_isr). It may be declared anywhere in the file, before or after the referring register, and may itself name another register, in which case the reference is followed transitively. A cycle, including a register naming itself, is an error, as is a name that does not exist or names a register that is not an interrupt register. A name is resolved separately for each register that refers to the target, so several registers may share a target.
+
 When interrupts shall be used to trigger data read-out, they can be added to normal registers:
 \verbatim
 "addressSpace": {
