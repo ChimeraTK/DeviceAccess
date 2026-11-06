@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -426,14 +426,14 @@ entry. The error comes from the type lookup, before any ISR is opened.
   purpose. Restrict both functions with 'static' (the CatalogueSnapshot type may
   stay in the anonymous namespace); this is not a clang-format fix, so it could
   not be auto-applied here.
-- DI-6 [IMPLEMENTED] Move the shared helper
-  interruptControllerNameAndDescription out of include/JsonExtensions.h and
-  src/JsonExtensions.cc into a static function in src/JsonMapFileParser.cc;
-  JsonExtensions.h must stay independent of the library's actual use of json
-  (future: the json snippets will no longer be stored as catalogue metadata but
-  parsed entirely in the map file parser). Fold the CR Specifications subsection
-  that currently documents it as a free function in include/JsonExtensions.h
-  (modified) accordingly, and update both call sites:
+- DI-6 [NEW] Move the shared helper interruptControllerNameAndDescription out of
+  include/JsonExtensions.h and src/JsonExtensions.cc into a static function in
+  src/JsonMapFileParser.cc; JsonExtensions.h must stay independent of the
+  library's actual use of json (future: the json snippets will no longer be
+  stored as catalogue metadata but parsed entirely in the map file parser). Fold
+  the CR Specifications subsection that currently documents it as a free
+  function in include/JsonExtensions.h (modified) accordingly, and update both
+  call sites:
   MuxedInterruptDistributorFactory::getInterruptControllerNameAndDescriptionFromCatalogue
   (src/async/MuxedInterruptDistributor.cc:50) and
   detail::InterruptHandlerEntry::augmentCatalogue
@@ -465,10 +465,33 @@ entry. The error comes from the type lookup, before any ISR is opened.
 - DI-11 [IMPLEMENTED] Rebase the branch
   mhier-agent/CR-019-interrupt-registers-from-isr-bit-fields onto the latest
   master, resolving conflicts carefully, including logical conflicts.
-- DI-12 [IMPLEMENTED] Add the missing full-line comment separator bars
-  (/*****...*/) at least between the test cases in the touched test files, and
-  check other places for missing bars.
+- DI-12 [NEW] Add the missing full-line comment separator bars (/*****...*/) at
+  least between the test cases in the touched test files, and check other places
+  for missing bars.
 - DI-13 [IMPLEMENTED] De-duplicate
   tests/executables_src/testJsonMapFileParser.cpp: keep the dedicated test
   cases, but stop re-testing everything again in TestGoodMapFileParse (many
   assertions there duplicate the dedicated cases).
+- DI-14 [NEW] src/JsonMapFileParser.cc:7 (DI-6): the change replaced `#include
+  "JsonExtensions.h" // IWYU pragma: keep - used indirectly by nlohmann json`
+  with a bare `#include "JsonExtensions.h"`, so clang-tidy-22 now reports
+  misc-include-cleaner (included header JsonExtensions.h is not used directly).
+  The header is required indirectly: the parser serialises std::optional members
+  (doubleBuffering, selectedBy) that rely on JsonExtensions.h's
+  adl_serializer<std::optional<T>>. Restore the `// IWYU pragma: keep - used
+  indirectly by nlohmann json` comment.
+- DI-15 [NEW] src/async/MuxedInterruptDistributor.cc:9 (DI-6): the change newly
+  added `#include "JsonExtensions.h"`, which is unused (the local `using json =
+  nlohmann::json;` plus the already-included `nlohmann/json.hpp` cover it, and
+  master had no such include). clang-tidy-22 reports misc-include-cleaner;
+  remove the include.
+- DI-16 [NEW] DI-12 is not fully resolved: separator bars are still missing
+  before test cases in the touched test files (the earlier DI-12 fix added one
+  such bar at testJsonMapFileParser.cpp:1210, so the sweep was intended).
+  Missing in tests/executables_src/testJsonMapFileParser.cpp before
+  TestSelectedBySelectorItselfGated (:1367), TestSelectedByWriteOnlyRejected
+  (:1421), TestSelectedByReadOnlyAccepted (:1426),
+  TestSelectedByInterruptAccepted (:1436); and in
+  tests/executables_src/testGenericMuxedInterruptDistributor.cpp before
+  activateIER (:189), testMerActive (:376), testSieCieMulti1 (:440),
+  testSieCieMulti2 (:478), testGieActive (:504), testMieActive (:519).
