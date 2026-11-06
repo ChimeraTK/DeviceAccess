@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: PLANNED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
