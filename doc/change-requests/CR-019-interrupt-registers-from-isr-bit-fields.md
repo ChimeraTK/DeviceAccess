@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -465,9 +465,10 @@ entry. The error comes from the type lookup, before any ISR is opened.
 - DI-11 [IMPLEMENTED] Rebase the branch
   mhier-agent/CR-019-interrupt-registers-from-isr-bit-fields onto the latest
   master, resolving conflicts carefully, including logical conflicts.
-- DI-12 [NEW] Add the missing full-line comment separator bars (/*****...*/) at
-  least between the test cases in the touched test files, and check other places
-  for missing bars.
-- DI-13 [NEW] De-duplicate tests/executables_src/testJsonMapFileParser.cpp: keep
-  the dedicated test cases, but stop re-testing everything again in
-  TestGoodMapFileParse (many assertions there duplicate the dedicated cases).
+- DI-12 [IMPLEMENTED] Add the missing full-line comment separator bars
+  (/*****...*/) at least between the test cases in the touched test files, and
+  check other places for missing bars.
+- DI-13 [IMPLEMENTED] De-duplicate
+  tests/executables_src/testJsonMapFileParser.cpp: keep the dedicated test
+  cases, but stop re-testing everything again in TestGoodMapFileParse (many
+  assertions there duplicate the dedicated cases).
