@@ -804,6 +804,75 @@ BOOST_AUTO_TEST_CASE(TestIsrChildNotOneBit) {
 
 /**********************************************************************************************************************/
 
+// A multi-element child of ISR is not one 1-bit bit field, so it is rejected at parse time. The child carries its own
+// address node (equal to ISR's) so the parser applies its numberOfElements, which keeps this case independent of the
+// own-address rejection below.
+BOOST_AUTO_TEST_CASE(TestIsrChildMultipleElements) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give one 1-bit child of DAQ/ISR more than one element, at ISR's own address.
+  nlohmann::json& child = map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"];
+  child["numberOfElements"] = 2;
+  child["address"] = {{"channel", 5}, {"offset", 8}};
+
+  std::string tmpFile = "isrChildMultipleElements_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR declared with a channels dictionary is not one 1-bit bit field, so it is rejected at parse time. A
+// channels dictionary makes the child itself a multi-channel register and additionally creates a deeper-level slice
+// register per named channel, so the no-deeper-levels rule fires; either way a channels child never qualifies.
+BOOST_AUTO_TEST_CASE(TestIsrChildWithChannels) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Replace one 1-bit child of DAQ/ISR with a two-channel register at ISR's own address. Both channels are 1 bit, so
+  // the channel width does not reject it.
+  nlohmann::json& child = map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"];
+  child.erase("representation");
+  child["address"] = {{"channel", 5}, {"offset", 8}};
+  child["channels"] = {
+      {"A", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"bitShift", 0}, {"width", 1}}}}},
+      {"B", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"bitShift", 0}, {"width", 1}}}}}};
+
+  std::string tmpFile = "isrChildWithChannels_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR at its own address rather than ISR's is not one 1-bit bit field, so it is rejected at parse time.
+BOOST_AUTO_TEST_CASE(TestIsrChildOwnAddress) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give one 1-bit child of DAQ/ISR its own address, different from ISR's (same channel, different offset).
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["address"] = {{"channel", 5}, {"offset", 16}};
+
+  std::string tmpFile = "isrChildOwnAddress_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR on a different channel (bar) from ISR is not one 1-bit bit field, so it is rejected at parse time.
+// The child keeps ISR's offset, so only the bar differs and this case is independent of the own-address rejection.
+BOOST_AUTO_TEST_CASE(TestIsrChildOwnBar) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give one 1-bit child of DAQ/ISR its own address on a different channel but at ISR's offset.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["address"] = {{"channel", 4}, {"offset", 8}};
+
+  std::string tmpFile = "isrChildOwnBar_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
 // A register below ISR that has children of its own is a deeper level, which the handler does not define.
 BOOST_AUTO_TEST_CASE(TestIsrDeeperLevel) {
   std::ifstream base("simpleJsonFile.jmap");

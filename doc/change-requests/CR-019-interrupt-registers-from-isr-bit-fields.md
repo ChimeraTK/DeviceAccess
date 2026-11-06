@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -310,11 +310,21 @@ full id.
 `detail::InterruptHandlerEntry::augmentCatalogue` (Specifications).
 - A child that is not a 1-bit value, with a temporary map file: parse-time
 `logic_error`. One case each for a wider child, a multi-element child
-(`numberOfElements` 2), a child declared with a `channels` dictionary, and a
-child carrying its own address different from `ISR`'s.
+(`numberOfElements` 2), a child declared with a `channels` dictionary, a child
+carrying its own address different from `ISR`'s, and a child on a different
+channel (bar) from `ISR` at the same offset.
 - Covers the qualifying-child requirement (Requirements); the condition has
 one part per rejected shape, so a case per part guards against a regression
 dropping any single part.
+- The multi-element, own-address and own-bar cases carry their own address
+node so the parser applies their `numberOfElements`/`bar`/`address`, keeping
+each case independent of the others.
+- A `channels` dictionary child makes the child itself multi-channel and
+additionally creates a deeper-level slice register per named channel, so the
+no-deeper-levels rule rejects it before the qualifying-child check; the case
+therefore guards that a channels child never qualifies rather than isolating
+the channel-count part of the condition, which no child reaches because a
+channels child always produces a deeper level.
 - Deeper levels below `ISR`: a child that has a child of its own gives a
 parse-time `logic_error`, with a temporary map file.
 - Covers the no-deeper-levels requirement (Requirements).
@@ -498,7 +508,7 @@ entry. The error comes from the type lookup, before any ISR is opened.
   tests/executables_src/testGenericMuxedInterruptDistributor.cpp before
   activateIER (:189), testMerActive (:376), testSieCieMulti1 (:440),
   testSieCieMulti2 (:478), testGieActive (:504), testMieActive (:519).
-- DI-17 [FOLDED-IN] Coverage gap: the ISR child-qualification check
+- DI-17 [IMPLEMENTED] Coverage gap: the ISR child-qualification check
   (src/async/GenericMuxedInterruptDistributor.cc:841 rejects a child when
   nElements != 1, channels.size() != 1, bar != ISR.bar, address != ISR.address,
   or width != 1) only exercises the width branch (TestIsrChildNotOneBit,
