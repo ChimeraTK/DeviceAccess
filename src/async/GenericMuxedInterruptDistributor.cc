@@ -3,6 +3,7 @@
 #include "async/GenericMuxedInterruptDistributor.h"
 
 #include "async/SubDomain.h"
+#include "DummyBackendBase.h"
 
 #include <nlohmann/json.hpp>
 
@@ -809,7 +810,11 @@ namespace ChimeraTK::async {
     // keeps executing by checking a counter.
     if(!_watchdogThread.joinable()) {
       _stopWatchdog = false;
-      _watchdogThread = std::thread(&GenericMuxedInterruptDistributor::watchdogLoop, this);
+      // Dummy backends do not have an interrupt controller so the watchdog can possibly
+      // trigger continuously for no actual reason at all
+      if(boost::dynamic_pointer_cast<DummyBackendBase>(_backend) == nullptr) {
+        _watchdogThread = std::thread(&GenericMuxedInterruptDistributor::watchdogLoop, this);
+      }
     }
 
     // Activate all existing sub-domains. We have to implement a loop here because the parent activate is calling
