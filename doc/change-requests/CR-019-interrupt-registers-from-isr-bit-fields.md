@@ -6,7 +6,7 @@ referred to by their numeric id. The 1-bit children of the controller's
 `[<handler id>, <bit position>]`, so that interrupts can be referred to by
 name.
 
-Status: IN PROGRESS (from TESTS REVIEWED)
+Status: PLANNED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -100,7 +100,7 @@ helper.
 stays in one place.
 - The helper inserts the interrupt id into `_listOfInterrupts` and the
 canonical interrupt paths `!I`, `!I:M`, ... into `_canonicalInterrupts`.
-- The helper only inserts, so it does not support retyping a register away
+- The helper only inserts, so it does not support modifying a register away
 from interrupt access.
 - A pre-existing interrupt id is not an error: the insertion is idempotent,
 so two registers can share one id.
@@ -139,13 +139,8 @@ registered. An unknown type stays an error at distributor creation.
 - Takes the controller type and the description as strings, so the header
 needs neither `nlohmann::json` nor the catalogue's definition; the
 catalogue is only forward-declared.
-- `getInterruptControllerNameAndDescriptionFromCatalogue` (modified)
-- Extracts the controller type and the description through the shared free
-function `interruptControllerNameAndDescription`, so the convention lives
-in one place.
-- Dependencies: the augmenter of `INTC`,
-`async::GenericMuxedInterruptDistributor::augmentCatalogue`, and the shared
-`interruptControllerNameAndDescription`.
+- Dependencies: the augmenter of `INTC` and
+`async::GenericMuxedInterruptDistributor::augmentCatalogue`.
 
 ### async::GenericMuxedInterruptDistributor (modified) in include/async/GenericMuxedInterruptDistributor.h (modified), src/async/GenericMuxedInterruptDistributor.cc (modified)
 
@@ -177,14 +172,13 @@ more than `ISR`.
 `logic_error`, so no deeper levels are allowed. A first pass over the
 registers below `ISR` rejects any deeper register, so the rule holds
 independently of the order in which the catalogue is enumerated; the
-second pass then validates and retypes the direct children.
+second pass then validates and modifies the direct children in place.
 - A child qualifies as one channel of width 1, one element, at the same bar
 and address as `ISR`. The bit position is the channel's bit offset, which
 for a bit field is its `representation.bitShift`.
 - A child that is not such a bit field throws a `logic_error`.
-- Retyping is in place: a copy of the register info with interrupt access
-and the interrupt id, written back through the catalogue's
-`modifyRegister`.
+- Modified in place: a copy of the register info with interrupt access and
+the interrupt id, written back through the catalogue's `modifyRegister`.
 - Channels, address, size, bit-range flag, path and the `BUF0`/`BUF1`
 views stay as they are.
 - Two children with the same bit position throw a `logic_error`.
@@ -194,16 +188,15 @@ declaration of `NumericAddressedRegisterCatalogue`, not its definition.
 - Dependencies: `NumericAddressedRegisterCatalogue::modifyRegister` (new) and
 `GenericMuxedInterruptDistributor::create`.
 
-### free function `interruptControllerNameAndDescription` (new) in include/JsonExtensions.h (modified)
+### file-local function `interruptControllerNameAndDescription` (new) in src/JsonMapFileParser.cc (modified)
 
-- `std::pair<std::string, std::string> interruptControllerNameAndDescription(
+- `static std::pair<std::string, std::string> interruptControllerNameAndDescription(
 nlohmann::json const& descriptor)` (new)
 - Returns the controller type (the first key of the descriptor) and its
 dumped value (the description).
-- Used by both
-`MuxedInterruptDistributorFactory::getInterruptControllerNameAndDescriptionFromCatalogue`
-and `detail::InterruptHandlerEntry::augmentCatalogue`, so the convention
-lives in one place.
+- File-local, so `JsonExtensions.h` stays independent of the library's use of
+`json`: only the map file parser interprets the controller descriptors.
+- Used by `detail::InterruptHandlerEntry::augmentCatalogue`, its only caller.
 - Dependencies: none new.
 
 ### detail::InterruptHandlerEntry (modified) in src/JsonMapFileParser.cc (modified)
@@ -229,8 +222,8 @@ so nothing dispatches for it.
 - A nesting-only entry without a controller object still reaches its
 subhandlers: the traversal runs the visitor and the recursion
 independently, so skipping the dispatch does not stop the walk.
-- Extracts the controller type and the description through the shared free
-function `interruptControllerNameAndDescription`, rather than repeating the
+- Extracts the controller type and the description through the file-local
+`interruptControllerNameAndDescription`, rather than repeating the
 convention.
 - A nested entry contributes its own full id, so its children carry the
 subhandler's full id.
@@ -339,10 +332,9 @@ parse-time `logic_error`, with a temporary map file.
 carrying `triggeredByInterrupt` `[<handler id>, <bit position>]` parses
 without error and both registers carry the id.
 - Covers the shared-interrupt-id requirement (Requirements).
-- Update the interrupt-list assertion in `TestGoodMapFileParse`:
-`loi.size() == 3` with the ids at lines 701-703 to the derived ids the map
-change adds, and re-check the other catalogue assertions in the same test
-for the new registers.
+- Update the interrupt-list assertion in `TestGoodMapFileParse` to the
+derived ids the map change adds, and drop its re-checks of the dedicated
+cases: it keeps only the catalogue assertions no dedicated case covers.
 - The map change adds derived interrupt ids to `_listOfInterrupts`, so the
 existing assertion would fail.
 - Consumers of `tests/simpleJsonFile.jmap` (modified as needed)
@@ -430,7 +422,7 @@ entry. The error comes from the type lookup, before any ISR is opened.
   purpose. Restrict both functions with 'static' (the CatalogueSnapshot type may
   stay in the anonymous namespace); this is not a clang-format fix, so it could
   not be auto-applied here.
-- DI-6 [NEW] Move the shared helper interruptControllerNameAndDescription out of
+- DI-6 [FOLDED-IN] Move the shared helper interruptControllerNameAndDescription out of
   include/JsonExtensions.h and src/JsonExtensions.cc into a static function in
   src/JsonMapFileParser.cc; JsonExtensions.h must stay independent of the
   library's actual use of json (future: the json snippets will no longer be
@@ -466,7 +458,7 @@ entry. The error comes from the type lookup, before any ISR is opened.
   :861, the local variable at :862 (retyped) and :866
   (catalogue.modifyRegister(retyped)), and the CR Specifications ("Retyping is
   in place", "then validates and retypes the direct children").
-- DI-11 [NEW] Rebase the branch
+- DI-11 [IMPLEMENTED] Rebase the branch
   mhier-agent/CR-019-interrupt-registers-from-isr-bit-fields onto the latest
   master, resolving conflicts carefully, including logical conflicts.
 - DI-12 [NEW] Add the missing full-line comment separator bars (/*****...*/) at
