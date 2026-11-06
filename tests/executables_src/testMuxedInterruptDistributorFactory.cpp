@@ -28,23 +28,23 @@ namespace {
     std::set<std::vector<size_t>> interrupts;
   };
 
-  CatalogueSnapshot snapshot(const NumericAddressedRegisterCatalogue& catalogue) {
-    CatalogueSnapshot result;
-    for(const auto& info : catalogue) {
-      result.registerPaths.insert(info.getRegisterName());
-    }
-    result.interrupts = catalogue.getListOfInterrupts();
-    return result;
-  }
-
-  void checkUnchanged(const CatalogueSnapshot& before, const CatalogueSnapshot& after) {
-    BOOST_TEST(after.registerPaths == before.registerPaths);
-    BOOST_TEST(after.interrupts == before.interrupts);
-  }
-
   /********************************************************************************************************************/
 
 } // namespace
+
+static CatalogueSnapshot snapshot(const NumericAddressedRegisterCatalogue& catalogue) {
+  CatalogueSnapshot result;
+  for(const auto& info : catalogue) {
+    result.registerPaths.insert(info.getRegisterName());
+  }
+  result.interrupts = catalogue.getListOfInterrupts();
+  return result;
+}
+
+static void checkUnchanged(const CatalogueSnapshot& before, const CatalogueSnapshot& after) {
+  BOOST_TEST(after.registerPaths == before.registerPaths);
+  BOOST_TEST(after.interrupts == before.interrupts);
+}
 
 BOOST_AUTO_TEST_SUITE(MuxedInterruptDistributorFactoryTestSuite)
 
