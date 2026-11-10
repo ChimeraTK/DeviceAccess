@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from STYLE REVIEWED)
+Status: READY TO TEST (from STYLE REVIEWED)
 
 ## Requirements
 
@@ -183,6 +183,14 @@ resolves after the augmentation.
 - Channel slice of a 2D referring register: the slice carries the resolved
 id.
 - Covers the derived-register coverage in `addInfos` (Specifications).
+- Empty id array counts as absent: a data register declared with an empty
+`triggeredByInterrupt` array keeps its declared access and no interrupt id.
+- Covers the empty-array-is-absent rule (the `JsonAddressSpaceEntry`
+specifications).
+- Empty id array on a void register: the entry is rejected with a
+`logic_error`, as for an absent field.
+- Covers the same rule for the void case (the `JsonAddressSpaceEntry`
+specifications).
 - `tests/executables_src/testGenericMuxedInterruptDistributor.cpp` (modified)
 - End to end: a data register referring by name is notified when the
 target's `ISR` bit is set (dummy backend), confirming the resolved id

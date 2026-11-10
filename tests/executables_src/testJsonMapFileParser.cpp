@@ -2024,4 +2024,42 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceChannelSlice) {
 
 /**********************************************************************************************************************/
 
+// An empty 'triggeredByInterrupt' array counts as absent: no id-less interrupt register is created, so a data register
+// keeps its declared access instead of silently becoming an interrupt register with an empty id.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyArrayIsAbsentForDataRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A data register with an empty id array and a declared read-only access: it must stay read-only.
+  map["addressSpace"]["BSP"]["children"]["EMPTY_ARRAY"] = {{"triggeredByInterrupt", nlohmann::json::array()},
+      {"access", "RO"}, {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefEmptyArrayData_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  auto reg = regs.getBackendRegister("/BSP/EMPTY_ARRAY");
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::READ_ONLY);
+  BOOST_TEST(reg.interruptId.empty());
+}
+
+/**********************************************************************************************************************/
+
+// An empty 'triggeredByInterrupt' array counts as absent for a void register as well: it has no address and no id, so
+// the entry is rejected with the same error as a void register without a 'triggeredByInterrupt' entry.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyArrayIsAbsentForVoidRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A void register with an empty id array: it declares no interrupt, so parsing fails cleanly.
+  map["addressSpace"]["BSP"]["children"]["EMPTY_ARRAY_VOID"] = {
+      {"triggeredByInterrupt", nlohmann::json::array()}, {"representation", {{"type", "void"}}}};
+
+  std::string tmpFile = "interruptRefEmptyArrayVoid_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
