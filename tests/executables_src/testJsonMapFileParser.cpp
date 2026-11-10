@@ -1759,6 +1759,35 @@ BOOST_AUTO_TEST_CASE(TestMapFormatVersionWithPatch) {
 
 /**********************************************************************************************************************/
 
+// 'triggeredByInterrupt' may name another interrupt register instead of giving the numeric id array. A void register
+// is read-only with wait_for_new_data exactly as for a numeric id, and it may carry a register-name reference: it
+// takes the target's resolved id, appears in the list of interrupts and resolves through the canonical interrupt path.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceVoidReferrer) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A void register (no address) referring by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]).
+  map["addressSpace"]["BSP"]["children"]["VOID_REFERRING"] = {
+      {"triggeredByInterrupt", "BSP.VOID_INTERRUPT_0"}, {"representation", {{"type", "void"}}}};
+
+  std::string tmpFile = "interruptRefVoidReferrer_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  auto reg = regs.getBackendRegister("/BSP/VOID_REFERRING");
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg.interruptId == std::vector<size_t>{0}));
+
+  // The void referring register is part of the list of interrupts and resolves through its canonical interrupt path.
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({0}) != loi.end());
+  auto canonical = regs.getBackendRegister("!0");
+  BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((canonical.interruptId == std::vector<size_t>{0}));
+}
+
+/**********************************************************************************************************************/
+
 // 'triggeredByInterrupt' may name another interrupt register instead of giving the numeric id array. A data register
 // referring to a void interrupt register takes that register's resolved id: it appears in the list of interrupts and
 // resolves through the canonical interrupt path, exactly as if it had declared the id itself.
