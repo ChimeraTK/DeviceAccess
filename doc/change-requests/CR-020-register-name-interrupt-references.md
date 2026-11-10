@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: STYLE REVIEWED
+Status: IMPLEMENTATION REVIEWED
 
 ## Requirements
 
