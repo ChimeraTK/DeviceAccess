@@ -15,7 +15,8 @@
 using namespace ChimeraTK;
 using namespace boost::unit_test_framework;
 
-bool readWithTimeout(VoidRegisterAccessor& acc, size_t msTimeout = 3000) {
+template<typename AccessorType>
+bool readWithTimeout(AccessorType& acc, size_t msTimeout = 3000) {
   auto startTime = std::chrono::steady_clock::now();
   auto currentTime = startTime;
   while(currentTime < startTime + std::chrono::milliseconds(msTimeout)) {
@@ -182,6 +183,8 @@ BOOST_FIXTURE_TEST_CASE(inactiveIER, Inactive0) {
   ier.read();
   BOOST_TEST(ier == 0x0);
 }
+
+/**********************************************************************************************************************/
 
 struct Active0 : public TestFixture {
   Active0() : TestFixture(0, true) {}
@@ -370,6 +373,9 @@ struct MerInactiveTestFixture : public MasterEnableTest {
 BOOST_FIXTURE_TEST_CASE(testMerInactive, MerInactiveTestFixture) {
   run();
 }
+
+/**********************************************************************************************************************/
+
 struct MerActiveTestFixture : public MasterEnableTest {
   MerActiveTestFixture() : MasterEnableTest(3, "MER", true) {}
 };
@@ -437,6 +443,8 @@ BOOST_FIXTURE_TEST_CASE(testSieCie, Inactive5) {
   BOOST_TEST(cie.readAndGet() == 0x10);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testSieCieMulti1, Inactive5) {
   // Mixed activation: the second accessor is created AFTER activateAsyncRead
   auto sie = device.getScalarRegisterAccessor<int>("TEST5/SIE/DUMMY_READABLE");
@@ -475,6 +483,8 @@ BOOST_FIXTURE_TEST_CASE(testSieCieMulti1, Inactive5) {
   BOOST_TEST(cie.readAndGet() == 0x30);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testSieCieMulti2, Inactive5) {
   // Create both accessors first, then call activateAsyncRead()
   // No need to check the clear section again. It's the same as above.
@@ -498,6 +508,9 @@ struct GieInactiveTestFixture : public MasterEnableTest {
 BOOST_FIXTURE_TEST_CASE(testGieInactive, GieInactiveTestFixture) {
   run();
 }
+
+/**********************************************************************************************************************/
+
 struct GieActiveTestFixture : public MasterEnableTest {
   GieActiveTestFixture() : MasterEnableTest(6, "GIE", true) {}
 };
@@ -513,6 +526,9 @@ struct MieInactiveTestFixture : public MasterEnableTest {
 BOOST_FIXTURE_TEST_CASE(testMieInactive, MieInactiveTestFixture) {
   run();
 }
+
+/**********************************************************************************************************************/
+
 struct MieActiveTestFixture : public MasterEnableTest {
   MieActiveTestFixture() : MasterEnableTest(7, "MIE", true) {}
 };
@@ -706,6 +722,61 @@ struct CieWritableTestFixture : public ThrowTestFixture {
   CieWritableTestFixture() : ThrowTestFixture(34) {}
 };
 BOOST_FIXTURE_TEST_CASE(testCieWriteable, CieWritableTestFixture) {}
+
+/**********************************************************************************************************************/
+
+/**
+ * Derived interrupt registers from INTC ISR bit fields, end to end on a backend.
+ *
+ * The irq_test.mapp fixture used by the other cases is a *.mapp file and never derives interrupt registers, so this
+ * case uses simpleJsonFile.jmap, whose INTC handler [0] refers to DAQ/ISR and whose DAQ/ISR carries the 1-bit
+ * children DAQ_READY (bit 0), SECOND_INTERRUPT (bit 1) and THIRD_INTERRUPT (bit 2). The dummy backend exposes a
+ * hidden DUMMY_INTERRUPT_0 trigger for the primary handler [0]. Setting one ISR bit and triggering the handler must
+ * wake exactly the accessor of the matching derived register.
+ */
+BOOST_AUTO_TEST_CASE(testDerivedInterruptRegistersEndToEnd) {
+  static constexpr std::string_view jsonCdd{"(dummy?map=simpleJsonFile.jmap)"};
+
+  Device device{std::string{jsonCdd}};
+  auto catalogue = device.getRegisterCatalogue();
+
+  // The derived registers exist under their named ISR paths.
+  BOOST_TEST(catalogue.hasRegister("DAQ/ISR/DAQ_READY"));
+  BOOST_TEST(catalogue.hasRegister("DAQ/ISR/THIRD_INTERRUPT"));
+
+  device.open();
+  device.activateAsyncRead();
+
+  // Read the accessors from the named ISR paths, not from the canonical interrupt paths: a canonical-path accessor
+  // resolves to a synthesised no-data interrupt register and never reads the ISR bit field, so it would not exercise
+  // the derived register at all. Canonical-path resolution is already covered by the parser test.
+  auto accBit0 =
+      device.getScalarRegisterAccessor<uint8_t>("DAQ/ISR/DAQ_READY", 0, {ChimeraTK::AccessMode::wait_for_new_data});
+  auto accBit2 = device.getScalarRegisterAccessor<uint8_t>(
+      "DAQ/ISR/THIRD_INTERRUPT", 0, {ChimeraTK::AccessMode::wait_for_new_data});
+  // Pop the initial values sent on activation.
+  accBit0.read();
+  accBit2.read();
+
+  auto isr = device.getScalarRegisterAccessor<uint32_t>("DAQ/ISR");
+  auto trigger = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0");
+
+  // Bit 0 belongs to the first derived register only.
+  isr.setAndWrite(0x1);
+  trigger.write();
+  BOOST_TEST(readWithTimeout(accBit0));
+  BOOST_TEST(accBit0 == 1);
+  BOOST_TEST(!accBit2.readNonBlocking());
+
+  // Bit 2 belongs to the third derived register (...THIRD_INTERRUPT, id [0, 2]) only.
+  isr.setAndWrite(0x4);
+  trigger.write();
+  BOOST_TEST(readWithTimeout(accBit2));
+  BOOST_TEST(accBit2 == 1);
+  BOOST_TEST(!accBit0.readNonBlocking());
+
+  device.close();
+}
 
 /**********************************************************************************************************************/
 

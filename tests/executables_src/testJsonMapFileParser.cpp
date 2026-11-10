@@ -695,12 +695,440 @@ BOOST_AUTO_TEST_CASE(TestGoodMapFileParse) {
   BOOST_TEST(metas.getMetadata("![3]") == R"({"INTC":{"options":["MER"],"path":"MY_INTC","version":1}})");
   BOOST_TEST(metas.getMetadata("![3,0]") == R"({"INTC":{"options":[],"path":"MY_INTC.SUB0","version":1}})");
   BOOST_TEST(metas.getMetadata("![3,1]") == R"({"INTC":{"options":["MER"],"path":"MY_INTC.SUB1","version":1}})");
-
+  // The map derives interrupt ids for the ISR bit fields of every INTC handler: DAQ/ISR yields [0, 0], [0, 1] and
+  // [0, 2], the nested MY_INTC.SUB1/ISR yields [3, 1, 0] and [3, 1, 1]. The dedicated cases below assert the derived
+  // registers themselves; here only the full list of interrupts is checked, which no dedicated case covers.
   auto loi = regs.getListOfInterrupts();
-  BOOST_TEST(loi.size() == 3);
+  BOOST_TEST(loi.size() == 8);
   BOOST_CHECK(loi.find({0}) != loi.end());
+  BOOST_CHECK(loi.find({0, 0}) != loi.end());
+  BOOST_CHECK(loi.find({0, 1}) != loi.end());
+  BOOST_CHECK(loi.find({0, 2}) != loi.end());
   BOOST_CHECK(loi.find({3, 0, 1}) != loi.end());
+  BOOST_CHECK(loi.find({3, 1, 0}) != loi.end());
+  BOOST_CHECK(loi.find({3, 1, 1}) != loi.end());
   BOOST_CHECK(loi.find({1}) != loi.end());
+}
+
+/**********************************************************************************************************************/
+
+// The 1-bit children of an INTC handler's <path>/ISR register derive interrupt registers carrying the handler id
+// followed by the child's bit position. The child keeps its path, address and bit position; only its access changes to
+// interrupt.
+BOOST_AUTO_TEST_CASE(TestDerivedInterruptRegistersFromIsr) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+  (void)metas;
+
+  auto reg = regs.getBackendRegister("/DAQ/ISR/DAQ_READY");
+  BOOST_TEST(reg.pathName == "/DAQ/ISR/DAQ_READY");
+  BOOST_TEST(reg.nElements == 1);
+  BOOST_TEST(reg.elementPitchBits == 4 * 8);
+  BOOST_TEST(reg.bar == 5);
+  BOOST_TEST(reg.address == 8);
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg.interruptId == std::vector<size_t>{0, 0}));
+  BOOST_REQUIRE(reg.channels.size() == 1);
+  BOOST_TEST(reg.channels[0].bitOffset == 0);
+  BOOST_TEST(reg.channels[0].width == 1);
+  BOOST_TEST(reg.isBitRange == true);
+  BOOST_TEST(regs.hasRegister("/DAQ/ISR/DAQ_READY"));
+
+  // The bit position is the child's own bit field offset within the ISR word.
+  auto reg2 = regs.getBackendRegister("/DAQ/ISR/THIRD_INTERRUPT");
+  BOOST_CHECK(reg2.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg2.interruptId == std::vector<size_t>{0, 2}));
+  BOOST_REQUIRE(reg2.channels.size() == 1);
+  BOOST_TEST(reg2.channels[0].bitOffset == 2);
+
+  // The derived ids are part of the list of interrupts and resolve through their canonical interrupt path.
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({0, 0}) != loi.end());
+  BOOST_CHECK(loi.find({0, 2}) != loi.end());
+  auto canonical = regs.getBackendRegister("!0:1");
+  BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((canonical.interruptId == std::vector<size_t>{0, 1}));
+}
+
+/**********************************************************************************************************************/
+
+// A nested handler's ISR children carry the subhandler's full id, so the children of MY_INTC.SUB1/ISR (handler
+// [3, 1]) carry the id [3, 1, <bit position>].
+BOOST_AUTO_TEST_CASE(TestDerivedInterruptRegistersNestedSubhandler) {
+  auto [regs, metas] = ChimeraTK::MapFileParser::parse("simpleJsonFile.jmap");
+  (void)metas;
+
+  auto reg = regs.getBackendRegister("/MY_INTC/SUB1/ISR/READY");
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg.interruptId == std::vector<size_t>{3, 1, 0}));
+  BOOST_REQUIRE(reg.channels.size() == 1);
+  BOOST_TEST(reg.channels[0].bitOffset == 0);
+  BOOST_TEST(reg.channels[0].width == 1);
+
+  auto reg2 = regs.getBackendRegister("/MY_INTC/SUB1/ISR/ERROR");
+  BOOST_CHECK(reg2.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg2.interruptId == std::vector<size_t>{3, 1, 1}));
+  BOOST_REQUIRE(reg2.channels.size() == 1);
+  BOOST_TEST(reg2.channels[0].bitOffset == 1);
+
+  // The nested id resolves through its canonical interrupt path.
+  auto canonical = regs.getBackendRegister("!3:1:0");
+  BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((canonical.interruptId == std::vector<size_t>{3, 1, 0}));
+}
+
+/**********************************************************************************************************************/
+
+// Helper that writes a modified copy of simpleJsonFile.jmap to <outFile> and parses it, so the negative derivation
+// cases below are built by injecting the fault into the full map from code instead of keeping a set of
+// near-identical variant fixtures.
+static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::MetadataCatalogue> parseInjectedInterruptMap(
+    const std::string& outFile, const nlohmann::json& map) {
+  std::ofstream(outFile) << map.dump(2);
+  return ChimeraTK::MapFileParser::parse(outFile);
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR that is not a 1-bit bit field has no defined meaning for the handler, so it is rejected at parse time.
+BOOST_AUTO_TEST_CASE(TestIsrChildNotOneBit) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Replace one 1-bit child of DAQ/ISR with a 3-bit value.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["representation"] = {
+      {"bitShift", 0}, {"width", 3}};
+
+  std::string tmpFile = "isrChildNotOneBit_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A multi-element child of ISR is not one 1-bit bit field, so it is rejected at parse time. The child carries its own
+// address node (equal to ISR's) so the parser applies its numberOfElements, which keeps this case independent of the
+// own-address rejection below.
+BOOST_AUTO_TEST_CASE(TestIsrChildMultipleElements) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give one 1-bit child of DAQ/ISR more than one element, at ISR's own address.
+  nlohmann::json& child = map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"];
+  child["numberOfElements"] = 2;
+  child["address"] = {{"channel", 5}, {"offset", 8}};
+
+  std::string tmpFile = "isrChildMultipleElements_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR declared with a channels dictionary is not one 1-bit bit field, so it is rejected at parse time. A
+// channels dictionary makes the child itself a multi-channel register and additionally creates a deeper-level slice
+// register per named channel, so the no-deeper-levels rule fires; either way a channels child never qualifies.
+BOOST_AUTO_TEST_CASE(TestIsrChildWithChannels) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Replace one 1-bit child of DAQ/ISR with a two-channel register at ISR's own address. Both channels are 1 bit, so
+  // the channel width does not reject it.
+  nlohmann::json& child = map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"];
+  child.erase("representation");
+  child["address"] = {{"channel", 5}, {"offset", 8}};
+  child["channels"] = {
+      {"A", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"bitShift", 0}, {"width", 1}}}}},
+      {"B", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"bitShift", 0}, {"width", 1}}}}}};
+
+  std::string tmpFile = "isrChildWithChannels_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR at its own address rather than ISR's is not one 1-bit bit field, so it is rejected at parse time.
+BOOST_AUTO_TEST_CASE(TestIsrChildOwnAddress) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give one 1-bit child of DAQ/ISR its own address, different from ISR's (same channel, different offset).
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["address"] = {{"channel", 5}, {"offset", 16}};
+
+  std::string tmpFile = "isrChildOwnAddress_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR on a different channel (bar) from ISR is not one 1-bit bit field, so it is rejected at parse time.
+// The child keeps ISR's offset, so only the bar differs and this case is independent of the own-address rejection.
+BOOST_AUTO_TEST_CASE(TestIsrChildOwnBar) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give one 1-bit child of DAQ/ISR its own address on a different channel but at ISR's offset.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["address"] = {{"channel", 4}, {"offset", 8}};
+
+  std::string tmpFile = "isrChildOwnBar_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A register below ISR that has children of its own is a deeper level, which the handler does not define.
+BOOST_AUTO_TEST_CASE(TestIsrDeeperLevel) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give one child of DAQ/ISR a child of its own.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["children"] = {
+      {"DEEPER", {{"representation", {{"bitShift", 0}, {"width", 1}}}}}};
+
+  std::string tmpFile = "isrDeeperLevel_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A multi-element ISR register is rejected at parse time: a channel slice below it would be indistinguishable from a
+// bit field.
+BOOST_AUTO_TEST_CASE(TestIsrMultipleElements) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["numberOfElements"] = 2;
+
+  std::string tmpFile = "isrMultipleElements_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An ISR declared with a channels dictionary is rejected at parse time as well: even a single-channel dictionary is
+// not a scalar register, because the channel's width is its own width rather than the element pitch.
+BOOST_AUTO_TEST_CASE(TestIsrWithChannels) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  nlohmann::json& isr = map["addressSpace"]["DAQ"]["children"]["ISR"];
+  isr.erase("children");
+  // A single named channel of 16 bits: one channel and one element, but it does not span the 32-bit element word.
+  isr["channels"] = {
+      {"ONLY", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"width", 16}, {"type", "fixedPoint"}}}}}};
+
+  std::string tmpFile = "isrWithChannels_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A double-buffered ISR is an error at parse time: the auto-generated BUF0/BUF1 buffer views are children of ISR
+// that are not bit fields, so the child scan rejects them.
+BOOST_AUTO_TEST_CASE(TestIsrDoubleBuffered) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give DAQ/ISR a doubleBuffering block, reusing the DAQ.DOUBLE_BUF enable/read-buffer registers.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["doubleBuffering"] = {
+      {"secondaryBufferAddress", {{"type", "IO"}, {"channel", 5}, {"offset", 12}}},
+      {"enableRegister", "DAQ.DOUBLE_BUF.ENA"}, {"readBufferRegister", "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID"}};
+
+  std::string tmpFile = "isrDoubleBuffered_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An ISR without any child is not an error: it parses and the catalogue is unchanged.
+BOOST_AUTO_TEST_CASE(TestIsrWithoutChildrenParses) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["DAQ"]["children"]["ISR"].erase("children");
+
+  std::string tmpFile = "isrWithoutChildren_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  auto isr = regs.getBackendRegister("/DAQ/ISR");
+  BOOST_CHECK(isr.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT);
+  // No derived ids below DAQ/ISR are present.
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({0, 0}) == loi.end());
+  BOOST_CHECK(loi.find({0, 1}) == loi.end());
+  BOOST_CHECK(loi.find({0, 2}) == loi.end());
+  // The remaining declared ids are untouched.
+  BOOST_CHECK(loi.find({0}) != loi.end());
+  BOOST_CHECK(loi.find({3, 1, 0}) != loi.end());
+}
+
+/**********************************************************************************************************************/
+
+// An INTC handler whose <path>/ISR does not exist is an error at parse time, even when the entry is unused.
+BOOST_AUTO_TEST_CASE(TestIsrMissing) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Remove the register the DAQ handler [0] refers to.
+  map["addressSpace"]["DAQ"]["children"].erase("ISR");
+
+  std::string tmpFile = "isrMissing_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An INTC handler entry whose <path>/ISR does not exist is an error at parse time for used and unused entries alike.
+// The nested subhandler [3, 1] refers to MY_INTC.SUB1/ISR but no register references [3, 1], so a regression that
+// validated only used entries would still pass with this missing.
+BOOST_AUTO_TEST_CASE(TestIsrMissingUnusedHandler) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Remove the register the unused subhandler [3, 1] refers to.
+  map["addressSpace"]["MY_INTC"]["children"]["SUB1"]["children"].erase("ISR");
+
+  std::string tmpFile = "isrMissingUnused_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// Two children covering the same ISR bit position are an error at parse time.
+BOOST_AUTO_TEST_CASE(TestIsrDuplicateBitPosition) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Make the second child cover the same bit as the first.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["SECOND_INTERRUPT"]["representation"] = {
+      {"bitShift", 0}, {"width", 1}};
+
+  std::string tmpFile = "isrDuplicateBitPosition_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A derived id that is already present is not an error: two registers may share one interrupt id and are notified
+// together by the same ISR bit.
+BOOST_AUTO_TEST_CASE(TestSharedInterruptId) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Add a declared interrupt register carrying the derived id [0, 0]. A void interrupt register needs a parent that
+  // is a register, so BSP (itself a register) is used rather than the DAQ module.
+  map["addressSpace"]["BSP"]["children"]["SHARED_INTERRUPT"] = {
+      {"triggeredByInterrupt", {0, 0}}, {"representation", {{"type", "void"}}}};
+
+  std::string tmpFile = "sharedInterruptId_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  // Both the declared register and the derived ISR child carry the shared id.
+  auto declared = regs.getBackendRegister("/BSP/SHARED_INTERRUPT");
+  BOOST_TEST((declared.interruptId == std::vector<size_t>{0, 0}));
+  auto derived = regs.getBackendRegister("/DAQ/ISR/DAQ_READY");
+  BOOST_TEST((derived.interruptId == std::vector<size_t>{0, 0}));
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({0, 0}) != loi.end());
+}
+
+/**********************************************************************************************************************/
+
+// A child of ISR whose bit position lies outside the ISR word or outside the distributor's 32-bit interrupt mask is an
+// error at parse time: the distributor maps an interrupt id to one bit of a 32-bit mask, so a position outside either
+// range has no interrupt to notify. The child inherits its address from the ISR parent, so the qualifying-child check
+// does not catch it. A 32-bit ISR reaches both range parts at bit position 32; a beyond-word position is not
+// separately testable, since a wider ISR word would make the child widen the register's channel past its element
+// pitch and trip the scalar-ISR check first.
+BOOST_AUTO_TEST_CASE(TestIsrBitPositionOutOfRange) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A 1-bit child at bit position 32 of the 32-bit ISR word: still a qualifying bit field, but the last id element
+  // would be used to shift a 32-bit mask by 32.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["representation"] = {
+      {"bitShift", 32}, {"width", 1}};
+
+  std::string tmpFile = "isrBitPositionOutOfRange_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// The children of ISR are the registers whose path carries ISR as its complete leading path components. A register
+// that only shares the text prefix, such as DAQ/ISR_EXTRA/READY against DAQ/ISR, is not a child: the map parses and
+// the register is left untouched. A text-prefix match would turn it into an interrupt or reject it as a deeper level.
+BOOST_AUTO_TEST_CASE(TestIsrTextPrefixNotAChild) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A register at the ISR address shaped like a bit field, but under a path that only shares the text prefix of ISR.
+  map["addressSpace"]["DAQ"]["children"]["ISR_EXTRA"] = {
+      {"children", {{"READY", {{"representation", {{"bitShift", 0}, {"width", 1}}}}}}}, {"bytesPerElement", 4},
+      {"numberOfElements", 1}, {"address", {{"channel", 5}, {"offset", 8}}}};
+
+  std::string tmpFile = "isrTextPrefix_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  // The unrelated register keeps its own (non-interrupt) access and is not part of the derived interrupt ids.
+  auto reg = regs.getBackendRegister("/DAQ/ISR_EXTRA/READY");
+  BOOST_CHECK(reg.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT);
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({0, 0}) != loi.end()); // the real ISR child still derives
+  for(auto const& id : loi) {
+    BOOST_TEST((id != std::vector<size_t>{0, 0, 0}));
+  }
+}
+
+/**********************************************************************************************************************/
+
+// A qualifying child of ISR that already declares its own interrupt is an error at parse time: an ISR child is
+// derived, so a declared interrupt is redundant and the child's own id would be silently overwritten. The check is
+// unconditional, so it rejects a declared id equal to the derived one too.
+BOOST_AUTO_TEST_CASE(TestIsrChildDeclaredInterruptDifferentId) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give the bit-0 child of DAQ/ISR its own interrupt with a different id.
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["triggeredByInterrupt"] = {7, 5};
+
+  std::string tmpFile = "isrChildDeclaredInterruptDiffId_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A declared interrupt on an ISR child is rejected even when its id equals the derived one: the check tests the
+// register access, not the id, so a declared interrupt is redundant rather than merely conflicting.
+BOOST_AUTO_TEST_CASE(TestIsrChildDeclaredInterruptSameId) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Give the bit-0 child of DAQ/ISR its own interrupt with the id it would derive anyway ([0, 0]).
+  map["addressSpace"]["DAQ"]["children"]["ISR"]["children"]["DAQ_READY"]["triggeredByInterrupt"] = {0, 0};
+
+  std::string tmpFile = "isrChildDeclaredInterruptSameId_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An interrupt handler entry must carry exactly one controller key at its top level, once 'subhandler' and the
+// underscore-prefixed keys are dropped. An entry with several controller keys is a map authoring error and the public
+// parser must reject it. The base map is the full fixture, so the INTC key resolves DAQ/ISR and the extra key is an
+// unregistered type the dispatcher skips: without the entry-level checks the map would parse. The entry reader and the
+// handler augmentation both enforce the invariant, so the case is rejected while either check is present and only
+// disappears once both are gone; it exercises the parse contract rather than either check in isolation.
+BOOST_AUTO_TEST_CASE(TestInterruptHandlerSeveralControllerKeys) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Add a second, non-underscore controller key beside the existing INTC key of the DAQ handler [0].
+  map["interruptHandler"]["0"]["OTHER_TYPE"] = {{"path", "DAQ"}};
+
+  std::string tmpFile = "interruptHandlerSeveralKeys_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+  BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
 }
 
 /**********************************************************************************************************************/
@@ -948,6 +1376,8 @@ BOOST_AUTO_TEST_CASE(TestNamedChannelBitRangeBuf0CollisionThrows) {
   std::remove(tmpFile.c_str());
 }
 
+/**********************************************************************************************************************/
+
 // A bit-field child literally named 'BUF0' of a double-buffered channel collides with the parent channel slice's
 // auto-generated BUF0 buffer view. This is a map authoring error and must fail fast with a logic_error at parse
 // time, rather than silently skipping the child slice. The colliding child is injected into a copy of
@@ -1101,6 +1531,8 @@ BOOST_AUTO_TEST_CASE(TestSelectedBySelectorNotFound) {
   BOOST_CHECK_THROW(ChimeraTK::MapFileParser::parse(tmpFile), ChimeraTK::logic_error);
 }
 
+/**********************************************************************************************************************/
+
 // S2: a selector register that is itself conditionally enabled by a 'selectedBy' of its own must be rejected: a
 // selector drives the gate of another register and must therefore be readable unconditionally.
 BOOST_AUTO_TEST_CASE(TestSelectedBySelectorItselfGated) {
@@ -1156,10 +1588,14 @@ BOOST_AUTO_TEST_CASE(TestSelectedByReadWriteRejected) {
   BOOST_CHECK_THROW(parseSelectedByAccessFixture("RW"), ChimeraTK::logic_error);
 }
 
+/**********************************************************************************************************************/
+
 // PR2: 'selectedBy' on a register with Access::WRITE_ONLY must be rejected as a parsing error.
 BOOST_AUTO_TEST_CASE(TestSelectedByWriteOnlyRejected) {
   BOOST_CHECK_THROW(parseSelectedByAccessFixture("WO"), ChimeraTK::logic_error);
 }
+
+/**********************************************************************************************************************/
 
 // PR3: 'selectedBy' on a register with Access::READ_ONLY is accepted.
 BOOST_AUTO_TEST_CASE(TestSelectedByReadOnlyAccepted) {
@@ -1169,6 +1605,8 @@ BOOST_AUTO_TEST_CASE(TestSelectedByReadOnlyAccepted) {
   BOOST_TEST(reg.channels[0].selectedBy->regPath == "/APP/SEL");
   BOOST_TEST(reg.channels[0].selectedBy->val == 1);
 }
+
+/**********************************************************************************************************************/
 
 // PR4: 'selectedBy' on a register with Access::INTERRUPT is accepted. An interrupt register is expressed via
 // 'triggeredByInterrupt' (which implies read-only) instead of 'access'.

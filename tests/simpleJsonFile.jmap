@@ -659,6 +659,43 @@
             "readBufferRegister": "DAQ.DOUBLE_BUF.INACTIVE_BUF_ID",
             "index": 2
           }
+        },
+        "ISR": {
+          "_": "The INTC handler for [0] refers to DAQ/ISR: each 1-bit child becomes an interrupt register with id [0, <bit position>].",
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 5,
+            "offset": 8
+          },
+          "children": {
+            "DAQ_READY": {
+              "representation": {
+                "bitShift": 0,
+                "width": 1
+              }
+            },
+            "SECOND_INTERRUPT": {
+              "representation": {
+                "bitShift": 1,
+                "width": 1
+              }
+            },
+            "THIRD_INTERRUPT": {
+              "representation": {
+                "bitShift": 2,
+                "width": 1
+              }
+            }
+          }
+        },
+        "IER": {
+          "bytesPerElement": 4,
+          "numberOfElements": 1,
+          "address": {
+            "channel": 5,
+            "offset": 12
+          }
         }
       }
     },
@@ -696,6 +733,40 @@
               "address": {
                 "channel": 4,
                 "offset": 0
+              }
+            },
+            "IER": {
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 4,
+                "offset": 0
+              }
+            }
+          }
+        },
+        "SUB1": {
+          "children": {
+            "ISR": {
+              "bytesPerElement": 4,
+              "numberOfElements": 1,
+              "address": {
+                "channel": 4,
+                "offset": 0
+              },
+              "children": {
+                "READY": {
+                  "representation": {
+                    "bitShift": 0,
+                    "width": 1
+                  }
+                },
+                "ERROR": {
+                  "representation": {
+                    "bitShift": 1,
+                    "width": 1
+                  }
+                }
               }
             },
             "IER": {
