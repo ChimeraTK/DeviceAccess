@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from STYLE REVIEWED)
+Status: READY TO TEST (from STYLE REVIEWED)
 
 ## Requirements
 
@@ -210,7 +210,7 @@ backend.
   parent's target (wrong id) or, when the parent carries no reference, silently
   dropped. The branch must distinguish 'no own reference, inherit from parent'
   from 'own reference' (and record the entry's own reference).
-- DI-3 [FOLDED-IN] The test plan
+- DI-3 [IMPLEMENTED] The test plan
   (tests/executables_src/testJsonMapFileParser.cpp) has no case for a void
   referring register - its first case uses a data-carrying referrer - so the
   defect above is not detected. A test for a void register declared with a
