@@ -90,10 +90,19 @@ Aspect: interrupt ids referred to by register name.
      dot-separated target resolves.
 - `addInfos` (modified): takes a `std::map<RegisterPath, RegisterPath>&`
   (referring register path to target name).
-   - Records an entry for a string-form register, for the channel and
-     bit-range slices derived from it and, on the inherited-representation
-     branch, for the child taking its interrupt id from its parent, so every
-     interrupt register of a string-form entry is covered.
+   - In the address-bearing branch it records an entry for a string-form
+     register and for the channel and bit-range slices derived from it, so
+     every referring register there is covered.
+   - In the address-less branch, which carries every void register and every
+     entry inheriting its parent's address, it records the entry's own
+     reference under the entry's path, so a void referring register is
+     covered as well.
+   - Only an address-less entry declaring no reference of its own but
+     inheriting an interrupt id takes over its string-form parent's
+     unresolved reference, so the child's id resolves with its parent's.
+      - The branch decides this from `triggeredByInterrupt`, not from an
+        empty `interruptId`: `fill` leaves the id empty both for an own
+        string reference and for inheritance from a string-form parent.
    - The map is passed down from `parse`.
 
 ### NumericAddressedRegisterCatalogue (modified) in src/NumericAddressedRegisterCatalogue.cc (modified)
@@ -143,6 +152,12 @@ Aspect: interrupt ids referred to by register name.
 ## Test plan
 
 - `tests/executables_src/testJsonMapFileParser.cpp` (modified)
+   - Void referring register: a `type: void` register declaring its
+     `triggeredByInterrupt` as a string carries the target's resolved id,
+     appears in `getListOfInterrupts()` and resolves through the canonical
+     interrupt path.
+      - Covers the void referrer requirement and the address-less recording
+        in `addInfos` (Requirements; Specifications).
    - Reference to a void interrupt register: the referring data register
      carries the resolved id, appears in `getListOfInterrupts()` and resolves
      through the canonical interrupt path.
@@ -171,3 +186,32 @@ Aspect: interrupt ids referred to by register name.
      reaches the distributor.
       - Covers the runtime behaviour (Requirements); the parser test has no
         backend.
+
+## Deferred issue
+
+- DI-1 [NEW] A referring register without an address is never recorded in the
+  interrupt-reference map, so its string 'triggeredByInterrupt' is silently
+  ignored. 'recordInterruptReference' is called only in the address-bearing
+  branch of addInfos (src/JsonMapFileParser.cc:510, and for slices 556/583).
+  Every address-less entry goes through the 'else if(representation.type !=
+  representationNotSet)' branch (src/JsonMapFileParser.cc:604-621), which never
+  records the entry's own 'triggeredByInterrupt'. Because the schema and 'fill'
+  force a void register to have no address and a 'type: void' representation,
+  every void referring register takes that branch: it keeps an empty interrupt
+  id, is absent from 'getListOfInterrupts()', has no canonical interrupt path,
+  and no parse error is raised. The same entry with a numeric id works, so a
+  string reference and the equivalent array are not interchangeable as required,
+  and the explicit requirement 'The referring register may be void or
+  data-carrying' is violated.
+- DI-2 [NEW] The fallback added in the address-less branch
+  (src/JsonMapFileParser.cc:612-620) assumes an empty interrupt id always means
+  'inherits from a string-form parent'. An address-less entry that declares its
+  own string reference is therefore not recorded for itself: it is bound to the
+  parent's target (wrong id) or, when the parent carries no reference, silently
+  dropped. The branch must distinguish 'no own reference, inherit from parent'
+  from 'own reference' (and record the entry's own reference).
+- DI-3 [NEW] The test plan (tests/executables_src/testJsonMapFileParser.cpp) has
+  no case for a void referring register - its first case uses a data-carrying
+  referrer - so the defect above is not detected. A test for a void register
+  declared with a string 'triggeredByInterrupt' is needed once the
+  implementation is fixed.
