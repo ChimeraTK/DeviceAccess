@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from STYLE REVIEWED)
+Status: READY TO IMPLEMENT (from STYLE REVIEWED)
 
 ## Requirements
 
@@ -215,3 +215,15 @@ backend.
   data-carrying referrer - so the defect above is not detected. A test for a
   void register declared with a string 'triggeredByInterrupt' is needed once the
   implementation is fixed.
+- DI-4 [NEW] tests/executables_src/testGenericMuxedInterruptDistributor.cpp:804
+  uses getpid() but the file does not include <unistd.h> directly; it relies on
+  a transitive include. The sibling
+  tests/executables_src/testJsonMapFileParser.cpp includes <unistd.h> directly
+  for the same call. Add the include (in the C system-header group).
+- DI-5 [NEW] Code and test comments carry the earlier change-request number as
+  historical information, which the project rule 'No historical information'
+  forbids, and no other file in the project references a CR number in code:
+  src/NumericAddressedRegisterCatalogue.cc:307 ('CR-019 always knew the id') and
+  tests/executables_src/testJsonMapFileParser.cpp:1855 ('... after CR-019 has
+  augmented the implicit interrupt ids ...'). Describe the behaviour/ordering
+  instead of naming the earlier change request.
