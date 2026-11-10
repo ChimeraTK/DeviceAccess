@@ -7,9 +7,13 @@
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
 
+#include <nlohmann/json.hpp>
+
 #include <boost/test/unit_test.hpp>
 
 #include <chrono>
+#include <fstream>
+#include <string>
 #include <thread>
 
 using namespace ChimeraTK;
@@ -776,6 +780,59 @@ BOOST_AUTO_TEST_CASE(testDerivedInterruptRegistersEndToEnd) {
   BOOST_TEST(!accBit0.readNonBlocking());
 
   device.close();
+}
+
+/**********************************************************************************************************************/
+
+/**
+ * Register-name reference in 'triggeredByInterrupt', end to end on a backend.
+ *
+ * A data register refers by name to the derived ISR child DAQ/ISR/DAQ_READY of simpleJsonFile.jmap, whose INTC handler
+ * [0] makes that child an interrupt register with id [0, 0]. The dummy backend exposes the hidden DUMMY_INTERRUPT_0
+ * trigger for the primary handler [0]. Setting ISR bit 0 and triggering the handler must wake the referring register
+ * with the ISR value, confirming the resolved id reaches the distributor. The referring register is injected into the
+ * fixture map from code, so no separate map file is kept.
+ */
+BOOST_AUTO_TEST_CASE(testInterruptReferenceEndToEnd) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A data register inside BSP referring by name to the derived ISR child, so its id resolves to [0, 0].
+  map["addressSpace"]["BSP"]["children"]["ISR_REFERRING"] = {{"triggeredByInterrupt", "DAQ.ISR.DAQ_READY"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefEndToEnd_" + std::to_string(getpid()) + ".jmap";
+  std::ofstream(tmpFile) << map.dump(2);
+
+  {
+    Device device("(dummy?map=" + tmpFile + ")");
+    device.open();
+    device.activateAsyncRead();
+
+    // The referring register resolves through its named path, not a canonical path: a canonical-path accessor resolves
+    // to a synthesised no-data interrupt register and never reads the ISR bit field.
+    auto accReferring =
+        device.getScalarRegisterAccessor<int>("BSP/ISR_REFERRING", 0, {ChimeraTK::AccessMode::wait_for_new_data});
+    // Pop the initial value sent on activation.
+    accReferring.read();
+
+    auto isr = device.getScalarRegisterAccessor<uint32_t>("DAQ/ISR");
+    auto trigger = device.getVoidRegisterAccessor("DUMMY_INTERRUPT_0");
+
+    // A different ISR bit (bit 1, id [0, 1]) must not notify the referring register, which confirms the resolved id
+    // [0, 0] reaches the distributor rather than any interrupt of the handler.
+    isr.setAndWrite(0x2);
+    trigger.write();
+    BOOST_TEST(!accReferring.readNonBlocking());
+
+    // The ISR bit DAQ_READY (bit 0) resolves the referring register to the id [0, 0], so it is notified.
+    isr.setAndWrite(0x1);
+    trigger.write();
+    BOOST_TEST(readWithTimeout(accReferring));
+
+    device.close();
+  }
+  std::remove(tmpFile.c_str());
 }
 
 /**********************************************************************************************************************/

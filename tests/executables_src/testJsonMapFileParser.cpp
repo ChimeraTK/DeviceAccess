@@ -1759,4 +1759,240 @@ BOOST_AUTO_TEST_CASE(TestMapFormatVersionWithPatch) {
 
 /**********************************************************************************************************************/
 
+// 'triggeredByInterrupt' may name another interrupt register instead of giving the numeric id array. A data register
+// referring to a void interrupt register takes that register's resolved id: it appears in the list of interrupts and
+// resolves through the canonical interrupt path, exactly as if it had declared the id itself.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceToVoidRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // BSP/SOME_INFO is a data register; refer by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]).
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.VOID_INTERRUPT_0"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}},
+      {"_", "^^^ inside BSP, so the address offset is relative to BSP's address"}};
+
+  std::string tmpFile = "interruptRefVoid_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  auto reg = regs.getBackendRegister("/BSP/REFERRING");
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg.interruptId == std::vector<size_t>{0}));
+
+  // The referring register is part of the list of interrupts and resolves through its canonical interrupt path.
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({0}) != loi.end());
+  auto canonical = regs.getBackendRegister("!0");
+  BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((canonical.interruptId == std::vector<size_t>{0}));
+}
+
+/**********************************************************************************************************************/
+
+// The target of a reference may carry data: triggering does not depend on the target's data, so a non-void target is
+// allowed and the referring register takes the target's resolved id.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceToDataRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A void interrupt register with id [7], which is itself data-carrying (a fixed-point representation).
+  map["addressSpace"]["BSP"]["children"]["DATA_INTERRUPT"] = {{"triggeredByInterrupt", {7}}, {"numberOfElements", 1},
+      {"bytesPerElement", 4}, {"address", {{"offset", 20}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}},
+      {"_", "^^^ a data-carrying interrupt register: the trigger only uses its id"}};
+  // A data register referring to the data-carrying interrupt register by name.
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.DATA_INTERRUPT"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 24}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefData_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  auto target = regs.getBackendRegister("/BSP/DATA_INTERRUPT");
+  BOOST_CHECK(target.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((target.interruptId == std::vector<size_t>{7}));
+
+  auto reg = regs.getBackendRegister("/BSP/REFERRING");
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg.interruptId == std::vector<size_t>{7}));
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({7}) != loi.end());
+}
+
+/**********************************************************************************************************************/
+
+// A reference resolves after CR-019 has augmented the implicit interrupt ids, so a target may be a derived ISR child.
+// The reference names the derived child by its named path and takes the id the augmentation gave it.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceToDerivedIsrChild) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // The INTC handler [0] refers to DAQ/ISR; its bit-0 child DAQ_READY derives the id [0, 0].
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "DAQ.ISR.DAQ_READY"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefDerived_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  auto derived = regs.getBackendRegister("/DAQ/ISR/DAQ_READY");
+  BOOST_CHECK(derived.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((derived.interruptId == std::vector<size_t>{0, 0}));
+
+  auto reg = regs.getBackendRegister("/BSP/REFERRING");
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg.interruptId == std::vector<size_t>{0, 0}));
+}
+
+/**********************************************************************************************************************/
+
+// A reference is resolved in a post-pass over the whole catalogue, so the target may be declared after the referring
+// register in the file.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceForward) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // The referring register is declared first; the target BSP/TARGET_VOID_INT afterwards.
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.TARGET_VOID_INT"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+  map["addressSpace"]["BSP"]["children"]["TARGET_VOID_INT"] = {
+      {"triggeredByInterrupt", {9}}, {"representation", {{"type", "void"}}}};
+
+  std::string tmpFile = "interruptRefForward_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  auto reg = regs.getBackendRegister("/BSP/REFERRING");
+  BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((reg.interruptId == std::vector<size_t>{9}));
+}
+
+/**********************************************************************************************************************/
+
+// A reference resolves transitively: a referring register names a target that itself names another register, and the
+// final id is the one at the end of the chain.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceChain) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // Chain: REFERRING -> INTERMEDIATE -> FINAL (void, id [4]).
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.INTERMEDIATE"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+  map["addressSpace"]["BSP"]["children"]["INTERMEDIATE"] = {{"triggeredByInterrupt", "BSP.FINAL"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 20}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+  map["addressSpace"]["BSP"]["children"]["FINAL"] = {
+      {"triggeredByInterrupt", {4}}, {"representation", {{"type", "void"}}}};
+
+  std::string tmpFile = "interruptRefChain_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  BOOST_TEST((regs.getBackendRegister("/BSP/FINAL").interruptId == std::vector<size_t>{4}));
+  BOOST_TEST((regs.getBackendRegister("/BSP/INTERMEDIATE").interruptId == std::vector<size_t>{4}));
+  BOOST_TEST((regs.getBackendRegister("/BSP/REFERRING").interruptId == std::vector<size_t>{4}));
+}
+
+/**********************************************************************************************************************/
+
+// A reference cycle is an error at parse time. Two registers naming each other form a cycle.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceCycle) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["BSP"]["children"]["FIRST"] = {{"triggeredByInterrupt", "BSP.SECOND"}, {"numberOfElements", 1},
+      {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+  map["addressSpace"]["BSP"]["children"]["SECOND"] = {{"triggeredByInterrupt", "BSP.FIRST"}, {"numberOfElements", 1},
+      {"bytesPerElement", 4}, {"address", {{"offset", 20}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefCycle_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A register naming itself is a cycle and an error at parse time.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceSelf) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["BSP"]["children"]["SELF"] = {{"triggeredByInterrupt", "BSP.SELF"}, {"numberOfElements", 1},
+      {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefSelf_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A reference to a register that does not exist is an error at parse time.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceMissingTarget) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.DOES_NOT_EXIST"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefMissing_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A reference to a register that is not an interrupt register is an error at parse time.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceNonInterruptTarget) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // BSP/VERSION is an ordinary read-only data register, not an interrupt register.
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.VERSION"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefNonInterrupt_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// A 2D register declared with the string form creates one slice register per named channel. Every slice carries the
+// resolved interrupt id of the referring register.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceChannelSlice) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A 2D register whose channels A and B refer by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]).
+  map["addressSpace"]["BSP"]["children"]["REFERRING_2D"] = {{"triggeredByInterrupt", "BSP.VOID_INTERRUPT_0"},
+      {"numberOfElements", 4}, {"pitch", 8}, {"address", {{"type", "DMA"}, {"offset", "0x2000"}}},
+      {"channels",
+          {{"A", {{"bytesPerElement", 4}, {"offset", 0}, {"representation", {{"type", "fixedPoint"}, {"width", 32}}}}},
+              {"B",
+                  {{"bytesPerElement", 4}, {"offset", 4},
+                      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}}}}}};
+
+  std::string tmpFile = "interruptRefSlice_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  // Both the 2D register and its channel slices carry the resolved id [0].
+  BOOST_TEST((regs.getBackendRegister("/BSP/REFERRING_2D").interruptId == std::vector<size_t>{0}));
+  auto sliceA = regs.getBackendRegister("/BSP/REFERRING_2D/A");
+  BOOST_CHECK(sliceA.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((sliceA.interruptId == std::vector<size_t>{0}));
+  auto sliceB = regs.getBackendRegister("/BSP/REFERRING_2D/B");
+  BOOST_CHECK(sliceB.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST((sliceB.interruptId == std::vector<size_t>{0}));
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
