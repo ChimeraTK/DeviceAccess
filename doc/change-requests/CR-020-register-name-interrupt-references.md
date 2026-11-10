@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from STYLE REVIEWED)
+Status: STYLE REVIEWED
 
 ## Requirements
 
