@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO IMPLEMENT (from STYLE REVIEWED)
+Status: IMPLEMENTED (from STYLE REVIEWED)
 
 ## Requirements
 
@@ -189,21 +189,21 @@ backend.
 
 ## Deferred issue
 
-- DI-1 [FOLDED-IN] A referring register without an address is never recorded in
-  the interrupt-reference map, so its string 'triggeredByInterrupt' is silently
-  ignored. 'recordInterruptReference' is called only in the address-bearing
-  branch of addInfos (src/JsonMapFileParser.cc:510, and for slices 556/583).
-  Every address-less entry goes through the 'else if(representation.type !=
-  representationNotSet)' branch (src/JsonMapFileParser.cc:604-621), which never
-  records the entry's own 'triggeredByInterrupt'. Because the schema and 'fill'
-  force a void register to have no address and a 'type: void' representation,
-  every void referring register takes that branch: it keeps an empty interrupt
-  id, is absent from 'getListOfInterrupts()', has no canonical interrupt path,
-  and no parse error is raised. The same entry with a numeric id works, so a
-  string reference and the equivalent array are not interchangeable as required,
-  and the explicit requirement 'The referring register may be void or
-  data-carrying' is violated.
-- DI-2 [FOLDED-IN] The fallback added in the address-less branch
+- DI-1 [IMPLEMENTED] A referring register without an address is never recorded
+  in the interrupt-reference map, so its string 'triggeredByInterrupt' is
+  silently ignored. 'recordInterruptReference' is called only in the
+  address-bearing branch of addInfos (src/JsonMapFileParser.cc:510, and for
+  slices 556/583). Every address-less entry goes through the 'else
+  if(representation.type != representationNotSet)' branch
+  (src/JsonMapFileParser.cc:604-621), which never records the entry's own
+  'triggeredByInterrupt'. Because the schema and 'fill' force a void register to
+  have no address and a 'type: void' representation, every void referring
+  register takes that branch: it keeps an empty interrupt id, is absent from
+  'getListOfInterrupts()', has no canonical interrupt path, and no parse error
+  is raised. The same entry with a numeric id works, so a string reference and
+  the equivalent array are not interchangeable as required, and the explicit
+  requirement 'The referring register may be void or data-carrying' is violated.
+- DI-2 [IMPLEMENTED] The fallback added in the address-less branch
   (src/JsonMapFileParser.cc:612-620) assumes an empty interrupt id always means
   'inherits from a string-form parent'. An address-less entry that declares its
   own string reference is therefore not recorded for itself: it is bound to the

@@ -609,10 +609,16 @@ namespace ChimeraTK::detail {
             effectiveSelectedBySource); // only updates the name and the representation
         my.computeDataDescriptor();
         catalogue.addRegister(my);
-        // The child takes its interrupt id from its parent. A string-form parent has no id yet, so the child inherits
-        // the parent's unresolved reference: record the child against the same target, so the resolution fills the
-        // child's id too. The id is empty exactly for a string-form reference (a numeric parent already filled it).
-        if(my.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT && my.interruptId.empty()) {
+        // Record the entry's own register-name reference under its path. Every address-less entry takes this branch,
+        // so this is what covers a void referring register, which never has an address. A no-op for a numeric id, an
+        // absent field or a non-interrupt entry.
+        recordInterruptReference(interruptReferences, my.pathName);
+        // Only an entry without a reference of its own that inherits its parent's interrupt id takes over the parent's
+        // unresolved reference, so the child's id resolves with its parent's. A string-form entry has no id yet, so an
+        // empty id together with no own reference means the id is inherited from a string-form parent. A numeric
+        // parent already filled the id, and an own reference was just recorded above.
+        if(my.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT && my.interruptId.empty() &&
+            interruptReferences.find(my.pathName) == interruptReferences.end()) {
           const auto parentReference = interruptReferences.find(parentName);
           if(parentReference != interruptReferences.end()) {
             interruptReferences[my.pathName] = parentReference->second;
