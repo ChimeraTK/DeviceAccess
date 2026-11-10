@@ -304,9 +304,9 @@ namespace ChimeraTK {
     if(registerInfo.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
       return;
     }
-    // A register whose interrupt id is not (yet) known is added without bookkeeping. CR-019 always knew the id, but
-    // a 'triggeredByInterrupt' register-name reference is added with interrupt access before its id is resolved; the
-    // id is written later through modifyRegister, which then runs this bookkeeping.
+    // A register whose interrupt id is not (yet) known is added without bookkeeping. A 'triggeredByInterrupt'
+    // register-name reference is added with interrupt access before its id is resolved; the id is written later
+    // through modifyRegister, which then runs this bookkeeping.
     if(registerInfo.interruptId.empty()) {
       return;
     }

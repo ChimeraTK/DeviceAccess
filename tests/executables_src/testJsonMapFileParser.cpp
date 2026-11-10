@@ -1852,7 +1852,7 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceToDataRegister) {
 
 /**********************************************************************************************************************/
 
-// A reference resolves after CR-019 has augmented the implicit interrupt ids, so a target may be a derived ISR child.
+// A reference resolves after the implicit interrupt ids have been augmented, so a target may be a derived ISR child.
 // The reference names the derived child by its named path and takes the id the augmentation gave it.
 BOOST_AUTO_TEST_CASE(TestInterruptReferenceToDerivedIsrChild) {
   std::ifstream base("simpleJsonFile.jmap");

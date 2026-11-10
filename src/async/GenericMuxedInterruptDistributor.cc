@@ -860,7 +860,7 @@ namespace ChimeraTK::async {
       }
       // A child of ISR is derived, so a declared interrupt on it is redundant and its own id would be silently
       // overwritten. The check tests the register access, not the id, so it also holds for a named reference whose
-      // id is not resolved yet (CR-020). Registers outside ISR are never checked, so shared ids stay allowed.
+      // id is not resolved yet. Registers outside ISR are never checked, so shared ids stay allowed.
       if(child.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT) {
         std::ostringstream oss;
         oss << "INTC " << controllerIDToStr(interruptId) << " ISR child '" << childPath

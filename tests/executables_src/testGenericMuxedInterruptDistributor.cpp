@@ -11,6 +11,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <unistd.h>
+
 #include <chrono>
 #include <fstream>
 #include <string>
