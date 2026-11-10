@@ -65,9 +65,12 @@ the plain `std::vector<size_t>`.
 alternative is involved.
 - Accepted forms: a non-empty array of non-negative integers as today, or
 a non-empty string parsed as a `RegisterPath`.
-- The three existing uses map as: absent is empty, and the non-void and
-void assignments to `info.interruptId` read the id vector of a present
-array.
+- An empty array counts as absent: the interrupt decision rests on a
+present array with at least one element, so the previous empty state is
+preserved and no id-less interrupt register is created.
+- The three existing uses map as: absent or an empty array is empty, and
+the non-void and void assignments to `info.interruptId` read the id vector
+of a present, non-empty array.
 - Serialisation: `include/JsonExtensions.h` (modified) gains an
 `adl_serializer<std::variant<Ts...>>`; the existing
 `adl_serializer<std::optional<T>>` covers absence.
@@ -227,3 +230,28 @@ backend.
   tests/executables_src/testJsonMapFileParser.cpp:1855 ('... after CR-019 has
   augmented the implicit interrupt ids ...'). Describe the behaviour/ordering
   instead of naming the earlier change request.
+- DI-6 [NEW] An empty 'triggeredByInterrupt' array is now treated as a declared
+  interrupt instead of as the previous empty state. The old test was
+  'triggeredByInterrupt.empty()', which was true both for an absent field and
+  for a present '[]'; it was replaced by '!triggeredByInterrupt.has_value()'
+  (src/JsonMapFileParser.cc:334, and again for the void case at :397), and the
+  nlohmann WITH_DEFAULT mapping gives '[]' an optional that holds an empty id
+  vector. Consequences of a present '[]': a data register silently becomes
+  INTERRUPT (read-only with wait_for_new_data) instead of the registered access
+  or the read-write default, and a void register silently parses instead of the
+  previous clear error 'Void-typed register ... needs triggeredByInterrupt
+  entry'. Such a register keeps an empty interrupt id, so it is absent from
+  getListOfInterrupts() and has no canonical interrupt path, i.e. it violates
+  the invariant stated in the NumericAddressedRegisterCatalogue specification
+  that an empty id exists only transiently for a string-form register (the id is
+  written later through modifyRegister). Requesting it with wait_for_new_data
+  reaches NumericAddressedBackend.cc:147,
+  registerInfo.getQualifiedAsyncId().front(), i.e. front() on an empty vector
+  (undefined behaviour) instead of a clean error. The schema forbids an empty
+  array (minItems 1), but the parser does not validate against the schema, and
+  the specification bullet 'The three existing uses map as: absent is empty'
+  intends the old empty state (absent or empty array) to map to absence.
+  Suggested fix (no specification change needed): treat a present-but-empty id
+  array as absent in fill/interruptIdIfNumeric, i.e. base the interrupt decision
+  on a present array with at least one element; alternatively reject it with a
+  clear logic_error.
