@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO IMPLEMENT (from STYLE REVIEWED)
+Status: IMPLEMENTED (from STYLE REVIEWED)
 
 ## Requirements
 
@@ -230,7 +230,7 @@ backend.
   tests/executables_src/testJsonMapFileParser.cpp:1855 ('... after CR-019 has
   augmented the implicit interrupt ids ...'). Describe the behaviour/ordering
   instead of naming the earlier change request.
-- DI-6 [FOLDED-IN] An empty 'triggeredByInterrupt' array is now treated as a
+- DI-6 [IMPLEMENTED] An empty 'triggeredByInterrupt' array is now treated as a
   declared interrupt instead of as the previous empty state. The old test was
   'triggeredByInterrupt.empty()', which was true both for an absent field and
   for a present '[]'; it was replaced by '!triggeredByInterrupt.has_value()'

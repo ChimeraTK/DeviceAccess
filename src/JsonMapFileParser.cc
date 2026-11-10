@@ -313,11 +313,24 @@ namespace ChimeraTK::detail {
     // authoring error.
     std::optional<SelectedBy> selectedBy;
 
-    // The interrupt id to assign when 'triggeredByInterrupt' carries a numeric id array. The string form names
-    // another register, so it has no id here yet; the id is resolved after the parse pass (see Imp::parse) and the
-    // reference is collected in the reference map.
+    // Whether 'triggeredByInterrupt' declares an interrupt. A present array with no element counts as absent: an empty
+    // array does not create an id-less interrupt register (the schema forbids it, but the parser does not validate
+    // against the schema), so the previous empty state is preserved.
+    [[nodiscard]] bool hasTriggeredByInterrupt() const {
+      if(!triggeredByInterrupt.has_value()) {
+        return false;
+      }
+      if(const auto* id = std::get_if<std::vector<size_t>>(&*triggeredByInterrupt)) {
+        return !id->empty();
+      }
+      return true; // the string form always names a register
+    }
+
+    // The interrupt id to assign when 'triggeredByInterrupt' carries a non-empty numeric id array. The string form
+    // names another register, so it has no id here yet; the id is resolved after the parse pass (see Imp::parse) and
+    // the reference is collected in the reference map.
     [[nodiscard]] std::vector<size_t> interruptIdIfNumeric() const {
-      if(triggeredByInterrupt.has_value()) {
+      if(hasTriggeredByInterrupt()) {
         if(const auto* id = std::get_if<std::vector<size_t>>(&*triggeredByInterrupt)) {
           return *id;
         }
@@ -331,7 +344,7 @@ namespace ChimeraTK::detail {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
 
-      if(!triggeredByInterrupt.has_value()) {
+      if(!hasTriggeredByInterrupt()) {
         if(access != Access::accessNotSet) {
           info.registerAccess = NumericAddressedRegisterInfo::Access(access);
         }
@@ -394,7 +407,7 @@ namespace ChimeraTK::detail {
         if(address.type != AddressType::addressTypeNotSet) {
           throw ChimeraTK::logic_error("Address is set for void-typed register " + info.pathName);
         }
-        if(!triggeredByInterrupt.has_value()) {
+        if(!hasTriggeredByInterrupt()) {
           throw ChimeraTK::logic_error(
               "Void-typed register " + parentName / name + " needs 'triggeredByInterrupt' entry.");
         }
