@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -491,10 +491,10 @@ built by the 1D/2D-agnostic constructor.
   with one public finalisation step called after the catalogue is filled and all
   ids are resolved; addRegister and modifyRegister no longer bookkeep. Both map
   file parsers call it once.
-- DI-14 [IMPLEMENTED] Revision request: an empty interrupt id is a map error
-  instead of a register silently left out of the interrupt indexes. A present
-  empty 'triggeredByInterrupt' array is rejected in fill; the constructor maps
-  an empty vector to std::nullopt, so no empty id reaches the field, and the
+- DI-14 [DONE] Revision request: an empty interrupt id is a map error instead of
+  a register silently left out of the interrupt indexes. A present empty
+  'triggeredByInterrupt' array is rejected in fill; the constructor maps an
+  empty vector to std::nullopt, so no empty id reaches the field, and the
   finalisation asserts that none is present.
 - DI-15 [DONE] Specifications lost the two non-class change sections during the
   design revision: `doc/jmapFormat.dox` (already changed: the `jmap_interrupts`
@@ -588,7 +588,7 @@ built by the 1D/2D-agnostic constructor.
   so the double bar at :732 no longer separates two big blocks as the style rule
   for consecutive bars requires. With a plain file-local function following it,
   it should be a single bar; the double bar before Imp::parse (:785) stays.
-- DI-28 [IMPLEMENTED] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:57-58:
+- DI-28 [DONE] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:57-58:
   two consecutive chrome bars sit between the two test cases of the suite.
   Consecutive bars emphasise big separations only (style rule); every other test
   file (e.g. tests/executables_src/testMapFileParser.cpp:158,
@@ -621,8 +621,8 @@ built by the 1D/2D-agnostic constructor.
   helper that throws (e.g. getInterruptControllerNameAndDescription,
   JsonAddressSpaceEntry::fill) leaves the prefix to that catch; drop the prefix
   from the four new messages.
-- DI-32 [IMPLEMENTED] The 2D (channel) constructor of
-  NumericAddressedRegisterInfo stores the interrupt id unchanged
+- DI-32 [DONE] The 2D (channel) constructor of NumericAddressedRegisterInfo
+  stores the interrupt id unchanged
   (src/NumericAddressedRegisterCatalogue.cc:59-64), so the empty
   std::vector&lt;size_t&gt; that the *.mapp parser passes for every 2D register
   without interrupt (src/TraditionalMapFileParser.cc:394 and :410) becomes an
@@ -639,8 +639,8 @@ built by the 1D/2D-agnostic constructor.
   with std::vector&lt;size_t&gt;{}
   (tests/executables_src/testMapFileParser.cpp:110,114,150,154); with the
   mapping added both sides become std::nullopt and still compare equal.
-- DI-33 [IMPLEMENTED] The obligation to call finaliseInterruptBookkeeping() once
-  per filled catalogue is documented only on the method
+- DI-33 [DONE] The obligation to call finaliseInterruptBookkeeping() once per
+  filled catalogue is documented only on the method
   (include/NumericAddressedRegisterCatalogue.h:201-214). The Specifications
   require it in two further places, neither of which has any documentation:
   NumericAddressedRegisterCatalogue has no class doc block at all
@@ -648,18 +648,18 @@ built by the 1D/2D-agnostic constructor.
   constructor NumericAddressedBackend(mapFileName, registerMapPointer,
   dataConsistencyKeyDescriptor) is undocumented
   (include/NumericAddressedBackend.h:22-25).
-- DI-34 [IMPLEMENTED] src/NumericAddressedRegisterCatalogue.cc:33-41 and :67-74:
-  the empty-id guard is duplicated verbatim, comment included, in both
-  constructors of NumericAddressedRegisterInfo ('An empty numeric id is no id:
-  it maps to the register not being an interrupt source. Such a vector is passed
-  by the *.mapp parser, whose interrupt entry may be empty.' plus the
+- DI-34 [DONE] src/NumericAddressedRegisterCatalogue.cc:33-41 and :67-74: the
+  empty-id guard is duplicated verbatim, comment included, in both constructors
+  of NumericAddressedRegisterInfo ('An empty numeric id is no id: it maps to the
+  register not being an interrupt source. Such a vector is passed by the *.mapp
+  parser, whose interrupt entry may be empty.' plus the
   if(std::get_if<std::vector<size_t>>...) { if(empty) reset; } block and the
   following 'interruptId = std::move(interruptId_);'). The project style forbids
   duplicated code and comments that repeat what a sibling comment already says.
   Move the mapping into one file-local helper (e.g. a static function taking the
   optional and returning std::nullopt for an empty numeric alternative) and call
   it from both constructors, keeping the reason stated once.
-- DI-35 [IMPLEMENTED] tests/executables_src/testMapFileParser.cpp:532-533: two
+- DI-35 [DONE] tests/executables_src/testMapFileParser.cpp:532-533: two
   consecutive chrome bars separate the test case testMapFileNewStyleMuxed from
   the new test case testInterruptBookkeepingFinalised. Consecutive bars
   emphasise big separations only; between two ordinary test cases a single bar
@@ -667,3 +667,16 @@ built by the 1D/2D-agnostic constructor.
   shows (the pair at :59-60 is the big separation after the compareCatalogue
   helper, which is the accepted use). The change inserted one bar next to the
   pre-existing one; reduce :532-533 to a single bar.
+- DI-36 [NEW] src/NumericAddressedRegisterCatalogue.cc:21-38: the empty-id
+  mapping helper `mapEmptyNumericIdToNoInterrupt` introduced for DI-34 lives in
+  the only anonymous namespace in `src/` and makes clang-tidy-22 report
+  `llvm-prefer-static-over-anonymous-namespace` at :27 (`function
+  'mapEmptyNumericIdToNoInterrupt' is declared in an anonymous namespace; prefer
+  using 'static' for restricting visibility`). The project has no other
+  anonymous namespace, its `.clang-tidy` enables the check, and every other
+  file-local helper is written as a `static` function inside the `ChimeraTK`
+  namespace (e.g. `resolveInterruptReference`, src/JsonMapFileParser.cc:741,
+  `makeInterruptRegister`,
+  tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:24). Drop the
+  anonymous namespace and declare the helper as `static`, with the chrome bar
+  structure adapted; keep the reason comment stated once.
