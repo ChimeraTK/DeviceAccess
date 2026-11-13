@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -494,3 +494,15 @@ and the indexes survive `clone()`.
   `std::optional::value_or` takes a deduced forwarding reference
   (`template<class U> T value_or(U&&)`), so `{}` cannot be deduced. It must name
   the empty vector explicitly.
+- DI-21 [NEW] tests/executables_src/testJsonMapFileParser.cpp:1830 comment is
+  self-contradictory: "A void interrupt register with id [7], which is itself
+  data-carrying (a fixed-point representation)." The register DATA_INTERRUPT
+  declared right below is a fixed-point (data-carrying) interrupt register, not
+  a void one, so the comment misdescribes the case it sets up. State it as a
+  data-carrying interrupt register with id [7].
+- DI-22 [NEW] include/NumericAddressedRegisterCatalogue.h:211 documents a throw
+  that cannot happen: the doxygen block of finaliseInterruptBookkeeping carries
+  '@throw ChimeraTK::logic_error never; ...'. Doxygen renders this as a 'throws'
+  entry although the function never throws; put the assertion of the two
+  incomplete states into plain prose in the description and drop the @throw
+  line. No other place in the project uses this construct.
