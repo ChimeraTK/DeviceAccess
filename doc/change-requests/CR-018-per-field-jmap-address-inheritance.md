@@ -56,6 +56,23 @@ lookup fails with the misleading `Register '/TOP' does not exist` instead of
 `Address not set but representation given` (`:333-335`), which is the intended
 error.
 
+Aspect: inheritance of the register properties.
+
+- Current behaviour (bug): `access` is inherited only where an entry omits its
+  whole `address` (`src/JsonMapFileParser.cc:346-353`), and
+  `triggeredByInterrupt` is not inherited at all, so an address-less child of an
+  interrupt register becomes an `INTERRUPT` register with no interrupt source.
+- `access` is inherited from the nearest ancestor register whenever the entry
+  gives no `access` of its own, with an `address` or without.
+- `triggeredByInterrupt` is inherited together with the `access` it implies,
+  unless the entry gives an `access` of its own; the two remain mutually
+  exclusive on a single entry (`schemas/jmap.schema.json:178`). Giving `access`
+  is thus the way to keep a child a plain register.
+- `numberOfElements` and `bytesPerElement` are inherited only where the entry
+  omits its whole `address`, since they describe the sample the entry is cut
+  from. An own `bytesPerElement` overrides the sample width in both cases.
+- `representation`, `engineeringUnit` and `description` are never inherited.
+
 Aspect: `secondaryBufferAddress`.
 
 - Current behaviour (bug): its omitted fields silently take the member defaults
@@ -94,6 +111,9 @@ that deviated.
 `type`/`channel` from the register's resolved address, with the same
 `type`/`channel` tie; its `offset` is its own and required, so a present
 `secondaryBufferAddress` without `offset` is rejected like a primary `address`.
+- The inheritance example in `doc/jmapFormat.dox:242-261` must stop claiming an
+identical outcome to the example above it: its `STATUS` child omits the address
+and therefore keeps `numberOfElements: 2` of `APP`.
 
 ## Specifications
 
@@ -145,23 +165,33 @@ the `representation` case.
 
 Recursion:
 
-- `addInfos` passes the nearest ancestor's resolved address down the recursion,
-replacing the `addressSetByParent` flag (`:276`, `:285`, `:319`, `:432`,
-`:448`, `:546`, `:554`).
+- `addInfos` takes the parent entry instead of a resolved address, and hands
+  `this` to its children, so the entry carries the values its children inherit.
+  This replaces the `addressSetByParent` flag (`:276`, `:285`, `:319`, `:432`,
+  `:448`, `:546`, `:554`) and the `catalogue.getBackendRegister(parentName)`
+  lookup (`:544`).
+- `JsonAddressSpaceEntry` gains a `derived` member holding the resolved
+  `address`, the effective `access` and interrupt sources, the sample width, the
+  element pitch, the element count, the effective `selectedBy` and the entry
+  that declared it. `derive()` resolves it once per entry from the parent entry
+  and the entry's own members and is the only place that carries the inheritance
+  rules. `fill` writes `derived` into the register info and keeps no inheritance
+  logic of its own (`AncestorRegister`, `:120-128`, disappears).
 - An entry with a present `address` resolves `type` from its own value, else
-from the inherited address, else from the `IO` default. `channel` is its own
-value, else the inherited one where the `type` is inherited as well, else `0`.
-`offset` is always its own.
+  from the inherited address, else from the `IO` default. `channel` is its own
+  value, else the inherited one where the `type` is inherited as well, else `0`.
+  `offset` is always its own.
+- `access` is the entry's own value, else the parent's.
+- `triggeredByInterrupt` is the entry's own value, else inherited together with
+  the `access` it implies; specifying `access` suppresses that inheritance.
+  Giving both on the same entry stays an error.
+- `numberOfElements` and `bytesPerElement` are inherited only where the entry
+  omits its whole `address` and gives no `channels`; an own `bytesPerElement`
+  then still overrides the sample width. `representation`, `engineeringUnit`
+  and `description` are never inherited.
 - The resolved address becomes the inherited address of the entry's children, so
-inheritance works through modules and from a 2D register down to its channels
-and their bit fields.
-- Whole-address omission no longer looks the parent up in the catalogue
-(`catalogue.getBackendRegister(parentName)`, `:544`); the address comes from
-the ancestor state carried down the recursion. This is the same top-down
-resolution as the per-field merge.
-- The recursion carries the ancestor's register info as well, because an entry
-with an omitted address takes the ancestor's `elementPitchBits` for the
-`bytesPerElement` fallback (`:326`) and keeps its `registerAccess` (`:285`).
+  inheritance works through modules and from a 2D register down to its channels
+  and their bit fields. A module copies the parent's `derived` unchanged.
 
 Double buffering:
 
@@ -423,6 +453,45 @@ holds two elements even though the text claims an identical outcome to the
 example above, where `STATUS` has one element. The example and that claim are
 to be corrected when the format documentation is updated.
 
+### Mechanism: the entry carries its derived values
+
+Agreed on 2026-11-13 for the implementation phase. It replaces
+`AncestorRegister` (`src/JsonMapFileParser.cc:120-128`).
+
+- `JsonAddressSpaceEntry` gains a member `derived` holding what the entry
+  effectively is: the resolved `address`, the effective `access`, the effective
+  interrupt sources, the sample width, the element pitch, the element count, the
+  effective `selectedBy` and the entry that declared it.
+- A new `derive(parent, thisPath)` resolves that member once per entry from the
+  parent entry and the entry's own members. It becomes the only place that holds
+  the inheritance rules of this section.
+- `addInfos` takes the parent entry (`const JsonAddressSpaceEntry*`, null for
+  the entries of the top-level `addressSpace`) and hands `this` to its children.
+  A module copies the parent's `derived` unchanged, a register derives its own
+  values from it.
+- `fill` loses both inheritance parameters and both `ownsAddress` branches and
+  only writes `derived` into the register info. Its single caller is `addInfos`
+  (`:518`), so no interface outside the parser is affected.
+- `resolveAddress` stays as it is and is called from `derive`, which takes the
+  inherited address from `parent->derived.address`.
+
+Why not carry the filled `NumericAddressedRegisterInfo` instead:
+
+- It cannot replace the inherited address: `bar` folds type and channel into
+  one number (`:192`), so IO channel 13 and DMA channel 0 both give `bar == 13`
+  and a child that gives its own `channel` and omits `type` could not compute
+  its `bar`.
+- A reference to it would point at a local of the parent's `addInfos` (`:516`)
+  and dangle once that call returns; the entry outlives the parse.
+- The entry that declared the effective selector (`selectedBySource`, `:505`)
+  is not part of the register info, but the error at `:434-436` names it.
+
+Trade-off accepted: the entry is no longer a pure image of the JSON, and the
+inheritable set is no longer enforced by a signature, so a child must read
+`parent->derived` and nothing else of its parent. This goes in the direction of
+the planned long-term change, in which the JSON structure becomes identical to
+the info object and parsing writes directly into the catalogue.
+
 ### Decisions taken
 
 Settled on 2026-11-13, so the section records no open points.
@@ -430,10 +499,7 @@ Settled on 2026-11-13, so the section records no open points.
 - Sample geometry: `numberOfElements` and `bytesPerElement` are inherited if
   and only if the entry omits its whole `address`. The earlier idea of
   stating the values on every bit-field child is dropped.
-- Consequences: `AncestorRegister` keeps its purpose, since it carries exactly
-  the sample geometry a bit-field child inherits. No fixture and no test
-  changes. The example in `doc/jmapFormat.dox` is corrected separately.
-- Remaining simplification: carry the inherited `access` and
-  `triggeredByInterrupt` in the same ancestor state, so `fill` gets one
-  ancestor argument instead of the resolved address plus the geometry, and the
-  rule is readable in one place.
+- Consequences: the sample geometry needs no carrier of its own, `derived`
+  holds it together with the access, the interrupt sources and the selector. No
+  fixture and no test changes. The example in `doc/jmapFormat.dox` is corrected
+  separately.
