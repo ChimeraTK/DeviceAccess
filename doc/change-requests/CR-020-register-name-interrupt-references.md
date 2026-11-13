@@ -80,8 +80,13 @@ missing before:
 
 ### NumericAddressedRegisterInfo (modified) in include/NumericAddressedRegisterCatalogue.h (modified), src/NumericAddressedRegisterCatalogue.cc (modified)
 
-- `interruptId` (modified): of type
-`std::optional<std::variant<std::vector<size_t>, std::string>>`, replacing
+- `InterruptId` (new):
+`using InterruptId = std::variant<std::vector<size_t>, std::string>;`, a
+public alias naming the two forms of an interrupt id, so the field and the
+constructor parameters name it instead of spelling the variant out. It is
+part of the installed header's API; the spelled-out type and the alias are
+the same type.
+- `interruptId` (modified): of type `std::optional<InterruptId>`, replacing
 the plain `std::vector<size_t>`.
 - The variant carries the numeric id or a not yet resolved register-name
 reference; `std::nullopt` is a register that is not an interrupt source.
@@ -92,8 +97,7 @@ applied where the reference is resolved.
 - An entry is an interrupt register when the field holds a numeric id or
 a string. An empty numeric id never occurs: the parser rejects `[]` and
 the constructor maps an empty vector to `std::nullopt`.
-- Constructors (modified): both take the new field type,
-`std::optional<std::variant<std::vector<size_t>, std::string>>`, with
+- Constructors (modified): both take `std::optional<InterruptId>`, with
 `= std::nullopt` as the default of the 1D/2D-agnostic one.
 - An empty numeric vector still maps to `std::nullopt`, so the `*.mapp`
 parser keeps passing its possibly empty id vector.
