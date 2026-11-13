@@ -1827,7 +1827,7 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceToVoidRegister) {
 BOOST_AUTO_TEST_CASE(TestInterruptReferenceToDataRegister) {
   std::ifstream base("simpleJsonFile.jmap");
   nlohmann::json map = nlohmann::json::parse(base);
-  // A void interrupt register with id [7], which is itself data-carrying (a fixed-point representation).
+  // A data-carrying interrupt register with id [7] (a fixed-point representation).
   map["addressSpace"]["BSP"]["children"]["DATA_INTERRUPT"] = {{"triggeredByInterrupt", {7}}, {"numberOfElements", 1},
       {"bytesPerElement", 4}, {"address", {{"offset", 20}}},
       {"representation", {{"type", "fixedPoint"}, {"width", 32}}},

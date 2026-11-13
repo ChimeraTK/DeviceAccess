@@ -27,7 +27,9 @@ namespace nlohmann {
       }
     }
 
-    /** Called when an optional is read from JSON: a null gives an empty optional, any other value the contained value. */
+    /**
+     * Called when an optional is read from JSON: a null gives an empty optional, any other value the contained value.
+     */
     static void from_json(const json& j, std::optional<T>& opt) {
       if(j.is_null()) {
         opt = std::nullopt;
