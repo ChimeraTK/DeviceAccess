@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -506,3 +506,14 @@ and the indexes survive `clone()`.
   entry although the function never throws; put the assertion of the two
   incomplete states into plain prose in the description and drop the @throw
   line. No other place in the project uses this construct.
+- DI-23 [NEW] The Test plan's empty-reference-string test case is not
+  implemented. The plan requires two cases in
+  tests/executables_src/testJsonMapFileParser.cpp ('Empty reference string:
+  parse-time logic_error naming the entry' plus the same case for a void
+  register), but the file only has TestInterruptReferenceEmptyArrayDataRegister
+  and TestInterruptReferenceEmptyArrayVoidRegister for the empty array; nothing
+  declares 'triggeredByInterrupt' as an empty JSON string. The parser's
+  rejection branch (src/JsonMapFileParser.cc:317-322, 'must not be an empty
+  register name') is therefore untested in both the data-register and the
+  void-register path, although the plan states this case is outside the schema
+  check and needs its own test.
