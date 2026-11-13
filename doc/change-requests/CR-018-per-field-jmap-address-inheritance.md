@@ -292,3 +292,137 @@ address-less module `APP`); a secondary on the same BAR is accepted
 - DI-6 [DONE] Implementation defect in secondaryBufferAddress offset rejection: a present secondaryBufferAddress without 'offset' must be rejected with ChimeraTK::logic_error like a primary 'address', but DoubleBufferingInfo::fill (src/JsonMapFileParser.cc:153) only asserts (assert(secondaryBufferAddress.offset.v != std::numeric_limits<size_t>::max())). In a debug build the assert aborts (SIGABRT) instead of throwing, so TestSecondaryBufferAddressWithoutOffsetRejected fails and aborts the...
 - DI-7 [DONE] tests/executables_src/testJsonMapFileParser.cpp (TestChannelsEntryInheritsAddressBecomesRegister): the second assertion block fetches '/APP/CHANS_PARENT/CHANS_CHILD/B', which is the channel slice named B, but its comment claims 'A bit-field child of a channel resolves to the same address as well'. Channel B is declared as a plain channel ({bytesPerElement 4, offset 0, representation {type fixedPoint, width 4}}) with no 'children', so no bit-field child (a 'children' entry belo...
 - DI-8 [DONE] The user requests replacing the 'unset' sentinels with std::optional: Address::type/channel/offset and DoubleBufferingInfo::SecondAddress::type/channel/offset currently use addressTypeNotSet / std::numeric_limits<size_t>::max() to mark an omitted (inherited) field (src/JsonMapFileParser.cc:134-136, :179-181). They should become std::optional, with an omitted JSON field deserialising to std::nullopt and resolveAddress (:304-331) and DoubleBufferingInfo::fill (:146-171) testin...
+
+## Temporary section: simplifying the inheritance mechanism
+
+Added during the final review on 2026-11-13 to record the discussion. It is not
+part of the change yet; it goes away once the open points are settled.
+
+### What the current mechanism does
+
+- `AncestorRegister` (`src/JsonMapFileParser.cc:120-128`) carries
+  `registerAccess`, `elementPitchBits` and `nElements` of the nearest ancestor
+  register, and `fill` receives it next to the resolved address (`:332-334`).
+- It is read only where an entry omits its whole `address` (`:346-353`,
+  `:377-383`). `resolveAddress` (`:308-330`) never looks at it, so address
+  inheritance and property inheritance are already independent.
+- On master (`84fcd860`) the whole parent register was copied
+  (`catalogue.getBackendRegister`, `:544`) and only name and representation
+  were overwritten. Every other member, `interruptId` included, came along by
+  accident, and the lookup failed whenever a module sat in between.
+
+### Proposed rule
+
+Property inheritance must not depend on whether the entry has an `address`.
+
+- `access`: inherited from the nearest ancestor register when the entry gives
+  no `access`.
+- `triggeredByInterrupt`: inherited together with the `access` it implies, but
+  only when the entry gives no `access`; the two are mutually exclusive
+  (`schemas/jmap.schema.json:178`, `src/JsonMapFileParser.cc:356-359`). Giving
+  `access` (`RO` for instance) switches the inheritance off, which is the way
+  out for a child that must not become an interrupt register.
+- `numberOfElements`: never inherited; see B.
+- Word width (`bytesPerElement`, and with it the element pitch): open; see A.
+- `representation`, `engineeringUnit`, `description`: always the entry's own.
+- Address fields: as specified above (`type`/`channel` per field, `offset` own
+  and required, a wholly omitted `address` inherits the offset as well).
+- `channels` and `children` stay mutually exclusive.
+
+### Comparison: master against the proposal
+
+The table states behaviour, not how it is achieved: "yes" or "no" for an entry
+that is a register, with the condition where the answer depends on the entry's
+own members. Columns are master (`84fcd860`) and the proposal.
+
+| Field | Master | Proposal |
+| --- | --- | --- |
+| `address` as a whole | yes, if omitted | yes, if omitted |
+| `type` | no, always `IO` | yes, if omitted |
+| `channel` | no, always `0` | yes, if `type` omitted |
+| `offset` | yes, if `address` omitted | yes, if `address` omitted |
+| `access` | yes, if `address` omitted | yes, if omitted |
+| `triggeredByInterrupt` | yes, if `address` omitted | yes, unless `access` |
+| `numberOfElements` | yes, if `address` omitted | no (B) |
+| word width | yes, if `address` omitted | open (A) |
+| `pitch` | no | no |
+| `representation` | no | no |
+| `engineeringUnit` | no | no |
+| `description` | no | no |
+| `selectedBy` | yes | yes |
+| `doubleBuffering` | no | no |
+| `secondaryBufferAddress` | no | no |
+
+The current branch differs from master in the address fields (`type`, `channel`,
+`offset`, and the secondary address), which is this change request. The
+property rows are as in master, except `triggeredByInterrupt`, which the branch
+dropped: an address-less child of an interrupt register now inherits
+`Access::INTERRUPT` but keeps an empty `interruptId`; the proposal repairs
+that.
+
+Notes on the rows that change behaviour:
+
+- `access`: master inherited it only where an entry omitted its whole address.
+  An entry with an own address and no `access` was `READ_WRITE` on master and
+  stays so on the branch; the proposal gives it the ancestor's `access`. No
+  fixture has that combination (checked for every `tests/*.jmap`), so no test
+  is affected.
+- `triggeredByInterrupt`: no fixture reaches this either; interrupt registers
+  in the maps use `channels`, and their bit-field children are a separate,
+  reduced struct (`ChannelChild`, `:275-281`) that never enters `addInfos`.
+- `numberOfElements`, word width: see the impact below and A/B.
+- `bytesPerElement`: it exists on master as well (`:118`). What a child
+  inherits is the word width, not the member as such; an own `bytesPerElement`
+  overrides the inherited width.
+- `offset`: master accepted an `address` without `offset` and used a
+  meaningless address; requiring the `offset` is already part of this change
+  request.
+- `secondaryBufferAddress`: master assumed `DMA`, channel 0 and offset 0 for
+  omitted secondary fields; requiring the `offset` is already part of this
+  change request.
+
+### Impact on the fixtures
+
+Only entries that reach `addInfos` without an own address inherit properties.
+In `tests/*.jmap` these are the eleven bit-field `children`:
+
+- `tests/simpleJsonFile.jmap`: `ProbeLimiter`, `ExternalInterlock` and
+  `ErrorCounter` below `APP/STATUS` and below `APP/LARGE_STATUS`.
+- `tests/unifiedTest.jmap`: `BitRangeLower`, `BitRangeMiddle`,
+  `BitRangeUpper` below `WORD_FIRMWARE`, and `ArrayBitRangeLow`,
+  `ArrayBitRangeHigh` below `ARRAY_REG`.
+
+`access`, `triggeredByInterrupt`: no fixture depends on either row.
+
+`numberOfElements`: only `ARRAY_REG` sets it (3) for a bit-field parent, and
+`testNumericAddressedBackendUnified.cpp:1084-1123` reads both bit ranges as
+three-element arrays. Not inheriting it makes them one-element registers unless
+the fixture states `numberOfElements: 3` (B).
+
+Word width: only `APP/LARGE_STATUS` has `bytesPerElement: 8`, and
+`testJsonMapFileParser.cpp:236,244,254,261,271,278` assert its bit fields at
+`elementPitchBits == 64` and `rawType == int64`. Not inheriting it drops them
+to 32 bits unless the fixture states `bytesPerElement: 8` (A).
+
+The documented example (`doc/jmapFormat.dox:242-261`) claims an identical
+outcome to the example above it, where `APP/STATUS` has one element while
+`APP` has `numberOfElements: 2`. Not inheriting the element count makes that
+statement true.
+
+### Open decisions
+
+A and B are the same question: does a bit-field child inherit the geometry of
+the word it is cut from, or does it state that geometry itself?
+
+- A (word width): A1 state `bytesPerElement: 8` on the three `LARGE_STATUS`
+  bit fields, one rule for every entry, no special case. A2 a bit field keeps
+  the ancestor's word width, everything else does not inherit it.
+- B (element count): B1 state `numberOfElements: 3` on the two `ARRAY_REG` bit
+  fields, one rule for every entry. B2 a bit field keeps the ancestor's element
+  count, everything else does not inherit it.
+
+Both A1 and B1 change fixtures that the backend test binaries share, and the
+example in `doc/jmapFormat.dox` should then state the values explicitly as
+well. With A2/B2 the `AncestorRegister` state keeps a purpose (the word
+geometry of a bit field), with A1/B1 it reduces to the inherited `access` and
+`triggeredByInterrupt` alone.
