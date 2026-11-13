@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: PLANNED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -400,7 +400,7 @@ and the indexes survive `clone()`.
   registerInfo.getQualifiedAsyncId().front(), i.e. front() on an empty vector
   (undefined behaviour) instead of a clean error. The schema forbids an empty
   array (minItems 1), but the parser does not validate against the schema.
-- DI-7 [NEW] Doxygen build warnings for angle-bracketed placeholders:
+- DI-7 [FOLDED-IN] Doxygen build warnings for angle-bracketed placeholders:
   doc/jmapFormat.dox:332 writes `&lt;handler id&gt;` and `&lt;bit position&gt;`
   as plain text and include/async/GenericMuxedInterruptDistributor.h:63 writes
   `&lt;path&gt;/ISR`, which doxygen reports as 'Unsupported xml/html tag'.
@@ -421,9 +421,9 @@ and the indexes survive `clone()`.
   hasTriggeredByInterrupt (:319). Declare it in the struct and define it after
   it in the same file; pre-existing inline definitions such as fill and addInfos
   stay as they are.
-- DI-11 [NEW] The project coding style requires full-line '/*****/' chrome bars
-  between namespace-level blocks, i.e. between class/struct declarations and
-  between each function implementation, never inside a declaration or
+- DI-11 [FOLDED-IN] The project coding style requires full-line '/*****/' chrome
+  bars between namespace-level blocks, i.e. between class/struct declarations
+  and between each function implementation, never inside a declaration or
   implementation body. Several of the files CR-020 touches lack them, so add
   them also where they were missing before. Scope: include/JsonExtensions.h,
   include/NumericAddressedRegisterCatalogue.h, src/JsonMapFileParser.cc,
@@ -441,10 +441,10 @@ and the indexes survive `clone()`.
   bookkeeping with one public finalisation step called after the catalogue is
   filled and all ids are resolved; addRegister and modifyRegister no longer
   bookkeep. Both map file parsers call it once.
-- DI-14 [NEW] Revision request: an empty interrupt id is a map error instead of
-  a register silently left out of the interrupt indexes. A present empty
-  'triggeredByInterrupt' array is rejected in fill; the constructor maps an
-  empty vector to std::nullopt, so no empty id reaches the field, and the
+- DI-14 [FOLDED-IN] Revision request: an empty interrupt id is a map error
+  instead of a register silently left out of the interrupt indexes. A present
+  empty 'triggeredByInterrupt' array is rejected in fill; the constructor maps
+  an empty vector to std::nullopt, so no empty id reaches the field, and the
   finalisation asserts that none is present.
 - DI-15 [FOLDED-IN] Specifications lost the two non-class change sections during
   the design revision: `doc/jmapFormat.dox` (already changed: the
