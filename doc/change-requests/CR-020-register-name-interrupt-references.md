@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO TEST (from TESTS REVIEWED)
+Status: TESTS PASSED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -559,22 +559,22 @@ and the indexes survive `clone()`.
   so the double bar at :732 no longer separates two big blocks as the style rule
   for consecutive bars requires. With a plain file-local function following it,
   it should be a single bar; the double bar before Imp::parse (:785) stays.
-- DI-28 [IMPLEMENTED] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:57-58:
+- DI-28 [DONE] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:57-58:
   two consecutive chrome bars sit between the two test cases of the suite.
   Consecutive bars emphasise big separations only (style rule); every other test
   file (e.g. tests/executables_src/testMapFileParser.cpp:158,
   tests/executables_src/testGenericMuxedInterruptDistributor.cpp) and the first
   pair in this same file (:30-31, after the helper function) separate a single
   test case with one bar. Reduce :57-58 to one bar.
-- DI-29 [IMPLEMENTED] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:43,69:
+- DI-29 [DONE] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:43,69:
   std::set is used but <set> is not included directly; the new file includes
   only <vector>. The sibling test files that use std::set include it explicitly
   (tests/executables_src/testMapFileParser.cpp:14,
   tests/executables_src/testMuxedInterruptDistributorFactory.cpp), and this
   change added that include to testMapFileParser.cpp for exactly this use. Add
   #include <set> in the C++ standard-header group (just before <vector>).
-- DI-30 [IMPLEMENTED] tests/executables_src/testJsonMapFileParser.cpp: three
-  pairs of parentheses are used in the interrupt assertions, e.g. :732
+- DI-30 [DONE] tests/executables_src/testJsonMapFileParser.cpp: three pairs of
+  parentheses are used in the interrupt assertions, e.g. :732
   'BOOST_TEST(((reg.interruptId == std::variant<...>(...))))' (20 occurrences).
   One pair is enough: 'BOOST_TEST((reg.interruptId ==
   std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 0})))'
