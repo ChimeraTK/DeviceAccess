@@ -94,12 +94,15 @@ Aspect: interrupt ids referred to by register name.
   applied where the reference is resolved.
 - An entry is an interrupt register when the field holds a numeric id or
   a string. An empty numeric id never occurs: the parser rejects `[]` and
-  the constructor maps an empty vector to `std::nullopt`.
+  the constructors map an empty vector to `std::nullopt`.
 - Constructors (modified): both take the new field type,
   `std::optional<std::variant<std::vector<size_t>, std::string>>`, with
   `= std::nullopt` as the default of the 1D/2D-agnostic one.
-- An empty numeric vector still maps to `std::nullopt`, so the `*.mapp`
-  parser keeps passing its possibly empty id vector.
+- Both constructors map an empty numeric vector to `std::nullopt`, the
+  channel (2D) one included, so an ordinary 2D register without interrupt is
+  not an interrupt source.
+- The `*.mapp` parser keeps passing its possibly empty id vector, so the
+  mapping in the constructor keeps that parser's behaviour unchanged.
 - The 2D channel-slice construction passes the field through unchanged, so
   a reference reaches the slices; it previously passed a plain vector.
 - `numericInterruptId` (new):
@@ -137,9 +140,9 @@ Aspect: interrupt ids referred to by register name.
   `finaliseInterruptBookkeeping`.
 - `finaliseInterruptBookkeeping` (new): `void finaliseInterruptBookkeeping()`.
 - Public. Called once per catalogue, after the last `addRegister` /
-  `modifyRegister` and after every interrupt id is resolved; the class
-  documentation states the obligation, as does the catalogue-taking
-  `NumericAddressedBackend` constructor.
+  `modifyRegister` and after every interrupt id is resolved. The obligation
+  is stated in three places, see the class documentation, the method
+  documentation and `NumericAddressedBackend`.
 - Walks the catalogue and fills `_listOfInterrupts` and
   `_canonicalInterrupts` from the registers with `Access::INTERRUPT`.
 - Asserts that the bookkeeping is complete, both being programming errors
@@ -151,6 +154,19 @@ Aspect: interrupt ids referred to by register name.
   indexes, so a clone is already finalised.
 - `getBackendRegister` (unmodified) keeps synthesising canonical interrupt
   path entries; they exist only after finalisation.
+- Class documentation (new): a doc block on the class states that a filled
+  catalogue must be finalised once with `finaliseInterruptBookkeeping()`
+  before it is used; the class has no doc block today.
+
+### NumericAddressedBackend (modified) in include/NumericAddressedBackend.h (modified)
+
+- Constructor (modified): gains documentation.
+  - `NumericAddressedBackend(const std::string& mapFileName,`
+    `std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer,`
+    `const std::string& dataConsistencyKeyDescriptor)`
+  - It states that a passed catalogue must already be finalised, because the
+    backend does not finalise it itself. The constructor is undocumented
+    today.
 
 ### JsonAddressSpaceEntry (modified) in src/JsonMapFileParser.cc (modified)
 
@@ -287,8 +303,8 @@ Aspect: interrupt ids referred to by register name.
   only after it.
 - A `finalised` flag guarding the indexes: rejected. It only turns a missed
   call into a different error message; the obligation is documented on the
-  method and on the catalogue-taking backend constructor, and the parsers
-  that produce complete catalogues are tested.
+  method, on the class and on the catalogue-taking backend constructor, and
+  the parsers that produce complete catalogues are tested.
 
 ## Test plan
 
@@ -355,6 +371,10 @@ Aspect: interrupt ids referred to by register name.
   still compares equal to one constructed without an id.
 - Covers the finalisation call in `TraditionalMapFileParser::parse`,
   which no other test reaches for this parser.
+- Covers the empty-vector mapping of the 2D constructor only indirectly: both
+  sides of the comparison pass the empty vector through that constructor, so
+  the comparison holds with or without the mapping. The direct assertion is in
+  `testNumericAddressedRegisterCatalogue.cpp`.
 - `tests/executables_src/testNumericAddressedRegisterCatalogue.cpp` (new)
 - Finalisation builds the interrupt list and the canonical interrupt
   paths of the interrupt registers, and leaves a register without
@@ -364,6 +384,11 @@ Aspect: interrupt ids referred to by register name.
 - A register with a registered and a derived interrupt is indexed once,
   and the indexes survive `clone()`.
 - Covers the rebuild and the copied indexes.
+- Construction without interrupt: a register built by the channel (2D)
+  constructor from an empty id vector has no interrupt id, and so has one
+  built by the 1D/2D-agnostic constructor.
+- Covers the empty-vector mapping of both constructors
+  (`NumericAddressedRegisterInfo`); the `*.mapp` test cannot, see there.
 
 ## Deferred issue
 
@@ -592,3 +617,30 @@ Aspect: interrupt ids referred to by register name.
   helper that throws (e.g. getInterruptControllerNameAndDescription,
   JsonAddressSpaceEntry::fill) leaves the prefix to that catch; drop the prefix
   from the four new messages.
+- DI-32 [NEW] The 2D (channel) constructor of NumericAddressedRegisterInfo
+  stores the interrupt id unchanged
+  (src/NumericAddressedRegisterCatalogue.cc:59-64), so the empty
+  std::vector&lt;size_t&gt; that the *.mapp parser passes for every 2D register
+  without interrupt (src/TraditionalMapFileParser.cc:394 and :410) becomes an
+  optional that holds an empty id vector. The first constructor does map it
+  (src/NumericAddressedRegisterCatalogue.cc:34-40). This contradicts the
+  specification bullet 'An empty numeric vector still maps to std::nullopt, so
+  the *.mapp parser keeps passing its possibly empty id vector' and the member
+  documentation in include/NumericAddressedRegisterCatalogue.h:150-155 ('A
+  register is an interrupt source when this holds a value ... The numeric
+  alternative never holds an empty vector'). Observable: an ordinary 2D mapp
+  register reports interruptId.has_value() and numericInterruptId().has_value()
+  as true, although it is not an interrupt source. The tests do not catch it
+  because the expected 2D registers are constructed through the same constructor
+  with std::vector&lt;size_t&gt;{}
+  (tests/executables_src/testMapFileParser.cpp:110,114,150,154); with the
+  mapping added both sides become std::nullopt and still compare equal.
+- DI-33 [NEW] The obligation to call finaliseInterruptBookkeeping() once per
+  filled catalogue is documented only on the method
+  (include/NumericAddressedRegisterCatalogue.h:201-214). The Specifications
+  require it in two further places, neither of which has any documentation:
+  NumericAddressedRegisterCatalogue has no class doc block at all
+  (include/NumericAddressedRegisterCatalogue.h:195), and the catalogue-taking
+  constructor NumericAddressedBackend(mapFileName, registerMapPointer,
+  dataConsistencyKeyDescriptor) is undocumented
+  (include/NumericAddressedBackend.h:22-25).
