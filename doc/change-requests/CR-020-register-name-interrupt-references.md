@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -536,3 +536,26 @@ and the indexes survive `clone()`.
   both address and reference from a parent declaring a string
   'triggeredByInterrupt' is untested. Add that case: the inherited child must
   carry the parent's resolved id.
+- DI-25 [NEW] tests/executables_src/testJsonMapFileParser.cpp:2122: the closing
+  BOOST_AUTO_TEST_SUITE_END() has no chrome bar before it. The change appended
+  the new reference tests after the existing separator, so that bar now belongs
+  to the first new test and the suite end lost its own. Every sibling test file
+  (e.g. tests/executables_src/testMapFileParser.cpp:555,
+  tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:83,
+  tests/executables_src/testGenericMuxedInterruptDistributor.cpp:840) and this
+  file before the change carry a full-line bar there.
+- DI-26 [NEW] include/JsonExtensions.h:52,56,62,69: clang-tidy-22 reports
+  readability-identifier-naming ('invalid case style for function
+  to_json/from_json') for the four new members of
+  adl_serializer<std::variant<Ts...>> (project .clang-tidy sets FunctionCase:
+  camelBack, HeaderFilterRegex: .*). The names are mandated by nlohmann, so the
+  project no-warnings policy asks for NOLINT on those lines. The pre-existing
+  std::optional specialisation is flagged identically at
+  include/JsonExtensions.h:21,33 and should get the same suppression, otherwise
+  the file stays inconsistent.
+- DI-27 [NEW] src/JsonMapFileParser.cc:732-733: the helper
+  resolveInterruptReference, inserted between the two pre-existing double bars,
+  is now bracketed by a double bar on both sides (:732 and the new one at :785),
+  so the double bar at :732 no longer separates two big blocks as the style rule
+  for consecutive bars requires. With a plain file-local function following it,
+  it should be a single bar; the double bar before Imp::parse (:785) stays.
