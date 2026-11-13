@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO IMPLEMENT (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -667,9 +667,9 @@ built by the 1D/2D-agnostic constructor.
   shows (the pair at :59-60 is the big separation after the compareCatalogue
   helper, which is the accepted use). The change inserted one bar next to the
   pre-existing one; reduce :532-533 to a single bar.
-- DI-36 [NEW] src/NumericAddressedRegisterCatalogue.cc:21-38: the empty-id
-  mapping helper `mapEmptyNumericIdToNoInterrupt` introduced for DI-34 lives in
-  the only anonymous namespace in `src/` and makes clang-tidy-22 report
+- DI-36 [IMPLEMENTED] src/NumericAddressedRegisterCatalogue.cc:21-38: the
+  empty-id mapping helper `mapEmptyNumericIdToNoInterrupt` introduced for DI-34
+  lives in the only anonymous namespace in `src/` and makes clang-tidy-22 report
   `llvm-prefer-static-over-anonymous-namespace` at :27 (`function
   'mapEmptyNumericIdToNoInterrupt' is declared in an anonymous namespace; prefer
   using 'static' for restricting visibility`). The project has no other

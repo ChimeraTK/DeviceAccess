@@ -18,22 +18,16 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  namespace {
-
-    /******************************************************************************************************************/
-
-    // An empty numeric id is no id: it maps to the register not being an interrupt source. Such a vector is passed by
-    // the *.mapp parser, whose interrupt entry may be empty.
-    std::optional<NumericAddressedRegisterInfo::InterruptId> mapEmptyNumericIdToNoInterrupt(
-        std::optional<NumericAddressedRegisterInfo::InterruptId> interruptId) {
-      if(interruptId && std::holds_alternative<std::vector<size_t>>(*interruptId) &&
-          std::get<std::vector<size_t>>(*interruptId).empty()) {
-        return std::nullopt;
-      }
-      return interruptId;
+  // An empty numeric id is no id: it maps to the register not being an interrupt source. Such a vector is passed by the
+  // *.mapp parser, whose interrupt entry may be empty. File-local: only the constructors map the id.
+  static std::optional<NumericAddressedRegisterInfo::InterruptId> mapEmptyNumericIdToNoInterrupt(
+      std::optional<NumericAddressedRegisterInfo::InterruptId> interruptId) {
+    if(interruptId && std::holds_alternative<std::vector<size_t>>(*interruptId) &&
+        std::get<std::vector<size_t>>(*interruptId).empty()) {
+      return std::nullopt;
     }
-
-  } // namespace
+    return interruptId;
+  }
 
   /********************************************************************************************************************/
 
