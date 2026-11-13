@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS REVIEWED
+Status: IN PROGRESS (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -263,3 +263,35 @@ backend.
   array as absent in fill/interruptIdIfNumeric, i.e. base the interrupt decision
   on a present array with at least one element; alternatively reject it with a
   clear logic_error.
+- DI-7 [NEW] Doxygen build warnings for angle-bracketed placeholders:
+  doc/jmapFormat.dox:332 writes <handler id> and <bit position> as plain text
+  and include/async/GenericMuxedInterruptDistributor.h:63 writes <path>/ISR,
+  which doxygen reports as 'Unsupported xml/html tag'. Escape them as HTML
+  entities (&lt;handler id&gt;, &lt;bit position&gt;, &lt;path&gt;/ISR) so the
+  documentation build is warning-free.
+- DI-8 [NEW] include/JsonExtensions.h carries no doxygen documentation at all:
+  both the pre-existing adl_serializer<std::optional<T>> and the new
+  adl_serializer<std::variant<Ts...>> need a concise comment stating that
+  nlohmann's template-specialisation lookup selects them, and one short sentence
+  per member function saying when it is called and what it does.
+- DI-9 [NEW] In include/JsonExtensions.h the new
+  adl_serializer<std::variant<Ts...>> members to_json/from_json are defined
+  inside the struct body; they must be declared in the struct and defined out of
+  it (as templates the definitions stay in the header). The pre-existing
+  std::optional specialisation stays unchanged.
+- DI-10 [NEW] In src/JsonMapFileParser.cc the member functions added by CR-020
+  are defined inside the JsonAddressSpaceEntry struct body:
+  recordInterruptReference (:297), hasTriggeredByInterrupt (:319) and
+  interruptIdIfNumeric (:332). Declare them in the struct and define them after
+  it in the same file; pre-existing inline definitions such as fill and addInfos
+  stay as they are.
+- DI-11 [NEW] Add the full-line '/*****/' chrome bars between all
+  namespace-level blocks in the C++ files CR-020 touches: between class/struct
+  declarations and between each function implementation, never inside a
+  declaration or implementation body. Apply this also where the bars were
+  missing before. Scope: include/JsonExtensions.h, src/JsonMapFileParser.cc,
+  src/NumericAddressedRegisterCatalogue.cc,
+  src/async/GenericMuxedInterruptDistributor.cc,
+  tests/executables_src/testGenericMuxedInterruptDistributor.cpp and
+  tests/executables_src/testJsonMapFileParser.cpp. Not in doc/jmapFormat.dox or
+  schemas/jmap.schema.json.
