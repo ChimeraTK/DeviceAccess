@@ -97,8 +97,12 @@ the constructor maps an empty vector to `std::nullopt`.
 `= std::nullopt` as the default of the 1D/2D-agnostic one.
 - An empty numeric vector still maps to `std::nullopt`, so the `*.mapp`
 parser keeps passing its possibly empty id vector.
-- The 2D channel-slice construction passes the field through unchanged, so
-a reference reaches the slices; it previously passed a plain vector.
+- Both constructors apply that normalisation through a shared helper,
+before any other use of the field. The 2D/channel-info constructor
+normalises as well, so a 2D `*.mapp` register without interrupt does not
+end up with a present empty vector.
+- Only then does the 2D channel-slice construction pass the field through,
+so a reference reaches the slices; it previously passed a plain vector.
 - `numericInterruptId` (new):
 `std::optional<std::vector<size_t>> numericInterruptId() const`.
 - The numeric id, or `std::nullopt` when the field is absent or holds a
@@ -131,9 +135,10 @@ still a reference.
 `finaliseInterruptBookkeeping`.
 - `finaliseInterruptBookkeeping` (new): `void finaliseInterruptBookkeeping()`.
 - Public. Called once per catalogue, after the last `addRegister` /
-`modifyRegister` and after every interrupt id is resolved; the class
-documentation states the obligation, as does the catalogue-taking
-`NumericAddressedBackend` constructor.
+`modifyRegister` and after every interrupt id is resolved. The obligation
+is documented in three places: the method itself, the class
+documentation, and the catalogue-taking `NumericAddressedBackend`
+constructor (see below).
 - Walks the catalogue and fills `_listOfInterrupts` and
 `_canonicalInterrupts` from the registers with `Access::INTERRUPT`.
 - Asserts that the bookkeeping is complete, both being programming errors
@@ -145,6 +150,18 @@ no completion flag is needed; `clone` and `fillFromThis` copy both
 indexes, so a clone is already finalised.
 - `getBackendRegister` (unmodified) keeps synthesising canonical interrupt
 path entries; they exist only after finalisation.
+- The class documentation states the obligation: a catalogue handed to a
+backend must have been finalised by its producer, since the interrupt
+indexes are built only here.
+
+### NumericAddressedBackend (unmodified) in include/NumericAddressedBackend.h (modified)
+
+- The catalogue-taking constructor gains a doxygen comment stating that a
+passed catalogue must already be finalised
+(`finaliseInterruptBookkeeping()` called after its last mutation and after
+every interrupt id is resolved).
+- Constructor and behaviour are otherwise unchanged; only the
+documentation of the obligation is added, as the specifications require.
 
 ### JsonAddressSpaceEntry (modified) in src/JsonMapFileParser.cc (modified)
 
@@ -278,8 +295,8 @@ the target's data.
 only after it.
 - A `finalised` flag guarding the indexes: rejected. It only turns a missed
 call into a different error message; the obligation is documented on the
-method and on the catalogue-taking backend constructor, and the parsers
-that produce complete catalogues are tested.
+method, the class and the catalogue-taking backend constructor, and the
+parsers that produce complete catalogues are tested.
 
 ## Test plan
 
@@ -357,6 +374,12 @@ the index contents in isolation.
 - A register with a registered and a derived interrupt is indexed once,
 and the indexes survive `clone()`.
 - Covers the rebuild and the copied indexes.
+- An empty numeric interrupt id gives `std::nullopt` through both
+constructors, the 2D/channel-info one included, so `has_value()` means
+"is an interrupt source" and the register compares equal to one
+constructed without an id.
+- Covers the shared normalisation in the `NumericAddressedRegisterInfo`
+constructors; the `*.mapp` comparison only reaches the 1D constructor.
 
 ## Deferred issue
 
@@ -522,3 +545,26 @@ and the indexes survive `clone()`.
   correction needed: the file includes <set> and <vector> only, and the item
   asks for a fix that is not present in the current tree; the include block must
   be checked against the item wording again.
+- DI-26 [NEW] The 2D/channel-info constructor does not map an empty numeric
+  interrupt id to std::nullopt: only the 1D constructor normalises
+  (src/NumericAddressedRegisterCatalogue.cc:36-40), while the 2D constructor
+  assigns the field unchanged (src/NumericAddressedRegisterCatalogue.cc:59-64).
+  The *.mapp parser passes its possibly empty id vector to that constructor
+  (src/TraditionalMapFileParser.cc:393-394 and :409-410), so a 2D .mapp register
+  without interrupt ends up with interruptId holding a present empty vector.
+  This contradicts the specification ('An empty numeric vector still maps to
+  std::nullopt', 'An empty numeric id never occurs ... the constructor maps an
+  empty vector to std::nullopt') and DI-14, and makes has_value() no longer mean
+  'is an interrupt source'
+  (include/NumericAddressedRegisterCatalogue.h:149-155), so such a register also
+  compares unequal to one constructed without an id. Apply the normalisation in
+  both constructors (e.g. a shared helper).
+- DI-27 [NEW] The documentation obligation of the finalisation step is not
+  implemented where the specification requires it: the catalogue-taking
+  NumericAddressedBackend constructor (include/NumericAddressedBackend.h:23-26)
+  carries no doxygen comment stating that a passed catalogue must be finalised,
+  and the NumericAddressedRegisterCatalogue class documentation
+  (include/NumericAddressedRegisterCatalogue.h:195) does not state it either;
+  only finaliseInterruptBookkeeping's own comment does. The specifications
+  explicitly say 'the class documentation states the obligation, as does the
+  catalogue-taking NumericAddressedBackend constructor'. Add those comments.
