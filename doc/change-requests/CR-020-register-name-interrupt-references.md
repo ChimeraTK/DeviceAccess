@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO TEST (from TESTS REVIEWED)
+Status: TESTS PASSED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -567,12 +567,13 @@ and the indexes survive `clone()`.
   pair in this same file (:30-31, after the helper function) separate a single
   test case with one bar. Reduce :57-58 to one bar.
 - DI-29 [DONE] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:43,69:
-  std::set is used but <set> is not included directly; the new file includes
-  only <vector>. The sibling test files that use std::set include it explicitly
+  std::set is used but `&lt;set&gt;` is not included directly; the new file includes
+  only `&lt;vector&gt;`. The sibling test files that use std::set include it explicitly
   (tests/executables_src/testMapFileParser.cpp:14,
   tests/executables_src/testMuxedInterruptDistributorFactory.cpp), and this
   change added that include to testMapFileParser.cpp for exactly this use. Add
-  #include <set> in the C++ standard-header group (just before <vector>).
+  `#include &lt;set&gt;` in the C++ standard-header group (just before
+  `&lt;vector&gt;`).
 - DI-30 [DONE] tests/executables_src/testJsonMapFileParser.cpp: three pairs of
   parentheses are used in the interrupt assertions, e.g. :732
   'BOOST_TEST(((reg.interruptId == std::variant<...>(...))))' (20 occurrences).
