@@ -83,8 +83,13 @@ missing before:
 - Files: include/NumericAddressedRegisterCatalogue.h (modified),
 src/NumericAddressedRegisterCatalogue.cc (modified).
 
-- `interruptId` (modified): of type
-`std::optional<std::variant<std::vector<size_t>, std::string>>`, replacing
+- `InterruptId` (new):
+`using InterruptId = std::variant<std::vector<size_t>, std::string>;`, a
+public alias naming the two forms of an interrupt id, so the field and the
+constructor parameters name it instead of spelling the variant out. It is
+part of the installed header's API; the spelled-out type and the alias are
+the same type.
+- `interruptId` (modified): of type `std::optional<InterruptId>`, replacing
 the plain `std::vector<size_t>`.
 - The variant carries the numeric id or a not yet resolved register-name
 reference; `std::nullopt` is a register that is not an interrupt source.
@@ -95,8 +100,7 @@ applied where the reference is resolved.
 - An entry is an interrupt register when the field holds a numeric id or
 a string. An empty numeric id never occurs: the parser rejects `[]` and
 the constructors map an empty vector to `std::nullopt`.
-- Constructors (modified): both take the new field type,
-`std::optional<std::variant<std::vector<size_t>, std::string>>`, with
+- Constructors (modified): both take `std::optional<InterruptId>`, with
 `= std::nullopt` as the default of the 1D/2D-agnostic one.
 - Both constructors map an empty numeric vector to `std::nullopt`, the
 channel (2D) one included, so an ordinary 2D register without interrupt is
@@ -680,3 +684,16 @@ built by the 1D/2D-agnostic constructor.
   tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:24). Drop the
   anonymous namespace and declare the helper as `static`, with the chrome bar
   structure adapted; keep the reason comment stated once.
+- DI-37 [NEW] The Specifications do not mention the new public type alias
+  `NumericAddressedRegisterInfo::InterruptId` (`using InterruptId =
+  std::variant<std::vector<size_t>, std::string>;`,
+  include/NumericAddressedRegisterCatalogue.h:45). The header uses it for the
+  field (include/NumericAddressedRegisterCatalogue.h:155) and for both
+  constructor parameters (:91, :99), and
+  src/NumericAddressedRegisterCatalogue.cc:36,67 uses it in the definitions,
+  while every specification bullet still spells the type out as
+  `std::optional<std::variant<std::vector<size_t>, std::string>>` (CR document
+  lines 87, 99). The alias is part of the installed header's public API and is
+  what downstream code constructs the field through, so the plan must describe
+  it; the specifications' declared member type must be stated as
+  `std::optional<InterruptId>` so code and document agree.
