@@ -2119,4 +2119,6 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyStringVoidRegister) {
   std::remove(tmpFile.c_str());
 }
 
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

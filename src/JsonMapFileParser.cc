@@ -730,7 +730,6 @@ namespace ChimeraTK::detail {
   }
 
   /********************************************************************************************************************/
-  /********************************************************************************************************************/
 
   /**
    * Return the numeric interrupt id of the register the given path names. A reference names another register, which

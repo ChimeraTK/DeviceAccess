@@ -18,6 +18,7 @@ namespace nlohmann {
   template<typename T>
   struct adl_serializer<std::optional<T>> {
     /** Called when an optional is written to JSON: writes the contained value, or null when it is empty. */
+    // NOLINTNEXTLINE(readability-identifier-naming) - the name is mandated by nlohmann
     static void to_json(json& j, const std::optional<T>& opt) {
       if(opt.has_value()) {
         j = *opt;
@@ -30,6 +31,7 @@ namespace nlohmann {
     /**
      * Called when an optional is read from JSON: a null gives an empty optional, any other value the contained value.
      */
+    // NOLINTNEXTLINE(readability-identifier-naming) - the name is mandated by nlohmann
     static void from_json(const json& j, std::optional<T>& opt) {
       if(j.is_null()) {
         opt = std::nullopt;
@@ -49,16 +51,19 @@ namespace nlohmann {
   template<typename... Ts>
   struct adl_serializer<std::variant<Ts...>> {
     /** Called when a variant is written to JSON: writes the active alternative. A variant always holds a value. */
+    // NOLINTNEXTLINE(readability-identifier-naming) - the name is mandated by nlohmann
     static void to_json(json& j, const std::variant<Ts...>& var);
 
     /** Called when a variant is read from JSON: takes the first alternative that parses, a null and a value no
      * alternative accepts are rejected. */
+    // NOLINTNEXTLINE(readability-identifier-naming) - the name is mandated by nlohmann
     static void from_json(const json& j, std::variant<Ts...>& var);
   };
 
   /********************************************************************************************************************/
 
   template<typename... Ts>
+  // NOLINTNEXTLINE(readability-identifier-naming) - the name is mandated by nlohmann
   void adl_serializer<std::variant<Ts...>>::to_json(json& j, const std::variant<Ts...>& var) {
     std::visit([&j](const auto& value) { j = value; }, var);
   }
@@ -66,6 +71,7 @@ namespace nlohmann {
   /********************************************************************************************************************/
 
   template<typename... Ts>
+  // NOLINTNEXTLINE(readability-identifier-naming) - the name is mandated by nlohmann
   void adl_serializer<std::variant<Ts...>>::from_json(const json& j, std::variant<Ts...>& var) {
     bool parsed = false;
     // Try the alternatives in declaration order and keep the first one that parses, so the mapping is independent of
