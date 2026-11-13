@@ -9,6 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <set>
 #include <vector>
 
 using namespace ChimeraTK;
@@ -54,7 +55,6 @@ BOOST_AUTO_TEST_CASE(TestFinaliseBuildsInterruptIndexes) {
   BOOST_CHECK(!catalogue.hasRegister("!3:0"));
 }
 
-/**********************************************************************************************************************/
 /**********************************************************************************************************************/
 
 // A register with its own registered interrupt and a register deriving a second interrupt are both indexed, and the
