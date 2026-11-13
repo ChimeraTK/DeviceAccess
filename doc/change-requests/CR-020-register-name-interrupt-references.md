@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -494,3 +494,23 @@ and the indexes survive `clone()`.
   `std::optional::value_or` takes a deduced forwarding reference
   (`template<class U> T value_or(U&&)`), so `{}` cannot be deduced. It must name
   the empty vector explicitly.
+- DI-21 [NEW] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:43
+  and :69 use std::set, but the new file's include block
+  (tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:12) lists
+  only <vector>, so std::set comes from a transitive include. Add #include <set>
+  to the standard-header group.
+- DI-22 [NEW] tests/executables_src/testGenericMuxedInterruptDistributor.cpp:837
+  calls std::remove but the file does not include <cstdio> (its include block is
+  at :10-19); the new tests in tests/executables_src/testJsonMapFileParser.cpp
+  repeat the same omission. Add #include <cstdio> directly, as DI-4 required for
+  <unistd.h> and getpid().
+- DI-23 [NEW] tests/executables_src/testMapFileParser.cpp:540 calls the static
+  ChimeraTK::MapFileParser::parse through an instance, which clang-tidy-22
+  reports as readability-static-accessed-through-instance on this new line. Call
+  it statically and drop the now unused 'fileparser', as the
+  parseInjectedInterruptMap helper in testJsonMapFileParser.cpp already does.
+- DI-24 [NEW] include/NumericAddressedRegisterCatalogue.h:211 carries the
+  malformed doxygen tag '@throw ChimeraTK::logic_error never;' on
+  finaliseInterruptBookkeeping, documenting an exception that is never thrown.
+  State it as prose instead (both incomplete states are programming errors and
+  are asserted).
