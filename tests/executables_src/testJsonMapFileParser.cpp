@@ -2027,6 +2027,39 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceChannelSlice) {
 
 /**********************************************************************************************************************/
 
+// A child entry without its own address inherits the address from its parent and takes the parent's register info,
+// including the parent's 'triggeredByInterrupt' reference. The inherited field is left untouched by 'fill', so the
+// child resolves to the parent's id like the parent itself.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceInheritedAddress) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A data register referring by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]), with a child
+  // INHERITED that declares no address, so it inherits the parent's address and interrupt reference.
+  map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.VOID_INTERRUPT_0"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}},
+      {"children", {{"INHERITED", {{"representation", {{"type", "fixedPoint"}, {"width", 32}}}}}}}};
+
+  std::string tmpFile = "interruptRefInherited_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  // The child inherits the address and carries the parent's resolved id.
+  auto child = regs.getBackendRegister("/BSP/REFERRING/INHERITED");
+  BOOST_TEST((child.address == regs.getBackendRegister("/BSP/REFERRING").address));
+  BOOST_CHECK(child.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST(((child.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
+
+  // The inherited register is part of the list of interrupts and resolves through the canonical interrupt path.
+  auto loi = regs.getListOfInterrupts();
+  BOOST_CHECK(loi.find({0}) != loi.end());
+  auto canonical = regs.getBackendRegister("!0");
+  BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+}
+
+/**********************************************************************************************************************/
+
 // An empty 'triggeredByInterrupt' array is a map error: it declares no interrupt, and the parser does not validate
 // against the schema's 'minItems'. A data register is rejected instead of silently becoming an interrupt register with
 // an empty id.
