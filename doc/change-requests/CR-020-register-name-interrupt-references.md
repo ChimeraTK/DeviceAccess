@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO IMPLEMENT (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -90,11 +90,15 @@ constructor parameters name it instead of spelling the variant out. It is
 part of the installed header's API; the spelled-out type and the alias are
 the same type.
 - `interruptId` (modified): of type `std::optional<InterruptId>`, replacing
-the plain `std::vector<size_t>`.
+the plain `std::vector<size_t>`. Field and constructor parameters are
+spelled through the alias, so downstream code constructs the field through
+`NumericAddressedRegisterInfo::InterruptId` too.
 - The variant carries the numeric id or a not yet resolved register-name
 reference; `std::nullopt` is a register that is not an interrupt source.
 - The JSON entry field has the same type, so the parser assigns it
-unchanged, and no side table of pending references exists anywhere.
+unchanged, and no side table of pending references exists anywhere. It spells
+the variant out rather than using the alias, which is a `NumericAddressedRegisterInfo`
+member; they are the same type.
 - The reference string is stored as written; the dot alt separator is
 applied where the reference is resolved.
 - An entry is an interrupt register when the field holds a numeric id or
@@ -684,8 +688,8 @@ built by the 1D/2D-agnostic constructor.
   tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:24). Drop the
   anonymous namespace and declare the helper as `static`, with the chrome bar
   structure adapted; keep the reason comment stated once.
-- DI-37 [FOLDED-IN] The Specifications do not mention the new public type alias
-  `NumericAddressedRegisterInfo::InterruptId` (`using InterruptId =
+- DI-37 [IMPLEMENTED] The Specifications do not mention the new public type
+  alias `NumericAddressedRegisterInfo::InterruptId` (`using InterruptId =
   std::variant<std::vector<size_t>, std::string>;`,
   include/NumericAddressedRegisterCatalogue.h:45). The header uses it for the
   field (include/NumericAddressedRegisterCatalogue.h:155) and for both
