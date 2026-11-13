@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO IMPLEMENT (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -515,7 +515,7 @@ and the indexes survive `clone()`.
   finaliseInterruptBookkeeping, documenting an exception that is never thrown.
   State it as prose instead (both incomplete states are programming errors and
   are asserted).
-- DI-25 [NEW] DI-21 is not implemented:
+- DI-25 [IMPLEMENTED] DI-21 is not implemented:
   tests/executables_src/testNumericAddressedRegisterCatalogue.cpp uses std::set
   at :44 and :70 but its include block (:12-13) still lists only <set>...
   correction needed: the file includes <set> and <vector> only, and the item

@@ -2028,6 +2028,32 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceChannelSlice) {
 
 /**********************************************************************************************************************/
 
+// A child entry may inherit its parent's address by giving up its own address node, declaring only its
+// representation. A child of a referring parent then resolves to the parent's id.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceInheritedParentAddress) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  // A 2D parent referring by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]).
+  map["addressSpace"]["BSP"]["children"]["REFERRING_PARENT"] = {{"triggeredByInterrupt", "BSP.VOID_INTERRUPT_0"},
+      {"numberOfElements", 4}, {"pitch", 8}, {"address", {{"type", "DMA"}, {"offset", "0x2000"}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+  // Its child declares no address of its own, so it inherits the parent's and keeps the parent's interrupt id.
+  map["addressSpace"]["BSP"]["children"]["REFERRING_PARENT"]["children"] = {
+      {"INHERITED", {{"representation", {{"type", "fixedPoint"}, {"width", 32}}}}}};
+
+  std::string tmpFile = "interruptRefInherited_" + std::to_string(getpid()) + ".jmap";
+  auto [regs, metas] = parseInjectedInterruptMap(tmpFile, map);
+  (void)metas;
+  std::remove(tmpFile.c_str());
+
+  BOOST_TEST((regs.getBackendRegister("/BSP/REFERRING_PARENT").numericInterruptId() == std::vector<size_t>{0}));
+  auto inherited = regs.getBackendRegister("/BSP/REFERRING_PARENT/INHERITED");
+  BOOST_CHECK(inherited.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
+  BOOST_TEST(((inherited.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
+}
+
+/**********************************************************************************************************************/
+
 // An empty 'triggeredByInterrupt' array is a map error: it declares no interrupt, and the parser does not validate
 // against the schema's 'minItems'. A data register is rejected instead of silently becoming an interrupt register with
 // an empty id.
@@ -2053,6 +2079,36 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyArrayVoidRegister) {
       {"triggeredByInterrupt", nlohmann::json::array()}, {"representation", {{"type", "void"}}}};
 
   std::string tmpFile = "interruptRefEmptyArrayVoid_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An empty reference string is a map error: it names no register, and the parser does not validate against the
+// schema's 'minLength'.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyStringDataRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["BSP"]["children"]["EMPTY_REFERENCE"] = {{"triggeredByInterrupt", ""}, {"numberOfElements", 1},
+      {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefEmptyStringData_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An empty reference string is rejected for a void register as well.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyStringVoidRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["BSP"]["children"]["EMPTY_REFERENCE_VOID"] = {
+      {"triggeredByInterrupt", ""}, {"representation", {{"type", "void"}}}};
+
+  std::string tmpFile = "interruptRefEmptyStringVoid_" + std::to_string(getpid()) + ".jmap";
   BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
   std::remove(tmpFile.c_str());
 }
