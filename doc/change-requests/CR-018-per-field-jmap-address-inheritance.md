@@ -305,6 +305,21 @@ from the register's resolved address, with the `type`/`channel` tie.
 - Necessary: every `secondaryBufferAddress` in the existing maps gives `type`
 explicitly, and the secondary resolution is its own code path
 (`DoubleBufferingInfo::fill`), so the tie needs an assertion there too.
+- An address-bearing parent with `access: RO` and a child whose own `address`
+  carries only `offset`: the child is `READ_ONLY`.
+- Requirement: inheritance of the register properties.
+- Necessary: the implemented parser applies an inherited `access` only where the
+  whole address is omitted, and no fixture combines an own `address` with an
+  omitted `access` below a parent whose access is not the default.
+- An address-bearing parent with `triggeredByInterrupt` and two address-less
+  children carrying a `representation`: the one without `access` is an
+  `INTERRUPT` register with the parent's interrupt id, the one giving
+  `access: RO` is `READ_ONLY` without an interrupt id.
+- Requirement: inheritance of the register properties.
+- Necessary: no fixture reaches this rule, since the interrupt registers in the
+  maps use `channels` and their bit-field children are a reduced struct that
+  never reaches `fill`. The interrupt id is what the implemented parser leaves
+  empty, so the case distinguishes the fix.
 - Not repeated, already covered today: an `address` giving only `offset` with no
 address-bearing ancestor defaults to `IO`/`0`
 (`tests/selectedByInheritance.jmap`, e.g. `APP.OUTPUT_SELECT`, below the
@@ -322,6 +337,34 @@ address-less module `APP`); a secondary on the same BAR is accepted
 - DI-6 [DONE] Implementation defect in secondaryBufferAddress offset rejection: a present secondaryBufferAddress without 'offset' must be rejected with ChimeraTK::logic_error like a primary 'address', but DoubleBufferingInfo::fill (src/JsonMapFileParser.cc:153) only asserts (assert(secondaryBufferAddress.offset.v != std::numeric_limits<size_t>::max())). In a debug build the assert aborts (SIGABRT) instead of throwing, so TestSecondaryBufferAddressWithoutOffsetRejected fails and aborts the...
 - DI-7 [DONE] tests/executables_src/testJsonMapFileParser.cpp (TestChannelsEntryInheritsAddressBecomesRegister): the second assertion block fetches '/APP/CHANS_PARENT/CHANS_CHILD/B', which is the channel slice named B, but its comment claims 'A bit-field child of a channel resolves to the same address as well'. Channel B is declared as a plain channel ({bytesPerElement 4, offset 0, representation {type fixedPoint, width 4}}) with no 'children', so no bit-field child (a 'children' entry belo...
 - DI-8 [DONE] The user requests replacing the 'unset' sentinels with std::optional: Address::type/channel/offset and DoubleBufferingInfo::SecondAddress::type/channel/offset currently use addressTypeNotSet / std::numeric_limits<size_t>::max() to mark an omitted (inherited) field (src/JsonMapFileParser.cc:134-136, :179-181). They should become std::optional, with an omitted JSON field deserialising to std::nullopt and resolveAddress (:304-331) and DoubleBufferingInfo::fill (:146-171) testin...
+
+- DI-9 [OPEN] Mechanism (Specifications, Recursion): the implemented parser keeps
+  the inherited state in `AncestorRegister` and passes it as a second argument
+  next to the resolved address (`src/JsonMapFileParser.cc:120-128`, `:493`,
+  `:511`, `:518`, `:521`, `:617`). It becomes a `derived` member of
+  `JsonAddressSpaceEntry` resolved by `derive()`; `addInfos` takes the parent
+  entry and hands `this` down; `fill` (`:332-440`) drops `resolved`, `ancestor`
+  and both `ownsAddress` branches; `applyRegisterSelectedBy` (`:442-452`) folds
+  into `fill`; the child loop (`:616`) and the top-level loop (`:724`) iterate
+  non-const. Reasons and rejected alternatives are in the temporary section.
+- DI-10 [OPEN] `access` inheritance: implemented only for an entry that omits its
+  whole address (`:346-353`); it must apply whenever the entry gives no `access`,
+  with an own `address` included. Covered by the new test plan case for `access`
+  inheritance.
+- DI-11 [OPEN] `triggeredByInterrupt` inheritance: not inherited today, so an
+  address-less child of an interrupt register becomes `Access::INTERRUPT` with an
+  empty `interruptId` (`:342-362`). It must inherit the parent's sources together
+  with that access unless the entry gives its own `access`. Covered by the new
+  test plan case for interrupt inheritance; no fixture reaches the rule.
+- DI-12 [OPEN] Sample geometry: the behaviour stays as implemented (`:371-383`,
+  inherited iff the whole address is omitted and the entry gives no `channels`,
+  an own `bytesPerElement` overriding the sample width). Only where the rule is
+  expressed changes, `derive()` instead of `fill`. No fixture or test change.
+- DI-13 [OPEN] `doc/jmapFormat.dox:242-261`: the example claims an identical
+  outcome to the one above it, but its `STATUS` child omits the address and the
+  implemented parser inherits `numberOfElements: 2` of `APP` for it, so the
+  claim is wrong. The example or the claim must be corrected.
+- DI-14 [OPEN] Remove the temporary section once DI-9 to DI-13 are done.
 
 ## Temporary section: simplifying the inheritance mechanism
 
