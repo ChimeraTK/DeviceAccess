@@ -1797,7 +1797,8 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceVoidReferrer) {
 BOOST_AUTO_TEST_CASE(TestInterruptReferenceToVoidRegister) {
   std::ifstream base("simpleJsonFile.jmap");
   nlohmann::json map = nlohmann::json::parse(base);
-  // A new data register REFERRING refers by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]).
+  // A new data register REFERRING refers by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]) of
+  // simpleJsonFile.jmap.
   map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.VOID_INTERRUPT_0"},
       {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
       {"representation", {{"type", "fixedPoint"}, {"width", 32}}},

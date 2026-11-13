@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -701,8 +701,8 @@ built by the 1D/2D-agnostic constructor.
   what downstream code constructs the field through, so the plan must describe
   it; the specifications' declared member type must be stated as
   `std::optional<InterruptId>` so code and document agree.
-- DI-38 [IMPLEMENTED] tests/executables_src/testJsonMapFileParser.cpp:1800: the
-  comment of TestInterruptReferenceToVoidRegister says "BSP/SOME_INFO is a data
+- DI-38 [DONE] tests/executables_src/testJsonMapFileParser.cpp:1800: the comment
+  of TestInterruptReferenceToVoidRegister says "BSP/SOME_INFO is a data
   register; refer by name to the void interrupt register BSP/VOID_INTERRUPT_0
   (id [0]).", but the case creates the register BSP/REFERRING and never touches
   BSP/SOME_INFO (that register is only read by the unrelated
