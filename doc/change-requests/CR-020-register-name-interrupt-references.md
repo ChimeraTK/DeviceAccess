@@ -50,20 +50,6 @@ Aspect: interrupt ids referred to by register name.
 
 ## Specifications
 
-- Style, in the C++ files the change restructures: full-line `/*****/`
-  chrome bars between namespace-level blocks.
-   - Between class and struct declarations, and between every two function
-     implementations; never inside a declaration or implementation body.
-   - Add bars that were missing before, so each file is consistent.
-   - Scope: `include/JsonExtensions.h`,
-     `include/NumericAddressedRegisterCatalogue.h`, `src/JsonMapFileParser.cc`,
-     `src/NumericAddressedRegisterCatalogue.cc`,
-     `src/async/GenericMuxedInterruptDistributor.cc`,
-     `tests/executables_src/testGenericMuxedInterruptDistributor.cpp` and
-     `tests/executables_src/testJsonMapFileParser.cpp`.
-   - Not in `doc/jmapFormat.dox`, the schema, or the files the change only
-     touches with a one-line call or a mechanical edit.
-
 ### doc/jmapFormat.dox (modified)
 
 - The `jmap_interrupts` section states that `triggeredByInterrupt` may name
@@ -417,12 +403,13 @@ Aspect: interrupt ids referred to by register name.
   hasTriggeredByInterrupt (:319). Declare it in the struct and define it after
   it in the same file; pre-existing inline definitions such as fill and addInfos
   stay as they are.
-- DI-11 [FOLDED-IN] Add the full-line '/*****/' chrome bars between all
-  namespace-level blocks in the C++ files CR-020 touches: between class/struct
+- DI-11 [FOLDED-IN] The project coding style requires full-line '/*****/'
+  chrome bars between namespace-level blocks, i.e. between class/struct
   declarations and between each function implementation, never inside a
-  declaration or implementation body. Apply this also where the bars were
-  missing before. Scope: include/JsonExtensions.h, src/JsonMapFileParser.cc,
-  src/NumericAddressedRegisterCatalogue.cc,
+  declaration or implementation body. Several of the files CR-020 touches lack
+  them, so add them also where they were missing before. Scope:
+  include/JsonExtensions.h, include/NumericAddressedRegisterCatalogue.h,
+  src/JsonMapFileParser.cc, src/NumericAddressedRegisterCatalogue.cc,
   src/async/GenericMuxedInterruptDistributor.cc,
   tests/executables_src/testGenericMuxedInterruptDistributor.cpp and
   tests/executables_src/testJsonMapFileParser.cpp. Not in doc/jmapFormat.dox or
