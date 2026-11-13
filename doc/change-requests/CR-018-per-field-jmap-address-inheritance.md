@@ -332,19 +332,20 @@ Property inheritance must not depend on whether the entry has an `address`.
 ### Comparison: master against the proposal
 
 The table states behaviour, not how it is achieved: "yes" or "no" for an entry
-that is a register, with the condition where the answer depends on the entry's
-own members. Columns are master (`84fcd860`) and the proposal.
+that is a register. "Yes" means the entry inherits the field whenever it does
+not set it itself; a condition stated here is exhaustive. Columns are master
+(`84fcd860`) and the proposal.
 
 | Field | Master | Proposal |
 | --- | --- | --- |
-| `address` as a whole | yes, if omitted | yes, if omitted |
-| `type` | no, always `IO` | yes, if omitted |
-| `channel` | no, always `0` | yes, if `type` omitted |
+| `address` as a whole | yes | yes |
+| `type` | no, always `IO` | yes; `IO` without an ancestor |
+| `channel` | no, always `0` | yes, if `type` omitted too |
 | `offset` | yes, if `address` omitted | yes, if `address` omitted |
-| `access` | yes, if `address` omitted | yes, if omitted |
+| `access` | yes, if `address` omitted | yes |
 | `triggeredByInterrupt` | yes, if `address` omitted | yes, unless `access` |
 | `numberOfElements` | yes, if `address` omitted | no (B) |
-| word width | yes, if `address` omitted | open (A) |
+| element word width | yes, if `address` omitted | open (A) |
 | `pitch` | no | no |
 | `representation` | no | no |
 | `engineeringUnit` | no | no |
@@ -370,7 +371,12 @@ Notes on the rows that change behaviour:
 - `triggeredByInterrupt`: no fixture reaches this either; interrupt registers
   in the maps use `channels`, and their bit-field children are a separate,
   reduced struct (`ChannelChild`, `:275-281`) that never enters `addInfos`.
-- `numberOfElements`, word width: see the impact below and A/B.
+- `numberOfElements`, element word width: see the impact below and A/B. The two
+  are different things: the word width is the size of one sample in bits (it
+  fixes the raw data type and, without `pitch`, the stride between samples),
+  `numberOfElements` is how many samples the register holds. A bit field is cut
+  out of one sample word of its ancestor, so both decide its geometry, the
+  width bounds `bitShift + width` and the count how many words it spans.
 - `bytesPerElement`: it exists on master as well (`:118`). What a child
   inherits is the word width, not the member as such; an own `bytesPerElement`
   overrides the inherited width.
@@ -399,7 +405,7 @@ In `tests/*.jmap` these are the eleven bit-field `children`:
 three-element arrays. Not inheriting it makes them one-element registers unless
 the fixture states `numberOfElements: 3` (B).
 
-Word width: only `APP/LARGE_STATUS` has `bytesPerElement: 8`, and
+Element word width: only `APP/LARGE_STATUS` has `bytesPerElement: 8`, and
 `testJsonMapFileParser.cpp:236,244,254,261,271,278` assert its bit fields at
 `elementPitchBits == 64` and `rawType == int64`. Not inheriting it drops them
 to 32 bits unless the fixture states `bytesPerElement: 8` (A).
@@ -414,9 +420,10 @@ statement true.
 A and B are the same question: does a bit-field child inherit the geometry of
 the word it is cut from, or does it state that geometry itself?
 
-- A (word width): A1 state `bytesPerElement: 8` on the three `LARGE_STATUS`
-  bit fields, one rule for every entry, no special case. A2 a bit field keeps
-  the ancestor's word width, everything else does not inherit it.
+- A (element word width): A1 state `bytesPerElement: 8` on the three
+  `LARGE_STATUS` bit fields, one rule for every entry, no special case. A2 a
+  bit field keeps the ancestor's word width, everything else does not inherit
+  it.
 - B (element count): B1 state `numberOfElements: 3` on the two `ARRAY_REG` bit
   fields, one rule for every entry. B2 a bit field keeps the ancestor's element
   count, everything else does not inherit it.
