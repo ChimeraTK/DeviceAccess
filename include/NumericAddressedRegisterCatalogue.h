@@ -192,6 +192,13 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  /**
+   * Catalogue of the registers of an address-based backend, holding the interrupt indexes beside them.
+   *
+   * A filled catalogue has to be finalised once with finaliseInterruptBookkeeping() before it is used, after the last
+   * addRegister()/modifyRegister() and after every interrupt id is resolved. Until then the interrupt list and the
+   * canonical interrupt paths are not built.
+   */
   class NumericAddressedRegisterCatalogue : public BackendRegisterCatalogue<NumericAddressedRegisterInfo> {
    public:
     [[nodiscard]] NumericAddressedRegisterInfo getBackendRegister(const RegisterPath& registerPathName) const override;

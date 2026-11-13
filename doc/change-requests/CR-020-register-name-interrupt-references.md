@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO IMPLEMENT (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -487,10 +487,10 @@ built by the 1D/2D-agnostic constructor.
   with one public finalisation step called after the catalogue is filled and all
   ids are resolved; addRegister and modifyRegister no longer bookkeep. Both map
   file parsers call it once.
-- DI-14 [NEW] Revision request: an empty interrupt id is a map error instead of
-  a register silently left out of the interrupt indexes. A present empty
-  'triggeredByInterrupt' array is rejected in fill; the constructor maps an
-  empty vector to std::nullopt, so no empty id reaches the field, and the
+- DI-14 [IMPLEMENTED] Revision request: an empty interrupt id is a map error
+  instead of a register silently left out of the interrupt indexes. A present
+  empty 'triggeredByInterrupt' array is rejected in fill; the constructor maps
+  an empty vector to std::nullopt, so no empty id reaches the field, and the
   finalisation asserts that none is present.
 - DI-15 [DONE] Specifications lost the two non-class change sections during the
   design revision: `doc/jmapFormat.dox` (already changed: the `jmap_interrupts`
@@ -617,8 +617,8 @@ built by the 1D/2D-agnostic constructor.
   helper that throws (e.g. getInterruptControllerNameAndDescription,
   JsonAddressSpaceEntry::fill) leaves the prefix to that catch; drop the prefix
   from the four new messages.
-- DI-32 [NEW] The 2D (channel) constructor of NumericAddressedRegisterInfo
-  stores the interrupt id unchanged
+- DI-32 [IMPLEMENTED] The 2D (channel) constructor of
+  NumericAddressedRegisterInfo stores the interrupt id unchanged
   (src/NumericAddressedRegisterCatalogue.cc:59-64), so the empty
   std::vector&lt;size_t&gt; that the *.mapp parser passes for every 2D register
   without interrupt (src/TraditionalMapFileParser.cc:394 and :410) becomes an
@@ -635,8 +635,8 @@ built by the 1D/2D-agnostic constructor.
   with std::vector&lt;size_t&gt;{}
   (tests/executables_src/testMapFileParser.cpp:110,114,150,154); with the
   mapping added both sides become std::nullopt and still compare equal.
-- DI-33 [NEW] The obligation to call finaliseInterruptBookkeeping() once per
-  filled catalogue is documented only on the method
+- DI-33 [IMPLEMENTED] The obligation to call finaliseInterruptBookkeeping() once
+  per filled catalogue is documented only on the method
   (include/NumericAddressedRegisterCatalogue.h:201-214). The Specifications
   require it in two further places, neither of which has any documentation:
   NumericAddressedRegisterCatalogue has no class doc block at all

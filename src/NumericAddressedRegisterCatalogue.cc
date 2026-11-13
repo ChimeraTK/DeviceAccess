@@ -60,9 +60,18 @@ namespace ChimeraTK {
       uint64_t address_, uint32_t nElements_, uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_,
       Access dataAccess_, std::optional<InterruptId> interruptId_, std::optional<DoubleBufferInfo> doubleBufferInfo_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(elementPitchBits_), bar(bar_), address(address_),
-    registerAccess(dataAccess_), interruptId(std::move(interruptId_)), doubleBuffer(std::move(doubleBufferInfo_)),
-    isBitRange(false), channels(std::move(channelInfo_)) {
+    registerAccess(dataAccess_), doubleBuffer(std::move(doubleBufferInfo_)), isBitRange(false),
+    channels(std::move(channelInfo_)) {
     assert(!channels.empty());
+
+    // An empty numeric id is no id: it maps to the register not being an interrupt source. Such a vector is passed by
+    // the *.mapp parser, whose interrupt entry may be empty.
+    if(const auto* numericId = interruptId_ ? std::get_if<std::vector<size_t>>(&*interruptId_) : nullptr) {
+      if(numericId->empty()) {
+        interruptId_.reset();
+      }
+    }
+    interruptId = std::move(interruptId_);
 
     // make sure . and / is treated as similar as possible
     pathName.setAltSeparator(".");
