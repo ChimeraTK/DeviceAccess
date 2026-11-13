@@ -744,7 +744,7 @@ namespace ChimeraTK::detail {
     RegisterPath current = targetPath;
     while(true) {
       if(std::ranges::find(chain, current) != chain.end()) {
-        std::string message = "Error parsing JSON map file: 'triggeredByInterrupt' reference cycle:";
+        std::string message = "'triggeredByInterrupt' reference cycle:";
         for(const auto& path : chain) {
           message += " " + std::string(path) + " ->";
         }
@@ -755,15 +755,14 @@ namespace ChimeraTK::detail {
 
       if(!catalogue.hasRegister(current)) {
         throw ChimeraTK::logic_error(
-            "Error parsing JSON map file: 'triggeredByInterrupt' references non-existent register '" +
-            std::string(current) + "'.");
+            "'triggeredByInterrupt' references non-existent register '" + std::string(current) + "'.");
       }
 
       // A target that names another reference continues the chain.
       auto target = catalogue.getBackendRegister(current);
       if(target.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
-        throw ChimeraTK::logic_error("Error parsing JSON map file: 'triggeredByInterrupt' target '" +
-            std::string(current) + "' is not an interrupt register.");
+        throw ChimeraTK::logic_error(
+            "'triggeredByInterrupt' target '" + std::string(current) + "' is not an interrupt register.");
       }
       if(const auto* reference = target.interruptId ? std::get_if<std::string>(&*target.interruptId) : nullptr) {
         current = *reference;
@@ -774,8 +773,8 @@ namespace ChimeraTK::detail {
       // The end of the chain must carry a numeric id.
       auto numericId = target.numericInterruptId();
       if(!numericId.has_value() || numericId->empty()) {
-        throw ChimeraTK::logic_error("Error parsing JSON map file: 'triggeredByInterrupt' target '" +
-            std::string(current) + "' is not an interrupt register.");
+        throw ChimeraTK::logic_error(
+            "'triggeredByInterrupt' target '" + std::string(current) + "' is not an interrupt register.");
       }
       return *numericId;
     }
