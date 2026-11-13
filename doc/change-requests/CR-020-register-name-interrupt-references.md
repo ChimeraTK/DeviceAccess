@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO IMPLEMENT (from TESTS REVIEWED)
+Status: IMPLEMENTED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -545,7 +545,7 @@ constructors; the `*.mapp` comparison only reaches the 1D constructor.
   correction needed: the file includes <set> and <vector> only, and the item
   asks for a fix that is not present in the current tree; the include block must
   be checked against the item wording again.
-- DI-26 [FOLDED-IN] The 2D/channel-info constructor does not map an empty
+- DI-26 [IMPLEMENTED] The 2D/channel-info constructor does not map an empty
   numeric interrupt id to std::nullopt: only the 1D constructor normalises
   (src/NumericAddressedRegisterCatalogue.cc:36-40), while the 2D constructor
   assigns the field unchanged (src/NumericAddressedRegisterCatalogue.cc:59-64).
@@ -559,8 +559,8 @@ constructors; the `*.mapp` comparison only reaches the 1D constructor.
   (include/NumericAddressedRegisterCatalogue.h:149-155), so such a register also
   compares unequal to one constructed without an id. Apply the normalisation in
   both constructors (e.g. a shared helper).
-- DI-27 [FOLDED-IN] The documentation obligation of the finalisation step is not
-  implemented where the specification requires it: the catalogue-taking
+- DI-27 [IMPLEMENTED] The documentation obligation of the finalisation step is
+  not implemented where the specification requires it: the catalogue-taking
   NumericAddressedBackend constructor (include/NumericAddressedBackend.h:23-26)
   carries no doxygen comment stating that a passed catalogue must be finalised,
   and the NumericAddressedRegisterCatalogue class documentation

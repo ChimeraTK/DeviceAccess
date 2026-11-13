@@ -194,11 +194,25 @@ namespace ChimeraTK {
 
   class NumericAddressedRegisterCatalogue : public BackendRegisterCatalogue<NumericAddressedRegisterInfo> {
    public:
+    /******************************************************************************************************************/
+
+    /**
+     * A catalogue handed to a backend must have been finalised by its producer, i.e. finaliseInterruptBookkeeping()
+     * must have been called after its last mutation and after every interrupt id has been resolved. The interrupt
+     * indexes are built only there, so they are empty (and the canonical interrupt paths do not exist) in an
+     * unfinalised catalogue.
+     */
     [[nodiscard]] NumericAddressedRegisterInfo getBackendRegister(const RegisterPath& registerPathName) const override;
+
+    /******************************************************************************************************************/
 
     [[nodiscard]] bool hasRegister(const RegisterPath& registerPathName) const override;
 
+    /******************************************************************************************************************/
+
     [[nodiscard]] const std::set<std::vector<size_t>>& getListOfInterrupts() const;
+
+    /******************************************************************************************************************/
 
     /**
      * Fill the interrupt bookkeeping from the registers currently in the catalogue: the interrupt id of every
@@ -213,18 +227,30 @@ namespace ChimeraTK {
      */
     void finaliseInterruptBookkeeping();
 
+    /******************************************************************************************************************/
+
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
+
+    /******************************************************************************************************************/
 
     [[nodiscard]] std::shared_ptr<async::DataConsistencyRealm> getDataConsistencyRealm(
         const std::vector<size_t>& qualifiedAsyncDomainId) const override;
 
+    /******************************************************************************************************************/
+
     [[nodiscard]] RegisterPath getDataConsistencyKeyRegisterPath(
         const std::vector<size_t>& qualifiedAsyncDomainId) const override;
+
+    /******************************************************************************************************************/
 
     void addDataConsistencyRealm(const RegisterPath& registerPath, const std::string& realmName);
 
    protected:
+    /******************************************************************************************************************/
+
     void fillFromThis(NumericAddressedRegisterCatalogue* target) const;
+
+    /******************************************************************************************************************/
 
     /**
      *  set of interrupt IDs. Each interrupt ID is a vector of (hierarchical) interrupt numbers.
@@ -242,6 +268,8 @@ namespace ChimeraTK {
      *  primary interrupt `!3`.
      */
     std::map<RegisterPath, std::vector<size_t>> _canonicalInterrupts;
+
+    /******************************************************************************************************************/
 
     /**
      * Map of data consistency key register paths to realm names

@@ -20,12 +20,25 @@ namespace ChimeraTK {
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
    public:
+    /******************************************************************************************************************/
+
+    /**
+     * Constructor taking an already filled register catalogue.
+     *
+     * A passed catalogue must already be finalised: finaliseInterruptBookkeeping() must have been called after the
+     * last mutation of the catalogue and after every interrupt id has been resolved. The interrupt indexes and the
+     * canonical interrupt paths are built only there.
+     */
     explicit NumericAddressedBackend(const std::string& mapFileName = "",
         std::unique_ptr<NumericAddressedRegisterCatalogue> registerMapPointer =
             std::make_unique<NumericAddressedRegisterCatalogue>(),
         const std::string& dataConsistencyKeyDescriptor = "");
 
+    /******************************************************************************************************************/
+
     ~NumericAddressedBackend() override = default;
+
+    /******************************************************************************************************************/
 
     /**
      * Read function to be implemented by backends.

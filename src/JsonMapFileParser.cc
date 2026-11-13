@@ -43,7 +43,11 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
+  /********************************************************************************************************************/
+
   struct JsonAddressSpaceEntry;
+
+  /********************************************************************************************************************/
 
   struct JsonMapFileParser::Imp {
     std::pair<NumericAddressedRegisterCatalogue, MetadataCatalogue> parse(std::ifstream& stream);
@@ -68,6 +72,8 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
+  /********************************************************************************************************************/
+
   // map Access enum to JSON as strings. Need to redefine the strongly typed enums as old-fashioned ones....
   enum Access {
     READ_ONLY = int(NumericAddressedRegisterInfo::Access::READ_ONLY),
@@ -75,6 +81,9 @@ namespace ChimeraTK::detail {
     READ_WRITE = int(NumericAddressedRegisterInfo::Access::READ_WRITE),
     accessNotSet
   };
+
+  /********************************************************************************************************************/
+
   NLOHMANN_JSON_SERIALIZE_ENUM(
       Access, {{Access::READ_ONLY, "RO"}, {Access::READ_WRITE, "RW"}, {Access::WRITE_ONLY, "WO"}})
 
@@ -88,6 +97,9 @@ namespace ChimeraTK::detail {
     ASCII = int(NumericAddressedRegisterInfo::Type::ASCII),
     representationNotSet
   };
+
+  /********************************************************************************************************************/
+
   NLOHMANN_JSON_SERIALIZE_ENUM(RepresentationType,
       {{RepresentationType::FIXED_POINT, "fixedPoint"}, {RepresentationType::IEEE754, "IEEE754"},
           {RepresentationType::VOID, "void"}, {RepresentationType::ASCII, "string"}})
@@ -96,7 +108,12 @@ namespace ChimeraTK::detail {
 
   // map AddressType enum to JSON as strings
   enum AddressType { IO, DMA, addressTypeNotSet };
+
+  /********************************************************************************************************************/
+
   NLOHMANN_JSON_SERIALIZE_ENUM(AddressType, {{AddressType::IO, "IO"}, {AddressType::DMA, "DMA"}})
+
+  /********************************************************************************************************************/
 
   /********************************************************************************************************************/
 
@@ -123,6 +140,8 @@ namespace ChimeraTK::detail {
       }
     }
 
+    /******************************************************************************************************************/
+
     // NOLINTNEXTLINE(readability-identifier-naming)
     friend void to_json(json& j, const HexValue& hv) { j = hv.v; }
   };
@@ -140,7 +159,11 @@ namespace ChimeraTK::detail {
     size_t numberOfElements{1};
     size_t bytesPerElement{0};
 
+    /******************************************************************************************************************/
+
     struct DoubleBufferingInfo {
+      /******************************************************************************************************************/
+
       struct SecondAddress {
         AddressType type{AddressType::DMA};
         size_t channel{0};
@@ -149,10 +172,14 @@ namespace ChimeraTK::detail {
         NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(SecondAddress, type, channel, offset)
       };
 
+      /******************************************************************************************************************/
+
       SecondAddress secondaryBufferAddress;
       std::string enableRegister;
       std::string readBufferRegister;
       size_t index{0};
+
+      /******************************************************************************************************************/
 
       void fill(NumericAddressedRegisterInfo& info) const {
         info.doubleBuffer->address = secondaryBufferAddress.offset.v;
@@ -170,15 +197,24 @@ namespace ChimeraTK::detail {
         info.doubleBuffer->index = index;
       }
 
+      /******************************************************************************************************************/
+
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
           DoubleBufferingInfo, secondaryBufferAddress, enableRegister, readBufferRegister, index)
     };
+
+    /******************************************************************************************************************/
+
     std::optional<DoubleBufferingInfo> doubleBuffering;
+
+    /******************************************************************************************************************/
 
     struct Address {
       AddressType type{AddressType::IO};
       size_t channel{0};
       HexValue offset{std::numeric_limits<size_t>::max()};
+
+      /******************************************************************************************************************/
 
       void fill(NumericAddressedRegisterInfo& info) const {
         assert(type != AddressType::addressTypeNotSet);
@@ -186,8 +222,12 @@ namespace ChimeraTK::detail {
         info.bar = channel + (type == AddressType::DMA ? 13 : 0);
       }
 
+      /******************************************************************************************************************/
+
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Address, type, channel, offset)
     } address{AddressType::addressTypeNotSet};
+
+    /******************************************************************************************************************/
 
     // Basic representation without sub elements
     struct Representation {
@@ -196,6 +236,8 @@ namespace ChimeraTK::detail {
       int32_t fractionalBits{0};
       bool isSigned{false};
       uint32_t bitShift{0};
+
+      /******************************************************************************************************************/
 
       void fill(NumericAddressedRegisterInfo& info, size_t offset, size_t bytesPerElem) const {
         if(type != RepresentationType::representationNotSet) {
@@ -212,8 +254,12 @@ namespace ChimeraTK::detail {
         }
       }
 
+      /******************************************************************************************************************/
+
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Representation, type, width, fractionalBits, isSigned, bitShift)
     } representation{RepresentationType::representationNotSet};
+
+    /******************************************************************************************************************/
 
     // 'register' is a C++ keyword, so the JSON member is deserialized manually into 'regPath'.
     struct SelectedBy {
@@ -232,13 +278,19 @@ namespace ChimeraTK::detail {
         j.at("value").get_to(s.value);
       }
 
+      /******************************************************************************************************************/
+
       // NOLINTNEXTLINE(readability-identifier-naming)
       friend void to_json(nlohmann::json& j, const SelectedBy& s) {
         j = nlohmann::json{{"register", s.regPath}, {"value", s.value}};
       }
     };
 
+    /******************************************************************************************************************/
+
     struct ChannelChild;
+
+    /******************************************************************************************************************/
 
     struct Channel {
       std::string engineeringUnit;
@@ -263,6 +315,8 @@ namespace ChimeraTK::detail {
           Channel, engineeringUnit, description, offset, bytesPerElement, representation, selectedBy, children)
     };
 
+    /******************************************************************************************************************/
+
     // A bit-field child of a named channel of a 2D register. Works like the top-level bit-field mechanism of a 1D
     // register, but is interpreted relative to the channel's sample word (the member byte offset/bytesPerElement).
     struct ChannelChild {
@@ -272,6 +326,8 @@ namespace ChimeraTK::detail {
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ChannelChild, engineeringUnit, description, representation)
     };
+
+    /******************************************************************************************************************/
 
     // The channels, sorted by byte offset so that per-channel information (and thus the channel index of a
     // 2D accessor) follows the natural memory order, independent of the lexically sorted map key. Returns the
@@ -287,6 +343,8 @@ namespace ChimeraTK::detail {
       return result;
     }
 
+    /******************************************************************************************************************/
+
     size_t pitch{0}; ///< byte pitch between two samples of the same channel in the 2D register
     std::map<std::string, Channel> channels;
 
@@ -298,6 +356,8 @@ namespace ChimeraTK::detail {
     // Whether 'triggeredByInterrupt' declares an interrupt: a numeric id array with at least one element or a
     // register name.
     [[nodiscard]] bool hasTriggeredByInterrupt() const;
+
+    /******************************************************************************************************************/
 
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
         bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy,
@@ -423,6 +483,8 @@ namespace ChimeraTK::detail {
       }
     }
 
+    /******************************************************************************************************************/
+
     // Apply a register-level 'selectedBy' (scalar/1D registers) to the register's single channel. Must only be called
     // after 'representation.fill' created exactly one channel. A local 'selectedBy' overrides an inherited one.
     void applyRegisterSelectedBy(
@@ -435,6 +497,8 @@ namespace ChimeraTK::detail {
       }
     }
 
+    /******************************************************************************************************************/
+
     // Build the ChannelInfo of a channel or bit-field child slice from its 'representation'. The raw type always
     // spans the whole sample word (wordBits), so the slice reads the element with its full word width in the
     // underlying transport and extracts the range via the bit offset/width. Shared by the parent channel slice and
@@ -445,6 +509,8 @@ namespace ChimeraTK::detail {
           rep.type != RepresentationType::IEEE754 ? rep.isSigned : true, DataType("int" + std::to_string(wordBits)),
           selectedBy};
     }
+
+    /******************************************************************************************************************/
 
     // Add a slice register to the catalogue and, for a double-buffered register, its two buffer-view registers
     // BUF0/BUF1, exactly as the parent 2D register's BUF0/BUF1 block but folded to the slice. The slice's own
@@ -471,7 +537,11 @@ namespace ChimeraTK::detail {
       catalogue.addRegister(sliceBuf1);
     }
 
+    /******************************************************************************************************************/
+
     std::map<std::string, JsonAddressSpaceEntry> children;
+
+    /******************************************************************************************************************/
 
     void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
         bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt,
@@ -601,6 +671,8 @@ namespace ChimeraTK::detail {
       }
     }
 
+    /******************************************************************************************************************/
+
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(JsonAddressSpaceEntry, engineeringUnit, description, access,
         triggeredByInterrupt, numberOfElements, bytesPerElement, pitch, address, representation, children, channels,
         doubleBuffering, selectedBy)
@@ -634,7 +706,11 @@ namespace ChimeraTK::detail {
     void forEachEntry(std::vector<size_t> const& intId,
         std::function<void(std::vector<size_t> const&, nlohmann::json const&)> const& visitor) const;
 
+    /******************************************************************************************************************/
+
     void fill(const std::vector<size_t>& intId, MetadataCatalogue& metadata) const;
+
+    /******************************************************************************************************************/
 
     /**
      * Dispatch every entry that carries a controller object to the catalogue augmenter of its controller type. The
@@ -642,6 +718,8 @@ namespace ChimeraTK::detail {
      * still reaches its subhandlers.
      */
     void augmentCatalogue(NumericAddressedRegisterCatalogue& catalogue) const;
+
+    /******************************************************************************************************************/
 
     // NOLINTNEXTLINE(readability-identifier-naming)
     friend void from_json(const json& j, InterruptHandlerEntry& e) {
@@ -732,6 +810,8 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
+  /********************************************************************************************************************/
+
   /**
    * Return the numeric interrupt id of the register the given path names. A reference names another register, which
    * may itself hold a reference, so the chain is followed transitively while keeping the already visited register
@@ -753,13 +833,11 @@ namespace ChimeraTK::detail {
         throw ChimeraTK::logic_error(message);
       }
       chain.push_back(current);
-
       if(!catalogue.hasRegister(current)) {
         throw ChimeraTK::logic_error(
             "Error parsing JSON map file: 'triggeredByInterrupt' references non-existent register '" +
             std::string(current) + "'.");
       }
-
       // A target that names another reference continues the chain.
       auto target = catalogue.getBackendRegister(current);
       if(target.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
@@ -783,6 +861,8 @@ namespace ChimeraTK::detail {
   }
 
   /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
   /********************************************************************************************************************/
 
   std::pair<NumericAddressedRegisterCatalogue, MetadataCatalogue> JsonMapFileParser::Imp::parse(std::ifstream& stream) {
