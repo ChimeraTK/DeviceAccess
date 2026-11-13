@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -582,3 +582,12 @@ and the indexes survive `clone()`.
   protects the template-argument comma). The extra pair is redundant clutter;
   reduce all 20 assertions to the single-pair form. This is a hand edit,
   clang-format and clang-tidy do not report it.
+- DI-31 [NEW] src/JsonMapFileParser.cc:747, 757-759, 764-766, 776-778: the new
+  logic_error messages of the file-local helper resolveInterruptReference start
+  with "Error parsing JSON map file:", which the enclosing catch in Imp::parse
+  (src/JsonMapFileParser.cc:928-929) prefixes again, so the user sees "Error
+  parsing JSON map file '<file>': Error parsing JSON map file: ..." with the
+  phrase twice and no file name in the helper part. Every other file-local
+  helper that throws (e.g. getInterruptControllerNameAndDescription,
+  JsonAddressSpaceEntry::fill) leaves the prefix to that catch; drop the prefix
+  from the four new messages.
