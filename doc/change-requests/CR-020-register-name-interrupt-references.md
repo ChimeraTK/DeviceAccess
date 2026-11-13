@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -311,9 +311,10 @@ after the augmentation.
 - Covers the post-pass resolution (Requirements).
 - Reference chain: two references resolve to the final id.
 - Covers transitive resolution (Requirements; `resolveInterruptReference`).
-- Cycle and self-reference: parse-time `logic_error`.
+- Cycle and self-reference: parse-time `logic_error`, one case each.
 - Covers the cycle rule (Requirements).
-- Missing target and non-interrupt target: parse-time `logic_error`.
+- Missing target and non-interrupt target: parse-time `logic_error`, one
+case each.
 - Covers the error cases (Requirements).
 - Channel slice of a 2D referring register: the slice carries the resolved
 id.
@@ -514,3 +515,9 @@ and the indexes survive `clone()`.
   finaliseInterruptBookkeeping, documenting an exception that is never thrown.
   State it as prose instead (both incomplete states are programming errors and
   are asserted).
+- DI-25 [NEW] DI-21 is not implemented:
+  tests/executables_src/testNumericAddressedRegisterCatalogue.cpp uses std::set
+  at :44 and :70 but its include block (:12-13) still lists only <set>...
+  correction needed: the file includes <set> and <vector> only, and the item
+  asks for a fix that is not present in the current tree; the include block must
+  be checked against the item wording again.
