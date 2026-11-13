@@ -9,6 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -79,6 +80,45 @@ BOOST_AUTO_TEST_CASE(TestFinaliseIndexesRegisteredAndDerivedInterruptsAndCloneCo
   BOOST_TEST((cloneCatalogue->getListOfInterrupts() == expectedInterrupts));
   BOOST_CHECK(cloneCatalogue->hasRegister("!2"));
   BOOST_TEST((cloneCatalogue->getBackendRegister("!2:3").numericInterruptId() == std::vector<size_t>{2, 3}));
+}
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
+// An empty numeric interrupt id is no interrupt: both constructors map it to std::nullopt, so has_value() always means
+// "is an interrupt source" and the register compares equal to one constructed without an id.
+BOOST_AUTO_TEST_CASE(TestEmptyNumericInterruptIdIsNoInterrupt) {
+  const std::vector<size_t> emptyId{};
+  const std::vector<size_t> numericId{3};
+
+  // The 1D constructor.
+  NumericAddressedRegisterInfo empty1D("EMPTY_1D", 0, 0, 0, 0, 32, 0, true,
+      NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, emptyId);
+  NumericAddressedRegisterInfo noId1D("EMPTY_1D", 0, 0, 0, 0, 32, 0, true);
+  BOOST_TEST(!empty1D.numericInterruptId().has_value());
+  BOOST_TEST(!empty1D.interruptId.has_value());
+  BOOST_TEST((empty1D == noId1D));
+
+  NumericAddressedRegisterInfo numeric1D("EMPTY_1D", 0, 0, 0, 0, 32, 0, true,
+      NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, numericId);
+  BOOST_TEST((numeric1D.numericInterruptId() == numericId));
+
+  // The 2D/channel-info constructor, which the *.mapp parser uses for 2D registers.
+  const std::vector<NumericAddressedRegisterInfo::ChannelInfo> channels{
+      {0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")}};
+  NumericAddressedRegisterInfo empty2D("EMPTY_2D", 0, 0, 4, 32, channels,
+      NumericAddressedRegisterInfo::Access::READ_WRITE,
+      std::optional<NumericAddressedRegisterInfo::InterruptId>{NumericAddressedRegisterInfo::InterruptId{emptyId}});
+  NumericAddressedRegisterInfo noId2D("EMPTY_2D", 0, 0, 4, 32, channels,
+      NumericAddressedRegisterInfo::Access::READ_WRITE, std::optional<NumericAddressedRegisterInfo::InterruptId>{});
+  BOOST_TEST(!empty2D.numericInterruptId().has_value());
+  BOOST_TEST(!empty2D.interruptId.has_value());
+  BOOST_TEST((empty2D == noId2D));
+
+  NumericAddressedRegisterInfo numeric2D("EMPTY_2D", 0, 0, 4, 32, channels,
+      NumericAddressedRegisterInfo::Access::READ_WRITE,
+      std::optional<NumericAddressedRegisterInfo::InterruptId>{NumericAddressedRegisterInfo::InterruptId{numericId}});
+  BOOST_TEST((numeric2D.numericInterruptId() == numericId));
 }
 
 /**********************************************************************************************************************/

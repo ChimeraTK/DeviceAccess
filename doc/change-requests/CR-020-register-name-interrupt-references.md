@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -380,6 +380,10 @@ constructors, the 2D/channel-info one included, so `has_value()` means
 constructed without an id.
 - Covers the shared normalisation in the `NumericAddressedRegisterInfo`
 constructors; the `*.mapp` comparison only reaches the 1D constructor.
+- Each constructor is exercised with an empty id vector, an absent id and
+a numeric id. The empty vector is passed as an explicitly constructed
+`std::optional<InterruptId>`, so the 2D/channel-info call does not depend
+on a braced list forming the alternative.
 
 ## Deferred issue
 
