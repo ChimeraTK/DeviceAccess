@@ -48,11 +48,11 @@ BOOST_AUTO_TEST_CASE(TestFinaliseBuildsInterruptIndexes) {
   BOOST_TEST((catalogue.getBackendRegister("!3").numericInterruptId() == std::vector<size_t>{3}));
   BOOST_TEST((catalogue.getBackendRegister("!5").numericInterruptId() == std::vector<size_t>{5}));
   BOOST_TEST((catalogue.getBackendRegister("!5:2").numericInterruptId() == std::vector<size_t>{5, 2}));
-  BOOST_CHECK(catalogue.hasRegister("!5:2"));
+  BOOST_TEST(catalogue.hasRegister("!5:2"));
 
   // A register without interrupt id is neither an interrupt nor a canonical interrupt path.
   BOOST_TEST((!catalogue.getBackendRegister("REG").numericInterruptId().has_value()));
-  BOOST_CHECK(!catalogue.hasRegister("!3:0"));
+  BOOST_TEST(!catalogue.hasRegister("!3:0"));
 }
 
 /**********************************************************************************************************************/
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(TestFinaliseIndexesRegisteredAndDerivedInterruptsAndCloneCo
   // The clone is already finalised: both indexes are copied, so neither the interrupt list nor the canonical
   // interrupt paths need a further finalisation call.
   BOOST_TEST((cloneCatalogue->getListOfInterrupts() == expectedInterrupts));
-  BOOST_CHECK(cloneCatalogue->hasRegister("!2"));
+  BOOST_TEST(cloneCatalogue->hasRegister("!2"));
   BOOST_TEST((cloneCatalogue->getBackendRegister("!2:3").numericInterruptId() == std::vector<size_t>{2, 3}));
 }
 
