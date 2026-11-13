@@ -30,9 +30,8 @@ Aspect: interrupt ids referred to by register name.
 - References resolve after CR-019 has augmented the implicit interrupt ids,
   so a target may be a derived `ISR` child and may be declared anywhere in
   the file.
-- An empty `triggeredByInterrupt` array declares no interrupt, so such an
-  entry is not an interrupt register, and a void entry carrying one is an
-  error.
+- A present but empty `triggeredByInterrupt` array, and an empty reference
+  string, are errors while parsing the map file.
 - After parsing, the interrupt bookkeeping is complete: every interrupt
   register is listed by `getListOfInterrupts()` and its canonical interrupt
   paths resolve.
@@ -50,24 +49,6 @@ Aspect: interrupt ids referred to by register name.
 
 ## Specifications
 
-### doc/jmapFormat.dox (modified)
-
-- The `jmap_interrupts` section states that `triggeredByInterrupt` may name
-  another interrupt register instead of giving the numeric id.
-- Angle-bracketed placeholders are escaped as HTML entities
-  (`&lt;handler id&gt;`, `&lt;bit position&gt;`), so doxygen does not report
-  them as unsupported tags.
-
-### schemas/jmap.schema.json (modified)
-
-- The schema accepts a non-empty string for `triggeredByInterrupt` beside
-  the numeric array.
-- The `interruptHandler` conditional for a chained interrupt is restricted
-  to arrays (`type: array`).
-   - Without this, `minItems` is ignored for a string and every string
-     reference would demand a handler; the target's own numeric chain
-     already triggers the requirement where one is needed.
-
 ### NumericAddressedRegisterInfo (modified) in include/NumericAddressedRegisterCatalogue.h (modified), src/NumericAddressedRegisterCatalogue.cc (modified)
 
 - `interruptId` (modified): of type
@@ -79,12 +60,16 @@ Aspect: interrupt ids referred to by register name.
      unchanged, and no side table of pending references exists anywhere.
    - The reference string is stored as written; the dot alt separator is
      applied where the reference is resolved.
-   - A present entry is an interrupt register only with a non-empty numeric
-     array or a string; an empty array counts as absent.
-- Constructors (modified): the `std::vector<size_t> interruptId_ = {}`
-  parameter stays and an empty vector maps to `std::nullopt`.
-   - Constructor call sites, e.g. the canonical interrupt path entry, are
-     unchanged; reading the member is not, see the test plan.
+   - An entry is an interrupt register when the field holds a numeric id or
+     a string. An empty numeric id never occurs: the parser rejects `[]` and
+     the constructor maps an empty vector to `std::nullopt`.
+- Constructors (modified): both take the new field type,
+  `std::optional<std::variant<std::vector<size_t>, std::string>>`, with
+  `= std::nullopt` as the default of the 1D/2D-agnostic one.
+   - An empty numeric vector still maps to `std::nullopt`, so the `*.mapp`
+     parser keeps passing its possibly empty id vector.
+   - The 2D channel-slice construction passes the field through unchanged, so
+     a reference reaches the slices; it previously passed a plain vector.
 - `numericInterruptId` (new):
   `std::optional<std::vector<size_t>> numericInterruptId() const`.
    - The numeric id, or `std::nullopt` when the field is absent or holds a
@@ -92,15 +77,16 @@ Aspect: interrupt ids referred to by register name.
      members and avoids handing out a pointer into the object.
    - A `std::vector<size_t>` assigns into the field directly (it converts to
      the numeric alternative), so no setter is needed.
-- `getQualifiedAsyncId` (modified): returns `numericInterruptId()`.
-   - `std::nullopt` yields an empty vector as today.
-   - A remaining reference throws `logic_error`, documented on the
-     declaration: an unresolved id must not reach a backend.
+- `getQualifiedAsyncId` (modified): returns
+  `numericInterruptId().value_or({})`, an empty vector when the field is
+  absent, as today.
+   - No throw of its own: the finalisation asserts that no reference is left,
+     and letting it return an empty vector keeps the accessor non-throwing.
 - The header gains an `<variant>` include.
-- The member is public, so its type change breaks source and binary
-  compatibility for code reading `interruptId`. The JSON parser, the
-  interrupt distributors and the tests are the only readers in the project,
-  and the change updates all of them.
+- The member is public and the header installed, so the type change breaks
+  source and binary compatibility for readers, in tree and downstream.
+   - In tree the JSON parser, the interrupt distributors and the tests are
+     updated; downstream code migrates to `numericInterruptId()`.
 
 ### NumericAddressedRegisterCatalogue (modified) in include/NumericAddressedRegisterCatalogue.h (modified), src/NumericAddressedRegisterCatalogue.cc (modified)
 
@@ -115,15 +101,12 @@ Aspect: interrupt ids referred to by register name.
 - `finaliseInterruptBookkeeping` (new): `void finaliseInterruptBookkeeping()`.
    - Public. Called once per catalogue, after the last `addRegister` /
      `modifyRegister` and after every interrupt id is resolved; the class
-     documentation states the obligation.
+     documentation states the obligation, as does the catalogue-taking
+     `NumericAddressedBackend` constructor.
    - Walks the catalogue and fills `_listOfInterrupts` and
-     `_canonicalInterrupts` from the interrupt registers.
-   - A register with `Access::INTERRUPT` throws `logic_error` naming it when
-     its id is still a reference, and also when it holds an empty numeric id.
-      - The two are reported separately, so a missed resolution does not read
-        like a missing declaration.
-      - The empty case keeps an empty id away from
-        `getQualifiedAsyncId().front()`.
+     `_canonicalInterrupts` from the registers with `Access::INTERRUPT`.
+   - Asserts that no register still holds a reference: resolution runs
+     before this, so a leftover is a programming error, not a map error.
    - Rebuilds both indexes from scratch, so a repeated call is harmless and
      no completion flag is needed; `clone` and `fillFromThis` copy both
      indexes, so a clone is already finalised.
@@ -141,11 +124,16 @@ Aspect: interrupt ids referred to by register name.
   is held in the info itself, so nothing has to be extracted or recorded.
 - `fill` (modified): on a declaring entry it assigns `info.interruptId` from
   `triggeredByInterrupt` as a whole, for the data and the void branch alike.
+   - A present empty array is a `logic_error` naming the entry: it declares
+     no interrupt and has no meaning, and the parser does not enforce the
+     schema's `minItems`.
+   - An empty reference string is a `logic_error` naming the entry: it names
+     no register, and the schema's `minLength` is likewise not enforced.
    - The reference string is stored as written; the dot alt separator is
      applied where the reference is resolved.
    - Without a declaration the copied field is left untouched, so an entry
      inheriting its parent's address and interrupt id keeps the parent's
-     reference without a special case. An empty array therefore never
+     reference without a special case. An absent declaration never
      overwrites an inherited id.
 - `addInfos` (modified): loses the `std::map<RegisterPath, RegisterPath>&`
   parameter.
@@ -231,8 +219,8 @@ Aspect: interrupt ids referred to by register name.
   It duplicates the field, needs one recording point per derived register
   and that recording is where the earlier defects were.
 - Keeping the empty-id guard in the per-register bookkeeping helper: rejected.
-  It leaves the catalogue silently inconsistent instead of reporting an
-  unresolved interrupt register at parse time.
+  An empty id is now a parse error and cannot reach the catalogue, so the
+  guard would be dead code.
 - A specialisation of `adl_serializer` for the concrete variant type:
   rejected, would tie the mapping to this one field, whereas the generic
   `adl_serializer<std::variant<Ts...>>` mirrors the existing `std::optional`
@@ -250,10 +238,10 @@ Aspect: interrupt ids referred to by register name.
   the target's data.
 - Resolving before the augmentation: rejected. Implicit `ISR` ids are known
   only after it.
-- A `finalised` flag guarding the indexes: rejected. Only the two map file
-  parsers create interrupt registers, both call the finalisation and both are
-  tested; the remaining catalogue users mutate already finalised catalogues
-  and never add an interrupt register.
+- A `finalised` flag guarding the indexes: rejected. It only turns a missed
+  call into a different error message; the obligation is documented on the
+  method and on the catalogue-taking backend constructor, and the parsers
+  that produce complete catalogues are tested.
 
 ## Test plan
 
@@ -292,13 +280,12 @@ Aspect: interrupt ids referred to by register name.
    - Entry inheriting its parent's address from a referring parent: it
      resolves to the parent's id.
    - Covers the inherited field in `fill` (`JsonAddressSpaceEntry`).
-   - Empty id array counts as absent: a data register declared with an empty
-     `triggeredByInterrupt` array keeps its declared access and no interrupt
-     id.
-   - Covers the empty-array-is-absent requirement.
-   - Empty id array on a void register: the entry is rejected with a
-     `logic_error`, as for an absent field.
-   - Covers the same requirement for the void case.
+   - Empty `triggeredByInterrupt` array: parse-time `logic_error`, for a
+     data register and a void register alike.
+   - Covers the empty-array requirement; the schema already forbids it, but
+     the parser does not validate against the schema.
+   - Empty reference string: parse-time `logic_error` naming the entry.
+   - Covers the empty-name requirement, likewise outside the schema check.
 - `tests/executables_src/testGenericMuxedInterruptDistributor.cpp` (modified)
    - End to end: a data register referring by name is notified when the
      target's `ISR` bit is set (dummy backend).
@@ -317,14 +304,9 @@ Aspect: interrupt ids referred to by register name.
      paths.
    - Covers `finaliseInterruptBookkeeping` directly; the parsers cannot show
      the index contents in isolation.
-   - An `Access::INTERRUPT` register without a numeric id is rejected with a
-     `logic_error` naming it.
-   - Covers the empty-id error, unreachable through the parsers because
-     resolution fails first.
-   - An `Access::INTERRUPT` register still holding a name at finalisation is
-     rejected with a `logic_error` naming it.
-   - Covers the unresolved-reference error, likewise unreachable through the
-     parsers.
+   - A register with a registered and a derived interrupt is indexed once,
+     and the indexes survive `clone()`.
+   - Covers the rebuild and the copied indexes.
 
 ## Deferred issue
 
@@ -423,7 +405,8 @@ Aspect: interrupt ids referred to by register name.
   bookkeeping with one public finalisation step called after the catalogue is
   filled and all ids are resolved; addRegister and modifyRegister no longer
   bookkeep. Both map file parsers call it once.
-- DI-14 [FOLDED-IN] Revision request: turn the empty-id guard of the interrupt
-  bookkeeping into a parse-time error. An Access::INTERRUPT register without a
-  numeric id at finalisation is a logic_error naming the register, instead of
-  being silently left out of the interrupt indexes.
+- DI-14 [FOLDED-IN] Revision request: an empty interrupt id is a map error
+  instead of a register silently left out of the interrupt indexes. A present
+  empty 'triggeredByInterrupt' array is rejected in fill; the constructor maps
+  an empty vector to std::nullopt, so no empty id reaches the field, and the
+  finalisation asserts that none is present.
