@@ -22,6 +22,8 @@
 using namespace ChimeraTK;
 using namespace boost::unit_test_framework;
 
+/**********************************************************************************************************************/
+
 template<typename AccessorType>
 bool readWithTimeout(AccessorType& acc, size_t msTimeout = 3000) {
   auto startTime = std::chrono::steady_clock::now();
@@ -74,6 +76,8 @@ class WriteMonitoringBackend : public DummyBackend {
   std::map<std::string, uint32_t> acknowledged;
   uint32_t sie{0};
 };
+
+/**********************************************************************************************************************/
 
 class BackendRegisterer {
  public:
@@ -155,6 +159,9 @@ struct ThrowTestFixture {
 struct Inactive0 : public TestFixture {
   Inactive0() : TestFixture(0, false) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(inactiveIER, Inactive0) {
   device.open();
 
@@ -196,6 +203,9 @@ BOOST_FIXTURE_TEST_CASE(inactiveIER, Inactive0) {
 struct Active0 : public TestFixture {
   Active0() : TestFixture(0, true) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(activateIER, Active0) {
   auto ier = device.getScalarRegisterAccessor<int>("TEST0/IER");
   ier.read();
@@ -248,6 +258,8 @@ BOOST_AUTO_TEST_CASE(activateOnActiveDomain) {
   BOOST_TEST(device.read<int32_t>("TEST3/SUB1/MER") == 0x3);
   BOOST_TEST(device.read<uint32_t>("TEST3/SUB1/IER") == (1U << 3));
 }
+
+/**********************************************************************************************************************/
 
 struct AcknowledgeTest : public TestFixture {
   AcknowledgeTest(uint32_t interrupt, std::string ackReg) : TestFixture(interrupt, true), ackRegister(ackReg) {}
@@ -325,6 +337,9 @@ struct AcknowledgeTest : public TestFixture {
 struct IsrTestFixture : public AcknowledgeTest {
   IsrTestFixture() : AcknowledgeTest(0, "ISR") {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testISR, IsrTestFixture) {
   run();
 }
@@ -334,6 +349,9 @@ BOOST_FIXTURE_TEST_CASE(testISR, IsrTestFixture) {
 struct IarTestFixture : public AcknowledgeTest {
   IarTestFixture() : AcknowledgeTest(1, "IAR") {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testIAR, IarTestFixture) {
   run();
 }
@@ -344,9 +362,14 @@ BOOST_FIXTURE_TEST_CASE(testIAR, IarTestFixture) {
 struct IcrTestFixture : public AcknowledgeTest {
   IcrTestFixture() : AcknowledgeTest(2, "ICR") {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testICR, IcrTestFixture) {
   run();
 }
+
+/**********************************************************************************************************************/
 
 struct MasterEnableTest : public TestFixture {
   MasterEnableTest(uint32_t interrupt, std::string meRegister, bool enableFirst)
@@ -377,6 +400,9 @@ struct MasterEnableTest : public TestFixture {
 struct MerInactiveTestFixture : public MasterEnableTest {
   MerInactiveTestFixture() : MasterEnableTest(3, "MER", false) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMerInactive, MerInactiveTestFixture) {
   run();
 }
@@ -386,6 +412,9 @@ BOOST_FIXTURE_TEST_CASE(testMerInactive, MerInactiveTestFixture) {
 struct MerActiveTestFixture : public MasterEnableTest {
   MerActiveTestFixture() : MasterEnableTest(3, "MER", true) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMerActive, MerActiveTestFixture) {
   run();
 }
@@ -423,6 +452,9 @@ BOOST_AUTO_TEST_CASE(testIMR) { // TEST4
 struct Inactive5 : public TestFixture {
   Inactive5() : TestFixture(5, false) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testSieCie, Inactive5) {
   auto sie = device.getScalarRegisterAccessor<int>("TEST5/SIE/DUMMY_READABLE");
   auto cie = device.getScalarRegisterAccessor<int>("TEST5/CIE/DUMMY_READABLE");
@@ -512,6 +544,9 @@ BOOST_FIXTURE_TEST_CASE(testSieCieMulti2, Inactive5) {
 struct GieInactiveTestFixture : public MasterEnableTest {
   GieInactiveTestFixture() : MasterEnableTest(6, "GIE", false) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testGieInactive, GieInactiveTestFixture) {
   run();
 }
@@ -521,6 +556,9 @@ BOOST_FIXTURE_TEST_CASE(testGieInactive, GieInactiveTestFixture) {
 struct GieActiveTestFixture : public MasterEnableTest {
   GieActiveTestFixture() : MasterEnableTest(6, "GIE", true) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testGieActive, GieActiveTestFixture) {
   run();
 }
@@ -530,6 +568,9 @@ BOOST_FIXTURE_TEST_CASE(testGieActive, GieActiveTestFixture) {
 struct MieInactiveTestFixture : public MasterEnableTest {
   MieInactiveTestFixture() : MasterEnableTest(7, "MIE", false) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMieInactive, MieInactiveTestFixture) {
   run();
 }
@@ -539,6 +580,9 @@ BOOST_FIXTURE_TEST_CASE(testMieInactive, MieInactiveTestFixture) {
 struct MieActiveTestFixture : public MasterEnableTest {
   MieActiveTestFixture() : MasterEnableTest(7, "MIE", true) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMieActive, MieActiveTestFixture) {
   run();
 }
@@ -550,6 +594,9 @@ BOOST_FIXTURE_TEST_CASE(testMieActive, MieActiveTestFixture) {
 struct UnknownOptionTestFixture : public ThrowTestFixture {
   UnknownOptionTestFixture() : ThrowTestFixture(10) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testUnknownOption, UnknownOptionTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -557,6 +604,9 @@ BOOST_FIXTURE_TEST_CASE(testUnknownOption, UnknownOptionTestFixture) {}
 struct InvalidJson1TestFixture : public ThrowTestFixture {
   InvalidJson1TestFixture() : ThrowTestFixture(11) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testJsonErrorInGeneralStructure, InvalidJson1TestFixture) {}
 
 /**********************************************************************************************************************/
@@ -564,6 +614,9 @@ BOOST_FIXTURE_TEST_CASE(testJsonErrorInGeneralStructure, InvalidJson1TestFixture
 struct InvalidJson2TestFixture : public ThrowTestFixture {
   InvalidJson2TestFixture() : ThrowTestFixture(12) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testJsonErrorInIntcSprecific, InvalidJson2TestFixture) {}
 
 /**********************************************************************************************************************/
@@ -571,6 +624,9 @@ BOOST_FIXTURE_TEST_CASE(testJsonErrorInIntcSprecific, InvalidJson2TestFixture) {
 struct OnlySieTestFixture : public ThrowTestFixture {
   OnlySieTestFixture() : ThrowTestFixture(13) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testOnlySie, OnlySieTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -578,6 +634,9 @@ BOOST_FIXTURE_TEST_CASE(testOnlySie, OnlySieTestFixture) {}
 struct OnlyCieTestFixture : public ThrowTestFixture {
   OnlyCieTestFixture() : ThrowTestFixture(14) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testOnlyCie, OnlyCieTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -585,6 +644,9 @@ BOOST_FIXTURE_TEST_CASE(testOnlyCie, OnlyCieTestFixture) {}
 struct IarAndIcrTestFixture : public ThrowTestFixture {
   IarAndIcrTestFixture() : ThrowTestFixture(15) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testIarAndIcr, IarAndIcrTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -592,6 +654,9 @@ BOOST_FIXTURE_TEST_CASE(testIarAndIcr, IarAndIcrTestFixture) {}
 struct NoIsrTestFixture : public ThrowTestFixture {
   NoIsrTestFixture() : ThrowTestFixture(16) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testNoIsr, NoIsrTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -599,6 +664,9 @@ BOOST_FIXTURE_TEST_CASE(testNoIsr, NoIsrTestFixture) {}
 struct NoIerTestFixture : public ThrowTestFixture {
   NoIerTestFixture() : ThrowTestFixture(17) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testNoIer, NoIerTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -606,6 +674,9 @@ BOOST_FIXTURE_TEST_CASE(testNoIer, NoIerTestFixture) {}
 struct NoPathTestFixture : public ThrowTestFixture {
   NoPathTestFixture() : ThrowTestFixture(18) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testNoPath, NoPathTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -613,6 +684,9 @@ BOOST_FIXTURE_TEST_CASE(testNoPath, NoPathTestFixture) {}
 struct NonexistendPathTestFixture : public ThrowTestFixture {
   NonexistendPathTestFixture() : ThrowTestFixture(118) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testNonexistendPath, NonexistendPathTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -621,6 +695,9 @@ BOOST_FIXTURE_TEST_CASE(testNonexistendPath, NonexistendPathTestFixture) {}
 struct UnknownVersionTestFixture : public ThrowTestFixture {
   UnknownVersionTestFixture() : ThrowTestFixture(19) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testUnknownVersion, UnknownVersionTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -629,6 +706,9 @@ BOOST_FIXTURE_TEST_CASE(testUnknownVersion, UnknownVersionTestFixture) {}
 struct UnknownMainKeyTestFixture : public ThrowTestFixture {
   UnknownMainKeyTestFixture() : ThrowTestFixture(20) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testUnknownMainKey, UnknownMainKeyTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -636,6 +716,9 @@ BOOST_FIXTURE_TEST_CASE(testUnknownMainKey, UnknownMainKeyTestFixture) {}
 struct MieAndGieTestFixture : public ThrowTestFixture {
   MieAndGieTestFixture() : ThrowTestFixture(21) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMieAndGie, MieAndGieTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -643,6 +726,9 @@ BOOST_FIXTURE_TEST_CASE(testMieAndGie, MieAndGieTestFixture) {}
 struct MieAndMerTestFixture : public ThrowTestFixture {
   MieAndMerTestFixture() : ThrowTestFixture(22) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMieAndMer, MieAndMerTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -650,6 +736,9 @@ BOOST_FIXTURE_TEST_CASE(testMieAndMer, MieAndMerTestFixture) {}
 struct GieAndMerTestFixture : public ThrowTestFixture {
   GieAndMerTestFixture() : ThrowTestFixture(23) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testGieAndMer, GieAndMerTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -657,6 +746,9 @@ BOOST_FIXTURE_TEST_CASE(testGieAndMer, GieAndMerTestFixture) {}
 struct MieGieAndMerTestFixture : public ThrowTestFixture {
   MieGieAndMerTestFixture() : ThrowTestFixture(24) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMieGieAndMer, MieGieAndMerTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -664,6 +756,9 @@ BOOST_FIXTURE_TEST_CASE(testMieGieAndMer, MieGieAndMerTestFixture) {}
 struct IsrReadableTestFixture : public ThrowTestFixture {
   IsrReadableTestFixture() : ThrowTestFixture(25) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testIsrReadable, IsrReadableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -672,6 +767,9 @@ BOOST_FIXTURE_TEST_CASE(testIsrReadable, IsrReadableTestFixture) {}
 struct IsrWritableTestFixture : public ThrowTestFixture {
   IsrWritableTestFixture() : ThrowTestFixture(26) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testIsrWriteable, IsrWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -679,6 +777,9 @@ BOOST_FIXTURE_TEST_CASE(testIsrWriteable, IsrWritableTestFixture) {}
 struct IerWritableTestFixture : public ThrowTestFixture {
   IerWritableTestFixture() : ThrowTestFixture(27) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testIerWriteable, IerWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -686,6 +787,9 @@ BOOST_FIXTURE_TEST_CASE(testIerWriteable, IerWritableTestFixture) {}
 struct IcrWritableTestFixture : public ThrowTestFixture {
   IcrWritableTestFixture() : ThrowTestFixture(28) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testIcrWriteable, IcrWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -693,6 +797,9 @@ BOOST_FIXTURE_TEST_CASE(testIcrWriteable, IcrWritableTestFixture) {}
 struct IarWritableTestFixture : public ThrowTestFixture {
   IarWritableTestFixture() : ThrowTestFixture(29) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testIarWriteable, IarWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -700,6 +807,9 @@ BOOST_FIXTURE_TEST_CASE(testIarWriteable, IarWritableTestFixture) {}
 struct MieWritableTestFixture : public ThrowTestFixture {
   MieWritableTestFixture() : ThrowTestFixture(30) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMieWriteable, MieWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -707,6 +817,9 @@ BOOST_FIXTURE_TEST_CASE(testMieWriteable, MieWritableTestFixture) {}
 struct GieWritableTestFixture : public ThrowTestFixture {
   GieWritableTestFixture() : ThrowTestFixture(31) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testGieWriteable, GieWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -714,6 +827,9 @@ BOOST_FIXTURE_TEST_CASE(testGieWriteable, GieWritableTestFixture) {}
 struct MerWritableTestFixture : public ThrowTestFixture {
   MerWritableTestFixture() : ThrowTestFixture(32) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testMerWriteable, MerWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -721,6 +837,9 @@ BOOST_FIXTURE_TEST_CASE(testMerWriteable, MerWritableTestFixture) {}
 struct SieWritableTestFixture : public ThrowTestFixture {
   SieWritableTestFixture() : ThrowTestFixture(33) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testSieWriteable, SieWritableTestFixture) {}
 
 /**********************************************************************************************************************/
@@ -728,6 +847,9 @@ BOOST_FIXTURE_TEST_CASE(testSieWriteable, SieWritableTestFixture) {}
 struct CieWritableTestFixture : public ThrowTestFixture {
   CieWritableTestFixture() : ThrowTestFixture(34) {}
 };
+
+/**********************************************************************************************************************/
+
 BOOST_FIXTURE_TEST_CASE(testCieWriteable, CieWritableTestFixture) {}
 
 /**********************************************************************************************************************/

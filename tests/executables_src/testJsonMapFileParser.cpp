@@ -45,6 +45,8 @@ static std::pair<ChimeraTK::NumericAddressedRegisterCatalogue, ChimeraTK::Metada
   return ChimeraTK::MapFileParser::parse(outFile);
 }
 
+/**********************************************************************************************************************/
+
 // Helper used by the map format version tests below: load simpleJsonFile.jmap as the base map, set the top-level
 // mapFormatVersion entry to the supplied value (or remove it when the value is null), write the result to <outFile>,
 // then parse it. As with the selectedBy fault helper above, this avoids keeping a set of near-identical variant
@@ -1642,6 +1644,8 @@ static ChimeraTK::NumericAddressedRegisterCatalogue parseSelectedByInheritedAcce
   std::ofstream(tmpFile) << map.dump(2);
   return ChimeraTK::MapFileParser::parse(tmpFile).first;
 }
+
+/**********************************************************************************************************************/
 
 // PR5: a module/parent declaring 'selectedBy' must be rejected if any descendant register inheriting it is writable;
 // the error points to the parent declaration, not the child.
