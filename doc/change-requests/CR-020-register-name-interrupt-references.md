@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: TESTS PASSED (from TESTS REVIEWED)
+Status: READY TO IMPLEMENT (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -644,3 +644,22 @@ built by the 1D/2D-agnostic constructor.
   constructor NumericAddressedBackend(mapFileName, registerMapPointer,
   dataConsistencyKeyDescriptor) is undocumented
   (include/NumericAddressedBackend.h:22-25).
+- DI-34 [NEW] src/NumericAddressedRegisterCatalogue.cc:33-41 and :67-74: the
+  empty-id guard is duplicated verbatim, comment included, in both constructors
+  of NumericAddressedRegisterInfo ('An empty numeric id is no id: it maps to the
+  register not being an interrupt source. Such a vector is passed by the *.mapp
+  parser, whose interrupt entry may be empty.' plus the
+  if(std::get_if<std::vector<size_t>>...) { if(empty) reset; } block and the
+  following 'interruptId = std::move(interruptId_);'). The project style forbids
+  duplicated code and comments that repeat what a sibling comment already says.
+  Move the mapping into one file-local helper (e.g. a static function taking the
+  optional and returning std::nullopt for an empty numeric alternative) and call
+  it from both constructors, keeping the reason stated once.
+- DI-35 [NEW] tests/executables_src/testMapFileParser.cpp:532-533: two
+  consecutive chrome bars separate the test case testMapFileNewStyleMuxed from
+  the new test case testInterruptBookkeepingFinalised. Consecutive bars
+  emphasise big separations only; between two ordinary test cases a single bar
+  is used, as every other test case in this file and in the sibling test files
+  shows (the pair at :59-60 is the big separation after the compareCatalogue
+  helper, which is the accepted use). The change inserted one bar next to the
+  pre-existing one; reduce :532-533 to a single bar.
