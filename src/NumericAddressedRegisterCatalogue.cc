@@ -18,6 +18,25 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  namespace {
+
+    /******************************************************************************************************************/
+
+    // An empty numeric id is no id: it maps to the register not being an interrupt source. Such a vector is passed by
+    // the *.mapp parser, whose interrupt entry may be empty.
+    std::optional<NumericAddressedRegisterInfo::InterruptId> mapEmptyNumericIdToNoInterrupt(
+        std::optional<NumericAddressedRegisterInfo::InterruptId> interruptId) {
+      if(interruptId && std::holds_alternative<std::vector<size_t>>(*interruptId) &&
+          std::get<std::vector<size_t>>(*interruptId).empty()) {
+        return std::nullopt;
+      }
+      return interruptId;
+    }
+
+  } // namespace
+
+  /********************************************************************************************************************/
+
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint32_t nElements_,
       uint64_t address_, uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
       Access dataAccess_, Type dataType_, std::optional<InterruptId> interruptId_,
@@ -30,14 +49,7 @@ namespace ChimeraTK {
                                  std::nullopt}}) {
     assert(channels.size() == 1);
 
-    // An empty numeric id is no id: it maps to the register not being an interrupt source. Such a vector is passed by
-    // the *.mapp parser, whose interrupt entry may be empty.
-    if(const auto* numericId = interruptId_ ? std::get_if<std::vector<size_t>>(&*interruptId_) : nullptr) {
-      if(numericId->empty()) {
-        interruptId_.reset();
-      }
-    }
-    interruptId = std::move(interruptId_);
+    interruptId = mapEmptyNumericIdToNoInterrupt(std::move(interruptId_));
 
     // make sure . and / is treated as similar as possible
     pathName.setAltSeparator(".");
@@ -64,14 +76,7 @@ namespace ChimeraTK {
     channels(std::move(channelInfo_)) {
     assert(!channels.empty());
 
-    // An empty numeric id is no id: it maps to the register not being an interrupt source. Such a vector is passed by
-    // the *.mapp parser, whose interrupt entry may be empty.
-    if(const auto* numericId = interruptId_ ? std::get_if<std::vector<size_t>>(&*interruptId_) : nullptr) {
-      if(numericId->empty()) {
-        interruptId_.reset();
-      }
-    }
-    interruptId = std::move(interruptId_);
+    interruptId = mapEmptyNumericIdToNoInterrupt(std::move(interruptId_));
 
     // make sure . and / is treated as similar as possible
     pathName.setAltSeparator(".");

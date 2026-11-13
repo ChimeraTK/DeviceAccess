@@ -530,7 +530,6 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
 }
 
 /**********************************************************************************************************************/
-/**********************************************************************************************************************/
 
 // The parsed catalogue completes its interrupt bookkeeping before it is returned: every interrupt register of the map
 // file is in the list of interrupts and each of its canonical interrupt paths resolves to it. A *.mapp file carries
