@@ -313,7 +313,9 @@ part of the change yet; it goes away once the open points are settled.
 
 ### Proposed rule
 
-Property inheritance must not depend on whether the entry has an `address`.
+Each property has one rule of its own. A property of the register's role follows
+the ancestor whether or not the entry has an `address`; a property of the sample
+geometry follows the `address`.
 
 - `access`: inherited from the nearest ancestor register when the entry gives
   no `access`.
