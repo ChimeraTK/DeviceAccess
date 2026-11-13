@@ -345,7 +345,7 @@ not set it itself; a condition stated here is exhaustive. Columns are master
 | `access` | yes, if `address` omitted | yes |
 | `triggeredByInterrupt` | yes, if `address` omitted | yes, unless `access` |
 | `numberOfElements` | yes, if `address` omitted | no (B) |
-| element word width | yes, if `address` omitted | open (A) |
+| `bytesPerElement` | yes, if `address` omitted | open (A) |
 | `pitch` | no | no |
 | `representation` | no | no |
 | `engineeringUnit` | no | no |
@@ -371,15 +371,14 @@ Notes on the rows that change behaviour:
 - `triggeredByInterrupt`: no fixture reaches this either; interrupt registers
   in the maps use `channels`, and their bit-field children are a separate,
   reduced struct (`ChannelChild`, `:275-281`) that never enters `addInfos`.
-- `numberOfElements`, element word width: see the impact below and A/B. The two
-  are different things: the word width is the size of one sample in bits (it
-  fixes the raw data type and, without `pitch`, the stride between samples),
+- `bytesPerElement`, `numberOfElements`: see the impact below and A/B. They are
+  different things: `bytesPerElement` is the size of one sample (it fixes the
+  raw data type and, without `pitch`, the stride between samples),
   `numberOfElements` is how many samples the register holds. A bit field is cut
-  out of one sample word of its ancestor, so both decide its geometry, the
-  width bounds `bitShift + width` and the count how many words it spans.
-- `bytesPerElement`: it exists on master as well (`:118`). What a child
-  inherits is the word width, not the member as such; an own `bytesPerElement`
-  overrides the inherited width.
+  out of one sample of its ancestor, so both decide its geometry: the sample
+  size bounds `bitShift + width`, the count says how many samples it spans.
+  Both members exist on master as well (`:117-118`); the question is only
+  whether an omitted one is taken from the ancestor.
 - `offset`: master accepted an `address` without `offset` and used a
   meaningless address; requiring the `offset` is already part of this change
   request.
@@ -405,8 +404,8 @@ In `tests/*.jmap` these are the eleven bit-field `children`:
 three-element arrays. Not inheriting it makes them one-element registers unless
 the fixture states `numberOfElements: 3` (B).
 
-Element word width: only `APP/LARGE_STATUS` has `bytesPerElement: 8`, and
-`testJsonMapFileParser.cpp:236,244,254,261,271,278` assert its bit fields at
+`bytesPerElement`: only `APP/LARGE_STATUS` sets it (8) for a bit-field parent,
+and `testJsonMapFileParser.cpp:236,244,254,261,271,278` asserts its bit fields at
 `elementPitchBits == 64` and `rawType == int64`. Not inheriting it drops them
 to 32 bits unless the fixture states `bytesPerElement: 8` (A).
 
@@ -418,18 +417,18 @@ statement true.
 ### Open decisions
 
 A and B are the same question: does a bit-field child inherit the geometry of
-the word it is cut from, or does it state that geometry itself?
+the sample it is cut from, or does it state that geometry itself?
 
-- A (element word width): A1 state `bytesPerElement: 8` on the three
+- A (`bytesPerElement`): A1 state `bytesPerElement: 8` on the three
   `LARGE_STATUS` bit fields, one rule for every entry, no special case. A2 a
-  bit field keeps the ancestor's word width, everything else does not inherit
-  it.
+  bit field keeps the ancestor's `bytesPerElement`, everything else does not
+  inherit it.
 - B (element count): B1 state `numberOfElements: 3` on the two `ARRAY_REG` bit
   fields, one rule for every entry. B2 a bit field keeps the ancestor's element
   count, everything else does not inherit it.
 
 Both A1 and B1 change fixtures that the backend test binaries share, and the
 example in `doc/jmapFormat.dox` should then state the values explicitly as
-well. With A2/B2 the `AncestorRegister` state keeps a purpose (the word
+well. With A2/B2 the `AncestorRegister` state keeps a purpose (the sample
 geometry of a bit field), with A1/B1 it reduces to the inherited `access` and
 `triggeredByInterrupt` alone.
