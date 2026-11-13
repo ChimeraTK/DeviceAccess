@@ -208,9 +208,8 @@ namespace ChimeraTK {
      * a repeated call is harmless and no completion flag is needed; clone() copies both indexes, so a clone is already
      * finalised.
      *
-     * @throw ChimeraTK::logic_error never; both incomplete states are programming errors and are asserted instead: a
-     * register still holding an unresolved register-name reference, and an interrupt register with an absent or empty
-     * id.
+     * It throws no exception. Both incomplete states are programming errors and are asserted instead: a register still
+     * holding an unresolved register-name reference, and an interrupt register with an absent or empty id.
      */
     void finaliseInterruptBookkeeping();
 

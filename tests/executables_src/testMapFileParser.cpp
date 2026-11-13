@@ -536,8 +536,7 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
 // file is in the list of interrupts and each of its canonical interrupt paths resolves to it. A *.mapp file carries
 // numeric ids only, so nothing has to be resolved, but the explicit finalisation step still runs.
 BOOST_AUTO_TEST_CASE(testInterruptBookkeepingFinalised) {
-  ChimeraTK::MapFileParser fileparser;
-  auto [regcat, mdcat] = fileparser.parse("interruptMapFile.map");
+  auto [regcat, mdcat] = ChimeraTK::MapFileParser::parse("interruptMapFile.map");
 
   // The map file declares the ids [0], [1,1], [2,2,2], [20], [21,1], [22,3,4], [3], [4] and [5]; registers sharing an
   // id collapse into one entry each.

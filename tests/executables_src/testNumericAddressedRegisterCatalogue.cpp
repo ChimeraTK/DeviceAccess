@@ -9,6 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <set>
 #include <vector>
 
 using namespace ChimeraTK;
