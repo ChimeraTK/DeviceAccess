@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO TEST (from TESTS REVIEWED)
+Status: TESTS PASSED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -526,9 +526,9 @@ and the indexes survive `clone()`.
   register name') is therefore untested in both the data-register and the
   void-register path, although the plan states this case is outside the schema
   check and needs its own test.
-- DI-24 [IMPLEMENTED] The Test plan case 'Entry inheriting its parent's address
-  from a referring parent: it resolves to the parent's id' (covering the
-  untouched, inherited `interruptId` in JsonAddressSpaceEntry::fill,
+- DI-24 [DONE] The Test plan case 'Entry inheriting its parent's address from a
+  referring parent: it resolves to the parent's id' (covering the untouched,
+  inherited `interruptId` in JsonAddressSpaceEntry::fill,
   src/JsonMapFileParser.cc:611-618) is not implemented in
   tests/executables_src/testJsonMapFileParser.cpp. Every string-form test there
   declares its own address (lines 1773, 1801, 1836, 1864, 1890, 1914, 1939,
