@@ -553,4 +553,23 @@ BOOST_AUTO_TEST_CASE(testInterruptBookkeepingFinalised) {
 
 /**********************************************************************************************************************/
 
+// An ordinary 2D register of a *.mapp file is not an interrupt source. The parser passes an empty id vector to the
+// channel (2D) constructor, which maps it to std::nullopt. A register without interrupt therefore reports no
+// interrupt id at all, through neither accessor, in both its 2D and its MULTIPLEXED_RAW form.
+BOOST_AUTO_TEST_CASE(testTwoDimensionalRegisterWithoutInterruptHasNoInterruptId) {
+  ChimeraTK::MapFileParser map_file_parser;
+  auto [regcat, mdcat] = map_file_parser.parse("64BitSequence.map");
+
+  auto register2D = regcat.getBackendRegister("INT642D");
+  BOOST_CHECK(register2D.registerAccess == NumericAddressedRegisterInfo::Access::READ_WRITE);
+  BOOST_TEST(!register2D.interruptId.has_value());
+  BOOST_TEST(!register2D.numericInterruptId().has_value());
+
+  auto muxedRaw = regcat.getBackendRegister("INT642D.MULTIPLEXED_RAW");
+  BOOST_TEST(!muxedRaw.interruptId.has_value());
+  BOOST_TEST(!muxedRaw.numericInterruptId().has_value());
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()

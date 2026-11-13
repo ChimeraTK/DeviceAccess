@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -371,10 +371,14 @@ with a real distributor.
 still compares equal to one constructed without an id.
 - Covers the finalisation call in `TraditionalMapFileParser::parse`,
 which no other test reaches for this parser.
-- Covers the empty-vector mapping of the 2D constructor only indirectly: both
-sides of the comparison pass the empty vector through that constructor, so
-the comparison holds with or without the mapping. The direct assertion is in
-`testNumericAddressedRegisterCatalogue.cpp`.
+- An ordinary 2D register of the `*.mapp` parser reports no interrupt id
+through either accessor, in its 2D and its `MULTIPLEXED_RAW` form.
+- The parser passes the empty id vector of a register without interrupt to
+the channel (2D) constructor, so this case covers that constructor's
+empty-vector mapping on the real parser output. A catalogue comparison
+cannot: both sides pass the empty vector through that constructor, so the
+comparison holds with or without the mapping. The construction from the
+raw vector is asserted in `testNumericAddressedRegisterCatalogue.cpp`.
 - `tests/executables_src/testNumericAddressedRegisterCatalogue.cpp` (new)
 - Finalisation builds the interrupt list and the canonical interrupt
 paths of the interrupt registers, and leaves a register without
@@ -584,7 +588,7 @@ built by the 1D/2D-agnostic constructor.
   so the double bar at :732 no longer separates two big blocks as the style rule
   for consecutive bars requires. With a plain file-local function following it,
   it should be a single bar; the double bar before Imp::parse (:785) stays.
-- DI-28 [DONE] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:57-58:
+- DI-28 [IMPLEMENTED] tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:57-58:
   two consecutive chrome bars sit between the two test cases of the suite.
   Consecutive bars emphasise big separations only (style rule); every other test
   file (e.g. tests/executables_src/testMapFileParser.cpp:158,

@@ -29,7 +29,6 @@ static NumericAddressedRegisterInfo makeInterruptRegister(
 }
 
 /**********************************************************************************************************************/
-/**********************************************************************************************************************/
 
 // The finalisation builds the interrupt list and the canonical interrupt paths of the interrupt registers present, and
 // leaves a register without interrupt id out of both.
