@@ -11,7 +11,9 @@ using namespace boost::unit_test_framework;
 #include "MapFileParser.h"
 #include "NumericAddressedRegisterCatalogue.h"
 
+#include <set>
 #include <sstream>
+#include <vector>
 
 using namespace ChimeraTK;
 using namespace boost::unit_test_framework;
@@ -525,6 +527,29 @@ BOOST_AUTO_TEST_CASE(testMapFileNewStyleMuxed) {
       NumericAddressedRegisterInfo::Type::FIXED_POINT, std::vector<size_t>{});
 
   compareCatalogue(regcat, RegisterInfoents);
+}
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+
+// The parsed catalogue completes its interrupt bookkeeping before it is returned: every interrupt register of the map
+// file is in the list of interrupts and each of its canonical interrupt paths resolves to it. A *.mapp file carries
+// numeric ids only, so nothing has to be resolved, but the explicit finalisation step still runs.
+BOOST_AUTO_TEST_CASE(testInterruptBookkeepingFinalised) {
+  ChimeraTK::MapFileParser fileparser;
+  auto [regcat, mdcat] = fileparser.parse("interruptMapFile.map");
+
+  // The map file declares the ids [0], [1,1], [2,2,2], [20], [21,1], [22,3,4], [3], [4] and [5]; registers sharing an
+  // id collapse into one entry each.
+  const std::set<std::vector<size_t>> expectedInterrupts{
+      {0}, {1, 1}, {2, 2, 2}, {20}, {21, 1}, {22, 3, 4}, {3}, {4}, {5}};
+  BOOST_TEST((regcat.getListOfInterrupts() == expectedInterrupts));
+
+  // A hierarchical id resolves through each of its canonical interrupt paths.
+  BOOST_TEST((regcat.getBackendRegister("!22").numericInterruptId() == std::vector<size_t>{22}));
+  BOOST_TEST((regcat.getBackendRegister("!22:3").numericInterruptId() == std::vector<size_t>{22, 3}));
+  BOOST_TEST((regcat.getBackendRegister("!22:3:4").numericInterruptId() == std::vector<size_t>{22, 3, 4}));
+  BOOST_CHECK(regcat.hasRegister("!22:3:4"));
 }
 
 /**********************************************************************************************************************/

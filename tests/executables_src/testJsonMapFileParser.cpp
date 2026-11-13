@@ -19,6 +19,7 @@ using namespace ChimeraTK;
 
 #include <fstream>
 #include <string>
+#include <variant>
 #include <vector>
 using namespace boost::unit_test_framework;
 
@@ -728,7 +729,7 @@ BOOST_AUTO_TEST_CASE(TestDerivedInterruptRegistersFromIsr) {
   BOOST_TEST(reg.bar == 5);
   BOOST_TEST(reg.address == 8);
   BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg.numericInterruptId() == std::vector<size_t>{0, 0}));
+  BOOST_TEST(((reg.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 0}))));
   BOOST_REQUIRE(reg.channels.size() == 1);
   BOOST_TEST(reg.channels[0].bitOffset == 0);
   BOOST_TEST(reg.channels[0].width == 1);
@@ -738,7 +739,7 @@ BOOST_AUTO_TEST_CASE(TestDerivedInterruptRegistersFromIsr) {
   // The bit position is the child's own bit field offset within the ISR word.
   auto reg2 = regs.getBackendRegister("/DAQ/ISR/THIRD_INTERRUPT");
   BOOST_CHECK(reg2.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg2.numericInterruptId() == std::vector<size_t>{0, 2}));
+  BOOST_TEST(((reg2.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 2}))));
   BOOST_REQUIRE(reg2.channels.size() == 1);
   BOOST_TEST(reg2.channels[0].bitOffset == 2);
 
@@ -748,7 +749,7 @@ BOOST_AUTO_TEST_CASE(TestDerivedInterruptRegistersFromIsr) {
   BOOST_CHECK(loi.find({0, 2}) != loi.end());
   auto canonical = regs.getBackendRegister("!0:1");
   BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((canonical.numericInterruptId() == std::vector<size_t>{0, 1}));
+  BOOST_TEST(((canonical.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 1}))));
 }
 
 /**********************************************************************************************************************/
@@ -761,21 +762,21 @@ BOOST_AUTO_TEST_CASE(TestDerivedInterruptRegistersNestedSubhandler) {
 
   auto reg = regs.getBackendRegister("/MY_INTC/SUB1/ISR/READY");
   BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg.numericInterruptId() == std::vector<size_t>{3, 1, 0}));
+  BOOST_TEST(((reg.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{3, 1, 0}))));
   BOOST_REQUIRE(reg.channels.size() == 1);
   BOOST_TEST(reg.channels[0].bitOffset == 0);
   BOOST_TEST(reg.channels[0].width == 1);
 
   auto reg2 = regs.getBackendRegister("/MY_INTC/SUB1/ISR/ERROR");
   BOOST_CHECK(reg2.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg2.numericInterruptId() == std::vector<size_t>{3, 1, 1}));
+  BOOST_TEST(((reg2.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{3, 1, 1}))));
   BOOST_REQUIRE(reg2.channels.size() == 1);
   BOOST_TEST(reg2.channels[0].bitOffset == 1);
 
   // The nested id resolves through its canonical interrupt path.
   auto canonical = regs.getBackendRegister("!3:1:0");
   BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((canonical.numericInterruptId() == std::vector<size_t>{3, 1, 0}));
+  BOOST_TEST(((canonical.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{3, 1, 0}))));
 }
 
 /**********************************************************************************************************************/
@@ -1026,9 +1027,9 @@ BOOST_AUTO_TEST_CASE(TestSharedInterruptId) {
 
   // Both the declared register and the derived ISR child carry the shared id.
   auto declared = regs.getBackendRegister("/BSP/SHARED_INTERRUPT");
-  BOOST_TEST((declared.numericInterruptId() == std::vector<size_t>{0, 0}));
+  BOOST_TEST(((declared.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 0}))));
   auto derived = regs.getBackendRegister("/DAQ/ISR/DAQ_READY");
-  BOOST_TEST((derived.numericInterruptId() == std::vector<size_t>{0, 0}));
+  BOOST_TEST(((derived.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 0}))));
   auto loi = regs.getListOfInterrupts();
   BOOST_CHECK(loi.find({0, 0}) != loi.end());
 }
@@ -1778,14 +1779,14 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceVoidReferrer) {
 
   auto reg = regs.getBackendRegister("/BSP/VOID_REFERRING");
   BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg.numericInterruptId() == std::vector<size_t>{0}));
+  BOOST_TEST(((reg.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
 
   // The void referring register is part of the list of interrupts and resolves through its canonical interrupt path.
   auto loi = regs.getListOfInterrupts();
   BOOST_CHECK(loi.find({0}) != loi.end());
   auto canonical = regs.getBackendRegister("!0");
   BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((canonical.numericInterruptId() == std::vector<size_t>{0}));
+  BOOST_TEST(((canonical.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
 }
 
 /**********************************************************************************************************************/
@@ -1809,14 +1810,14 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceToVoidRegister) {
 
   auto reg = regs.getBackendRegister("/BSP/REFERRING");
   BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg.numericInterruptId() == std::vector<size_t>{0}));
+  BOOST_TEST(((reg.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
 
   // The referring register is part of the list of interrupts and resolves through its canonical interrupt path.
   auto loi = regs.getListOfInterrupts();
   BOOST_CHECK(loi.find({0}) != loi.end());
   auto canonical = regs.getBackendRegister("!0");
   BOOST_CHECK(canonical.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((canonical.numericInterruptId() == std::vector<size_t>{0}));
+  BOOST_TEST(((canonical.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
 }
 
 /**********************************************************************************************************************/
@@ -1843,11 +1844,11 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceToDataRegister) {
 
   auto target = regs.getBackendRegister("/BSP/DATA_INTERRUPT");
   BOOST_CHECK(target.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((target.numericInterruptId() == std::vector<size_t>{7}));
+  BOOST_TEST(((target.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{7}))));
 
   auto reg = regs.getBackendRegister("/BSP/REFERRING");
   BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg.numericInterruptId() == std::vector<size_t>{7}));
+  BOOST_TEST(((reg.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{7}))));
   auto loi = regs.getListOfInterrupts();
   BOOST_CHECK(loi.find({7}) != loi.end());
 }
@@ -1871,11 +1872,11 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceToDerivedIsrChild) {
 
   auto derived = regs.getBackendRegister("/DAQ/ISR/DAQ_READY");
   BOOST_CHECK(derived.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((derived.numericInterruptId() == std::vector<size_t>{0, 0}));
+  BOOST_TEST(((derived.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 0}))));
 
   auto reg = regs.getBackendRegister("/BSP/REFERRING");
   BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg.numericInterruptId() == std::vector<size_t>{0, 0}));
+  BOOST_TEST(((reg.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0, 0}))));
 }
 
 /**********************************************************************************************************************/
@@ -1899,7 +1900,7 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceForward) {
 
   auto reg = regs.getBackendRegister("/BSP/REFERRING");
   BOOST_CHECK(reg.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((reg.numericInterruptId() == std::vector<size_t>{9}));
+  BOOST_TEST(((reg.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{9}))));
 }
 
 /**********************************************************************************************************************/
@@ -2018,10 +2019,10 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceChannelSlice) {
   BOOST_TEST((regs.getBackendRegister("/BSP/REFERRING_2D").numericInterruptId() == std::vector<size_t>{0}));
   auto sliceA = regs.getBackendRegister("/BSP/REFERRING_2D/A");
   BOOST_CHECK(sliceA.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((sliceA.numericInterruptId() == std::vector<size_t>{0}));
+  BOOST_TEST(((sliceA.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
   auto sliceB = regs.getBackendRegister("/BSP/REFERRING_2D/B");
   BOOST_CHECK(sliceB.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT);
-  BOOST_TEST((sliceB.numericInterruptId() == std::vector<size_t>{0}));
+  BOOST_TEST(((sliceB.interruptId == std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{0}))));
 }
 
 /**********************************************************************************************************************/

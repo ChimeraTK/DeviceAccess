@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -75,6 +75,8 @@ missing before:
 - src/async/GenericMuxedInterruptDistributor.cc
 - tests/executables_src/testGenericMuxedInterruptDistributor.cpp
 - tests/executables_src/testJsonMapFileParser.cpp
+- tests/executables_src/testMapFileParser.cpp
+- tests/executables_src/testNumericAddressedRegisterCatalogue.cpp
 
 ### NumericAddressedRegisterInfo (modified) in include/NumericAddressedRegisterCatalogue.h (modified), src/NumericAddressedRegisterCatalogue.cc (modified)
 
@@ -282,10 +284,13 @@ that produce complete catalogues are tested.
 ## Test plan
 
 - `tests/executables_src/testJsonMapFileParser.cpp` (modified)
-- Existing assertions that read `interruptId` move to
-`numericInterruptId()`, so no test compares the field with a bare id
-vector. Mechanical, but it touches most interrupt assertions in the
-file.
+- Bring existing assertions that read `numericInterruptId()` in line with
+the new field type: they compare `interruptId` instead. No test compares
+the field with a bare id vector. An assertion spells the field type out as
+`std::variant<std::vector<size_t>, std::string>(...)`. The shorthand
+variant construction from a braced list does not compile inside
+`BOOST_TEST`, because its decomposition cannot form the overload.
+Mechanical, but it touches most interrupt assertions in the file.
 - Void referring register: a `type: void` register declaring its
 `triggeredByInterrupt` as a string carries the target's resolved id,
 appears in `getListOfInterrupts()` and resolves through the canonical
@@ -321,10 +326,14 @@ data register and a void register alike.
 - Covers the empty-array requirement; the schema already forbids it, but
 the parser does not validate against the schema.
 - Empty reference string: parse-time `logic_error` naming the entry.
+- The same case with a void register, since `fill` reaches its own
+branch there.
 - Covers the empty-name requirement, likewise outside the schema check.
 - `tests/executables_src/testGenericMuxedInterruptDistributor.cpp` (modified)
 - End to end: a data register referring by name is notified when the
 target's `ISR` bit is set (dummy backend).
+- A non-matching `ISR` bit does not notify it, so the resolved id
+reaches the distributor.
 - Covers the runtime behaviour (Requirements); the parser test has no
 backend, and the augmentation plus finalisation path is only exercised
 with a real distributor.
@@ -333,11 +342,14 @@ with a real distributor.
 `getListOfInterrupts()` and through its canonical interrupt path.
 - Its `interruptId` assertion (line 26) likewise reads
 `numericInterruptId()`.
+- Its catalogue comparison is unchanged: a register without interrupt
+still compares equal to one constructed without an id.
 - Covers the finalisation call in `TraditionalMapFileParser::parse`,
 which no other test reaches for this parser.
 - `tests/executables_src/testNumericAddressedRegisterCatalogue.cpp` (new)
 - Finalisation builds the interrupt list and the canonical interrupt
-paths.
+paths of the interrupt registers, and leaves a register without
+interrupt id out of both.
 - Covers `finaliseInterruptBookkeeping` directly; the parsers cannot show
 the index contents in isolation.
 - A register with a registered and a derived interrupt is indexed once,
