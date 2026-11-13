@@ -7,196 +7,338 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IN PROGRESS (from TESTS REVIEWED)
+Status: PLANNED (from TESTS REVIEWED)
 
 ## Requirements
 
 Aspect: interrupt ids referred to by register name.
 
 - The `triggeredByInterrupt` field of an address-space entry may be a string
-naming another register, as an alternative to the numeric id array.
+  naming another register, as an alternative to the numeric id array.
 - The named target must be an interrupt register: one carrying a
-`triggeredByInterrupt` of its own, declared explicitly or derived
-implicitly (CR-019).
+  `triggeredByInterrupt` of its own, declared explicitly or derived
+  implicitly (CR-019).
 - The target may carry data; triggering does not depend on the target's data,
-so a non-void target is allowed.
+  so a non-void target is allowed.
 - The referring register takes the target's resolved interrupt id and is
-otherwise declared as today (own address, representation and data).
+  otherwise declared as today (own address, representation and data).
 - The referring register may be void or data-carrying. It is read-only with
-`wait_for_new_data`, exactly as for a numeric id.
+  `wait_for_new_data`, exactly as for a numeric id.
 - The reference resolves transitively: a target may itself name another
-register.
+  register.
 - A cycle, including a register naming itself, is an error.
 - References resolve after CR-019 has augmented the implicit interrupt ids,
-so a target may be a derived `ISR` child and may be declared anywhere in
-the file.
-- The change applies to the JSON (`*.jmap`) parser only. The `*.mapp` parser
-is unaffected.
+  so a target may be a derived `ISR` child and may be declared anywhere in
+  the file.
+- An empty `triggeredByInterrupt` array declares no interrupt, so such an
+  entry is not an interrupt register, and a void entry carrying one is an
+  error.
+- After parsing, the interrupt bookkeeping is complete: every interrupt
+  register is listed by `getListOfInterrupts()` and its canonical interrupt
+  paths resolve.
 - A string reference and the equivalent numeric array are interchangeable,
-and the referring register behaves exactly like one declared with the
-resolved id.
+  and the referring register behaves exactly like one declared with the
+  resolved id.
 - Registers resolving to the same id are notified together and share the
-canonical interrupt path, as CR-019 already allows for a written id.
+  canonical interrupt path, as CR-019 already allows for a written id.
 - The field stays mutually exclusive with `access` and remains required for a
-void register.
+  void register.
 - An error while parsing the map file when the target does not exist, when
-the target is not an interrupt register, or on a reference cycle.
+  the target is not an interrupt register, or on a reference cycle.
+- The change applies to the JSON (`*.jmap`) parser only. The `*.mapp` parser
+  behaviour is unaffected.
 
 ## Specifications
 
-- Documentation: `doc/jmapFormat.dox` (modified)
+- Style, in the C++ files the change restructures: full-line `/*****/`
+  chrome bars between namespace-level blocks.
+   - Between class and struct declarations, and between every two function
+     implementations; never inside a declaration or implementation body.
+   - Add bars that were missing before, so each file is consistent.
+   - Scope: `include/JsonExtensions.h`,
+     `include/NumericAddressedRegisterCatalogue.h`, `src/JsonMapFileParser.cc`,
+     `src/NumericAddressedRegisterCatalogue.cc`,
+     `src/async/GenericMuxedInterruptDistributor.cc`,
+     `tests/executables_src/testGenericMuxedInterruptDistributor.cpp` and
+     `tests/executables_src/testJsonMapFileParser.cpp`.
+   - Not in `doc/jmapFormat.dox`, the schema, or the files the change only
+     touches with a one-line call or a mechanical edit.
+
+### doc/jmapFormat.dox (modified)
+
 - The `jmap_interrupts` section states that `triggeredByInterrupt` may name
-another interrupt register instead of giving the numeric id.
-- `schemas/jmap.schema.json` (modified)
+  another interrupt register instead of giving the numeric id.
+- Angle-bracketed placeholders are escaped as HTML entities
+  (`&lt;handler id&gt;`, `&lt;bit position&gt;`), so doxygen does not report
+  them as unsupported tags.
+
+### schemas/jmap.schema.json (modified)
+
 - The schema accepts a non-empty string for `triggeredByInterrupt` beside
-the numeric array.
+  the numeric array.
 - The `interruptHandler` conditional for a chained interrupt is restricted
-to arrays (`type: array`).
-- Without this, `minItems` is ignored for a string and every string
-reference would demand a handler; the target's own numeric chain
-already triggers the requirement where one is needed.
+  to arrays (`type: array`).
+   - Without this, `minItems` is ignored for a string and every string
+     reference would demand a handler; the target's own numeric chain
+     already triggers the requirement where one is needed.
+
+### NumericAddressedRegisterInfo (modified) in include/NumericAddressedRegisterCatalogue.h (modified), src/NumericAddressedRegisterCatalogue.cc (modified)
+
+- `interruptId` (modified): of type
+  `std::optional<std::variant<std::vector<size_t>, std::string>>`, replacing
+  the plain `std::vector<size_t>`.
+   - The variant carries the numeric id or a not yet resolved register-name
+     reference; `std::nullopt` is a register that is not an interrupt source.
+   - The JSON entry field has the same type, so the parser assigns it
+     unchanged, and no side table of pending references exists anywhere.
+   - The reference string is stored as written; the dot alt separator is
+     applied where the reference is resolved.
+   - A present entry is an interrupt register only with a non-empty numeric
+     array or a string; an empty array counts as absent.
+- Constructors (modified): the `std::vector<size_t> interruptId_ = {}`
+  parameter stays and an empty vector maps to `std::nullopt`.
+   - Constructor call sites, e.g. the canonical interrupt path entry, are
+     unchanged; reading the member is not, see the test plan.
+- `numericInterruptId` (new):
+  `std::optional<std::vector<size_t>> numericInterruptId() const`.
+   - The numeric id, or `std::nullopt` when the field is absent or holds a
+     reference. Follows the value-returning style of the other optional
+     members and avoids handing out a pointer into the object.
+   - A `std::vector<size_t>` assigns into the field directly (it converts to
+     the numeric alternative), so no setter is needed.
+- `getQualifiedAsyncId` (modified): returns `numericInterruptId()`.
+   - `std::nullopt` yields an empty vector as today.
+   - A remaining reference throws `logic_error`, documented on the
+     declaration: an unresolved id must not reach a backend.
+- The header gains an `<variant>` include.
+- The member is public, so its type change breaks source and binary
+  compatibility for code reading `interruptId`. The JSON parser, the
+  interrupt distributors and the tests are the only readers in the project,
+  and the change updates all of them.
+
+### NumericAddressedRegisterCatalogue (modified) in include/NumericAddressedRegisterCatalogue.h (modified), src/NumericAddressedRegisterCatalogue.cc (modified)
+
+- `addRegister` and `modifyRegister` (removed): the base class already
+  declares both signatures, so the overrides and their bookkeeping go.
+   - Their doxygen blocks go with them, including the promise that
+     `modifyRegister` updates the interrupt bookkeeping.
+   - No register is ever in the interrupt indexes while its id is missing or
+     still a reference.
+- `addInterruptBookkeeping` (removed): its body moves into
+  `finaliseInterruptBookkeeping`.
+- `finaliseInterruptBookkeeping` (new): `void finaliseInterruptBookkeeping()`.
+   - Public. Called once per catalogue, after the last `addRegister` /
+     `modifyRegister` and after every interrupt id is resolved; the class
+     documentation states the obligation.
+   - Walks the catalogue and fills `_listOfInterrupts` and
+     `_canonicalInterrupts` from the interrupt registers.
+   - A register with `Access::INTERRUPT` throws `logic_error` naming it when
+     its id is still a reference, and also when it holds an empty numeric id.
+      - The two are reported separately, so a missed resolution does not read
+        like a missing declaration.
+      - The empty case keeps an empty id away from
+        `getQualifiedAsyncId().front()`.
+   - Rebuilds both indexes from scratch, so a repeated call is harmless and
+     no completion flag is needed; `clone` and `fillFromThis` copy both
+     indexes, so a clone is already finalised.
+- `getBackendRegister` (unmodified) keeps synthesising canonical interrupt
+  path entries; they exist only after finalisation.
 
 ### JsonAddressSpaceEntry (modified) in src/JsonMapFileParser.cc (modified)
 
-- `triggeredByInterrupt` (modified): of type
-`std::optional<std::variant<std::vector<size_t>, std::string>>`, replacing
-the plain `std::vector<size_t>`.
-- `optional` carries absence, `variant` the present value; no `nullptr`
-alternative is involved.
-- Accepted forms: a non-empty array of non-negative integers as today, or
-a non-empty string parsed as a `RegisterPath`.
-- An empty array counts as absent: the interrupt decision rests on a
-present array with at least one element, so the previous empty state is
-preserved and no id-less interrupt register is created.
-- The three existing uses map as: absent or an empty array is empty, and
-the non-void and void assignments to `info.interruptId` read the id vector
-of a present, non-empty array.
-- Serialisation: `include/JsonExtensions.h` (modified) gains an
-`adl_serializer<std::variant<Ts...>>`; the existing
-`adl_serializer<std::optional<T>>` covers absence.
-- `to_json` writes the active alternative of the `variant`; `from_json`
-takes the first alternative that parses, in declaration order, and
-reports an error when none does. A variant always holds a value, so
-this mapping neither writes nor accepts null.
-- The `optional` mapping is the existing one: a missing field (the
-`WITH_DEFAULT` macro leaves the member untouched) and a null value
-give `std::nullopt`, and `std::nullopt` is written as null. This is
-why `doubleBuffering` works today.
-- Composed: absent or null gives `std::nullopt`, an array the id
-vector, a string the register name. With both mappings the
-`NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT` list stays unchanged
-(checked by compilation).
-- `fill` (modified): on the string form it sets interrupt access and leaves
-`interruptId` empty, so the register is added before its id is resolved.
-- The reference string and the reference map keys are normalised with
-`setAltSeparator(".")`, as the `selectedBy` handling does, so a
-dot-separated target resolves.
-- `addInfos` (modified): takes a `std::map<RegisterPath, RegisterPath>&`
-(referring register path to target name).
-- In the address-bearing branch it records an entry for a string-form
-register and for the channel and bit-range slices derived from it, so
-every referring register there is covered.
-- In the address-less branch, which carries every void register and every
-entry inheriting its parent's address, it records the entry's own
-reference under the entry's path, so a void referring register is
-covered as well.
-- Only an address-less entry declaring no reference of its own but
-inheriting an interrupt id takes over its string-form parent's
-unresolved reference, so the child's id resolves with its parent's.
-- The branch decides this from `triggeredByInterrupt`, not from an
-empty `interruptId`: `fill` leaves the id empty both for an own
-string reference and for inheritance from a string-form parent.
-- The map is passed down from `parse`.
-
-### NumericAddressedRegisterCatalogue (modified) in src/NumericAddressedRegisterCatalogue.cc (modified)
-
-- `addInterruptBookkeeping` (modified): returns without bookkeeping when
-`interruptId` is empty.
-- CR-019 guards only on the access, but a string-form register is added
-with interrupt access before its id is known. The id is written later
-through `modifyRegister`, which then runs the bookkeeping.
-- This relaxes a helper introduced by CR-019, whose own callers always pass
-a non-empty id; the empty case is created by CR-020 alone.
+- `triggeredByInterrupt` (unmodified): the type already matches the new
+  `NumericAddressedRegisterInfo::interruptId`.
+- `hasTriggeredByInterrupt` (modified): decides that an entry declares an
+  interrupt, from a non-empty numeric array or a string.
+   - Declared in the struct and defined after it in the same file.
+- `interruptIdIfNumeric` and `recordInterruptReference` (removed): the field
+  is held in the info itself, so nothing has to be extracted or recorded.
+- `fill` (modified): on a declaring entry it assigns `info.interruptId` from
+  `triggeredByInterrupt` as a whole, for the data and the void branch alike.
+   - The reference string is stored as written; the dot alt separator is
+     applied where the reference is resolved.
+   - Without a declaration the copied field is left untouched, so an entry
+     inheriting its parent's address and interrupt id keeps the parent's
+     reference without a special case. An empty array therefore never
+     overwrites an inherited id.
+- `addInfos` (modified): loses the `std::map<RegisterPath, RegisterPath>&`
+  parameter.
+   - The reference travels in the copied info, so channel and bit-range
+     slices, `BUF0`/`BUF1` views and entries inheriting the parent's address
+     carry it without per-derived-register recording.
 
 ### detail::JsonMapFileParser::Imp (modified) in src/JsonMapFileParser.cc (modified)
 
-- `parse` (modified): immediately after the CR-019 augmentation, and before
-the `selectedBy` validation loop, it resolves every collected reference and
-writes the id back with `NumericAddressedRegisterCatalogue::modifyRegister`.
-- Runs after `InterruptHandlerEntry::augmentCatalogue`, so the implicit
-`ISR` ids exist and a derived register can be a target.
-- Runs before the `selectedBy` validation and the metadata handling, so
-every interrupt id is final before either walks the catalogue.
-- `resolveInterruptReference` (new, file-local): follows a reference chain to
-the final register and returns its id.
-- A missing target, a non-interrupt target and a cycle throw a
-`logic_error` naming the registers involved.
+- `parse` (modified): after `InterruptHandlerEntry::augmentCatalogue` and
+  before the `selectedBy` validation loop, it resolves the references and
+  then finalises the bookkeeping.
+   - First loop collects the paths of the registers whose `interruptId` holds
+     a string, so the catalogue is not modified while it is iterated.
+   - Second loop resolves each collected register with
+     `resolveInterruptReference`, assigns the returned `std::vector<size_t>`
+     to `interruptId` and writes the register back with `modifyRegister`.
+   - `finaliseInterruptBookkeeping()` then builds the interrupt indexes.
+   - Runs after the augmentation, so the implicit `ISR` ids exist and a
+     derived register can be a target.
+   - Runs before the `selectedBy` validation and the metadata handling, so
+     every interrupt id and canonical path is final before either walks the
+     catalogue.
+- `resolveInterruptReference` (modified, file-local): returns the numeric
+  id of the named register, recursively.
+   - Loses the reference-map parameter, since the field carries the target
+     name; reads the target through the catalogue instead.
+   - Continues into a target that itself holds a reference.
+   - Converts the stored name to a `RegisterPath` and sets the dot alt
+     separator, so a dot-separated target resolves, as for `selectedBy`.
+   - A missing target, a non-interrupt target and a cycle throw a
+     `logic_error` naming the registers involved.
+
+### TraditionalMapFileParser (modified) in src/TraditionalMapFileParser.cc (modified)
+
+- `parse` (modified): calls `finaliseInterruptBookkeeping()` on the parsed
+  catalogue before returning it.
+   - The `*.mapp` parser writes numeric ids only, so nothing needs resolving,
+     but the catalogue now requires the explicit finalisation step.
+
+### adl_serializer (modified) in include/JsonExtensions.h (modified)
+
+- `adl_serializer<std::optional<T>>` (unmodified in behaviour): a null value
+  and a missing field give `std::nullopt`, and `std::nullopt` is written as
+  null.
+   - `WITH_DEFAULT` assigns the default-constructed member for a missing key,
+     so the absent case rests on that default, not on the member being left
+     untouched. This is why `doubleBuffering` works today.
+- `adl_serializer<std::variant<Ts...>>` (new): mirrors that support for the
+  new field.
+   - `to_json` writes the active alternative; a variant always holds a value,
+     so nothing is written as null.
+   - `from_json` takes the first alternative that parses, in declaration
+     order, skips a null explicitly and reports an error when no alternative
+     matches.
+- Both serialisers carry documentation stating that nlohmann's
+  template-specialisation lookup selects them, plus one sentence per member
+  function on when it is called and what it does.
+- The variant specialisation is generic, so it applies to every
+  `std::variant` serialised in a translation unit including this header;
+  the `triggeredByInterrupt` field is currently the only such use.
+- The member functions are declared in the specialisation and defined after
+  it; as templates the definitions stay in the header.
+- Composed on the field: absent or null gives `std::nullopt`, an array the id
+  vector, a string the register name. With both mappings the
+  `NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT` list stays unchanged (checked
+  by compilation).
+
+### async::GenericMuxedInterruptDistributor (modified) in include/async/GenericMuxedInterruptDistributor.h (modified), src/async/GenericMuxedInterruptDistributor.cc (modified)
+
+- `augmentCatalogue` (modified): builds the child id as a local
+  `std::vector<size_t>` from the controller id plus the bit position and
+  assigns it to the field, which converts to the numeric alternative.
+  Replaces the append onto the member, which a variant does not offer.
+   - It runs before the finalisation, so the registers it turns into
+     interrupt registers are indexed there rather than at the call.
+- The `<path>/ISR` placeholder in the class documentation is escaped as an
+  HTML entity, so doxygen does not report it as an unsupported tag.
 
 ### Alternatives considered
 
+- A side map of pending references filled while `addInfos` runs: rejected.
+  It duplicates the field, needs one recording point per derived register
+  and that recording is where the earlier defects were.
+- Keeping the empty-id guard in the per-register bookkeeping helper: rejected.
+  It leaves the catalogue silently inconsistent instead of reporting an
+  unresolved interrupt register at parse time.
 - A specialisation of `adl_serializer` for the concrete variant type:
-rejected, would tie the mapping to this one field, whereas the generic
-`adl_serializer<std::variant<Ts...>>` mirrors the existing `std::optional`
-support.
+  rejected, would tie the mapping to this one field, whereas the generic
+  `adl_serializer<std::variant<Ts...>>` mirrors the existing `std::optional`
+  support.
 - A dedicated struct wrapping the two forms (the `SelectedBy` idiom):
-rejected. `SelectedBy` pairs a path with a value and is all-or-nothing,
-whereas `triggeredByInterrupt` has three states (absent, id array, name);
-`std::optional<std::variant<...>>` expresses that directly.
+  rejected. `SelectedBy` pairs a path with a value and is all-or-nothing,
+  whereas `triggeredByInterrupt` has three states (absent, id array, name);
+  `std::optional<std::variant<...>>` expresses that directly.
 - A string element inside the id array (e.g. `[3, 0, "REG"]`): rejected. A
-name yields a whole id, so mixing it with numeric components has no
-meaning.
+  name yields a whole id, so mixing it with numeric components has no
+  meaning.
 - Resolving when the interrupt distributor is created (runtime): rejected.
-The id must exist at parse time, as in CR-019.
+  The id must exist at parse time, as in CR-019.
 - Requiring the target to be void: rejected. The trigger does not depend on
-the target's data.
-- Resolving before the CR-019 augmentation: rejected. Implicit `ISR` ids are
-known only after augmentation.
+  the target's data.
+- Resolving before the augmentation: rejected. Implicit `ISR` ids are known
+  only after it.
+- A `finalised` flag guarding the indexes: rejected. Only the two map file
+  parsers create interrupt registers, both call the finalisation and both are
+  tested; the remaining catalogue users mutate already finalised catalogues
+  and never add an interrupt register.
 
 ## Test plan
 
 - `tests/executables_src/testJsonMapFileParser.cpp` (modified)
-- Void referring register: a `type: void` register declaring its
-`triggeredByInterrupt` as a string carries the target's resolved id,
-appears in `getListOfInterrupts()` and resolves through the canonical
-interrupt path.
-- Covers the void referrer requirement and the address-less recording
-in `addInfos` (Requirements; Specifications).
-- Reference to a void interrupt register: the referring data register
-carries the resolved id, appears in `getListOfInterrupts()` and resolves
-through the canonical interrupt path.
-- Covers the string form and the resulting bookkeeping (Requirements;
-the `JsonAddressSpaceEntry` and catalogue specifications).
-- Reference to a data-carrying interrupt register: same assertions, with a
-non-void target.
-- Covers the data-target requirement (Requirements).
-- Reference to an implicit `ISR`-derived child (CR-019): the reference
-resolves after the augmentation.
-- Covers the resolution ordering (Requirements; `Imp::parse`).
-- Forward reference: a target declared later in the file resolves.
-- Covers the post-pass resolution (Requirements).
-- Reference chain: two references resolve to the final id.
-- Covers transitive resolution (Requirements).
-- Cycle and self-reference: parse-time `logic_error`.
-- Covers the cycle rule (Requirements).
-- Missing target and non-interrupt target: parse-time `logic_error`.
-- Covers the error cases (Requirements).
-- Channel slice of a 2D referring register: the slice carries the resolved
-id.
-- Covers the derived-register coverage in `addInfos` (Specifications).
-- Empty id array counts as absent: a data register declared with an empty
-`triggeredByInterrupt` array keeps its declared access and no interrupt id.
-- Covers the empty-array-is-absent rule (the `JsonAddressSpaceEntry`
-specifications).
-- Empty id array on a void register: the entry is rejected with a
-`logic_error`, as for an absent field.
-- Covers the same rule for the void case (the `JsonAddressSpaceEntry`
-specifications).
+   - Existing assertions that read `interruptId` move to
+     `numericInterruptId()`, so no test compares the field with a bare id
+     vector. Mechanical, but it touches most interrupt assertions in the
+     file.
+   - Void referring register: a `type: void` register declaring its
+     `triggeredByInterrupt` as a string carries the target's resolved id,
+     appears in `getListOfInterrupts()` and resolves through the canonical
+     interrupt path.
+   - Covers the void referrer requirement and the assignment in `fill`.
+   - Reference to a void interrupt register: the referring data register
+     carries the resolved id, appears in `getListOfInterrupts()` and resolves
+     through the canonical interrupt path.
+   - Covers the string form and the resulting bookkeeping (Requirements;
+     the `NumericAddressedRegisterInfo` and catalogue specifications).
+   - Reference to a data-carrying interrupt register: same assertions, with a
+     non-void target.
+   - Covers the data-target requirement (Requirements).
+   - Reference to an implicit `ISR`-derived child: the reference resolves
+     after the augmentation.
+   - Covers the resolution ordering (Requirements; `Imp::parse`).
+   - Forward reference: a target declared later in the file resolves.
+   - Covers the post-pass resolution (Requirements).
+   - Reference chain: two references resolve to the final id.
+   - Covers transitive resolution (Requirements; `resolveInterruptReference`).
+   - Cycle and self-reference: parse-time `logic_error`.
+   - Covers the cycle rule (Requirements).
+   - Missing target and non-interrupt target: parse-time `logic_error`.
+   - Covers the error cases (Requirements).
+   - Channel slice of a 2D referring register: the slice carries the resolved
+     id.
+   - Covers the reference travelling in the copied info (`addInfos`).
+   - Entry inheriting its parent's address from a referring parent: it
+     resolves to the parent's id.
+   - Covers the inherited field in `fill` (`JsonAddressSpaceEntry`).
+   - Empty id array counts as absent: a data register declared with an empty
+     `triggeredByInterrupt` array keeps its declared access and no interrupt
+     id.
+   - Covers the empty-array-is-absent requirement.
+   - Empty id array on a void register: the entry is rejected with a
+     `logic_error`, as for an absent field.
+   - Covers the same requirement for the void case.
 - `tests/executables_src/testGenericMuxedInterruptDistributor.cpp` (modified)
-- End to end: a data register referring by name is notified when the
-target's `ISR` bit is set (dummy backend), confirming the resolved id
-reaches the distributor.
-- Covers the runtime behaviour (Requirements); the parser test has no
-backend.
+   - End to end: a data register referring by name is notified when the
+     target's `ISR` bit is set (dummy backend).
+   - Covers the runtime behaviour (Requirements); the parser test has no
+     backend, and the augmentation plus finalisation path is only exercised
+     with a real distributor.
+- `tests/executables_src/testMapFileParser.cpp` (modified)
+   - The `*.mapp` parser still yields every interrupt register in
+     `getListOfInterrupts()` and through its canonical interrupt path.
+   - Its `interruptId` assertion (line 26) likewise reads
+     `numericInterruptId()`.
+   - Covers the finalisation call in `TraditionalMapFileParser::parse`,
+     which no other test reaches for this parser.
+- `tests/executables_src/testNumericAddressedRegisterCatalogue.cpp` (new)
+   - Finalisation builds the interrupt list and the canonical interrupt
+     paths.
+   - Covers `finaliseInterruptBookkeeping` directly; the parsers cannot show
+     the index contents in isolation.
+   - An `Access::INTERRUPT` register without a numeric id is rejected with a
+     `logic_error` naming it.
+   - Covers the empty-id error, unreachable through the parsers because
+     resolution fails first.
+   - An `Access::INTERRUPT` register still holding a name at finalisation is
+     rejected with a `logic_error` naming it.
+   - Covers the unresolved-reference error, likewise unreachable through the
+     parsers.
 
 ## Deferred issue
 
@@ -242,50 +384,40 @@ backend.
   interrupt instead of as the previous empty state. The old test was
   'triggeredByInterrupt.empty()', which was true both for an absent field and
   for a present '[]'; it was replaced by '!triggeredByInterrupt.has_value()'
-  (src/JsonMapFileParser.cc:334, and again for the void case at :397), and the
+  (src/JsonMapFileParser.cc:319-327, and again for the void case at :410), and the
   nlohmann WITH_DEFAULT mapping gives '[]' an optional that holds an empty id
   vector. Consequences of a present '[]': a data register silently becomes
   INTERRUPT (read-only with wait_for_new_data) instead of the registered access
   or the read-write default, and a void register silently parses instead of the
   previous clear error 'Void-typed register ... needs triggeredByInterrupt
   entry'. Such a register keeps an empty interrupt id, so it is absent from
-  getListOfInterrupts() and has no canonical interrupt path, i.e. it violates
-  the invariant stated in the NumericAddressedRegisterCatalogue specification
-  that an empty id exists only transiently for a string-form register (the id is
-  written later through modifyRegister). Requesting it with wait_for_new_data
-  reaches NumericAddressedBackend.cc:147,
+  getListOfInterrupts() and has no canonical interrupt path. Requesting it with
+  wait_for_new_data reaches NumericAddressedBackend.cc:147,
   registerInfo.getQualifiedAsyncId().front(), i.e. front() on an empty vector
   (undefined behaviour) instead of a clean error. The schema forbids an empty
-  array (minItems 1), but the parser does not validate against the schema, and
-  the specification bullet 'The three existing uses map as: absent is empty'
-  intends the old empty state (absent or empty array) to map to absence.
-  Suggested fix (no specification change needed): treat a present-but-empty id
-  array as absent in fill/interruptIdIfNumeric, i.e. base the interrupt decision
-  on a present array with at least one element; alternatively reject it with a
-  clear logic_error.
-- DI-7 [NEW] Doxygen build warnings for angle-bracketed placeholders:
-  doc/jmapFormat.dox:332 writes <handler id> and <bit position> as plain text
-  and include/async/GenericMuxedInterruptDistributor.h:63 writes <path>/ISR,
+  array (minItems 1), but the parser does not validate against the schema.
+- DI-7 [FOLDED-IN] Doxygen build warnings for angle-bracketed placeholders:
+  doc/jmapFormat.dox:332 writes `&lt;handler id&gt;` and `&lt;bit position&gt;` as plain text
+  and include/async/GenericMuxedInterruptDistributor.h:63 writes `&lt;path&gt;/ISR`,
   which doxygen reports as 'Unsupported xml/html tag'. Escape them as HTML
   entities (&lt;handler id&gt;, &lt;bit position&gt;, &lt;path&gt;/ISR) so the
   documentation build is warning-free.
-- DI-8 [NEW] include/JsonExtensions.h carries no doxygen documentation at all:
-  both the pre-existing adl_serializer<std::optional<T>> and the new
+- DI-8 [FOLDED-IN] include/JsonExtensions.h carries no doxygen documentation at
+  all: both the pre-existing adl_serializer<std::optional<T>> and the new
   adl_serializer<std::variant<Ts...>> need a concise comment stating that
   nlohmann's template-specialisation lookup selects them, and one short sentence
   per member function saying when it is called and what it does.
-- DI-9 [NEW] In include/JsonExtensions.h the new
+- DI-9 [FOLDED-IN] In include/JsonExtensions.h the new
   adl_serializer<std::variant<Ts...>> members to_json/from_json are defined
   inside the struct body; they must be declared in the struct and defined out of
   it (as templates the definitions stay in the header). The pre-existing
   std::optional specialisation stays unchanged.
-- DI-10 [NEW] In src/JsonMapFileParser.cc the member functions added by CR-020
-  are defined inside the JsonAddressSpaceEntry struct body:
-  recordInterruptReference (:297), hasTriggeredByInterrupt (:319) and
-  interruptIdIfNumeric (:332). Declare them in the struct and define them after
+- DI-10 [FOLDED-IN] In src/JsonMapFileParser.cc the member function added by
+  CR-020 is defined inside the JsonAddressSpaceEntry struct body:
+  hasTriggeredByInterrupt (:319). Declare it in the struct and define it after
   it in the same file; pre-existing inline definitions such as fill and addInfos
   stay as they are.
-- DI-11 [NEW] Add the full-line '/*****/' chrome bars between all
+- DI-11 [FOLDED-IN] Add the full-line '/*****/' chrome bars between all
   namespace-level blocks in the C++ files CR-020 touches: between class/struct
   declarations and between each function implementation, never inside a
   declaration or implementation body. Apply this also where the bars were
@@ -295,3 +427,16 @@ backend.
   tests/executables_src/testGenericMuxedInterruptDistributor.cpp and
   tests/executables_src/testJsonMapFileParser.cpp. Not in doc/jmapFormat.dox or
   schemas/jmap.schema.json.
+- DI-12 [FOLDED-IN] Revision request: hold the not yet resolved reference in
+  NumericAddressedRegisterInfo::interruptId itself (std::optional of
+  std::variant<std::vector<size_t>, std::string>) instead of a side map
+  collected while parsing. Removes recordInterruptReference, the map parameter
+  of addInfos and the per-derived-register recording.
+- DI-13 [FOLDED-IN] Revision request: replace the per-mutation interrupt
+  bookkeeping with one public finalisation step called after the catalogue is
+  filled and all ids are resolved; addRegister and modifyRegister no longer
+  bookkeep. Both map file parsers call it once.
+- DI-14 [FOLDED-IN] Revision request: turn the empty-id guard of the interrupt
+  bookkeeping into a parse-time error. An Access::INTERRUPT register without a
+  numeric id at finalisation is a logic_error naming the register, instead of
+  being silently left out of the interrupt indexes.
