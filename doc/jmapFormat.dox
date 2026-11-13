@@ -327,7 +327,7 @@ This will create a push-type register (supporting ChimeraTK::AccessMode::wait_fo
 
 \subsection jmap_interrupts_isr Interrupts derived from the ISR bit fields of an INTC controller
 
-For an \c INTC controller at path \c P, the 1-bit child bit fields of its \c P/ISR status register become interrupt registers implicitly, so that individual interrupts of the controller can be referred to by name instead of by their numeric id. Each qualifying child carries the interrupt id \c [<handler id>, <bit position>], where the bit position is the child's bit offset in the \c ISR word. Such a child is readable with \c wait_for_new_data and is notified when its \c ISR bit is set, exactly like a register declared with \c triggeredByInterrupt. Example:
+For an \c INTC controller at path \c P, the 1-bit child bit fields of its \c P/ISR status register become interrupt registers implicitly, so that individual interrupts of the controller can be referred to by name instead of by their numeric id. Each qualifying child carries the interrupt id \c [&lt;handler id&gt;, &lt;bit position&gt;], where the bit position is the child's bit offset in the \c ISR word. Such a child is readable with \c wait_for_new_data and is notified when its \c ISR bit is set, exactly like a register declared with \c triggeredByInterrupt. Example:
 \verbatim
 "addressSpace": {
   "MY_INTC": {

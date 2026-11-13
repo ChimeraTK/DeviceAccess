@@ -290,59 +290,42 @@ namespace ChimeraTK::detail {
     size_t pitch{0}; ///< byte pitch between two samples of the same channel in the 2D register
     std::map<std::string, Channel> channels;
 
-    // Record an interrupt register name reference of this entry (the string form of 'triggeredByInterrupt') under the
-    // given register path, so Imp::parse can resolve it after the parse pass. Empty when the field is numeric or
-    // absent. The reference string is normalised with the dot separator, as the 'selectedBy' handling does, so a
-    // dot-separated target resolves.
-    void recordInterruptReference(
-        std::map<RegisterPath, RegisterPath>& references, const RegisterPath& registerPath) const {
-      if(!triggeredByInterrupt.has_value()) {
-        return;
-      }
-      const auto* target = std::get_if<std::string>(&*triggeredByInterrupt);
-      if(target == nullptr) {
-        return;
-      }
-      RegisterPath targetPath(*target);
-      targetPath.setAltSeparator(".");
-      references[registerPath] = targetPath;
-    }
-
     // Register-level selectedBy for scalar/1D (non-2D, non-channels) registers: makes the whole register conditional
     // on a selector. For 2D registers the per-channel `Channel::selectedBy` is used instead; having both set is a map
     // authoring error.
     std::optional<SelectedBy> selectedBy;
 
-    // Whether 'triggeredByInterrupt' declares an interrupt. A present array with no element counts as absent: an empty
-    // array does not create an id-less interrupt register (the schema forbids it, but the parser does not validate
-    // against the schema), so the previous empty state is preserved.
-    [[nodiscard]] bool hasTriggeredByInterrupt() const {
-      if(!triggeredByInterrupt.has_value()) {
-        return false;
-      }
-      if(const auto* id = std::get_if<std::vector<size_t>>(&*triggeredByInterrupt)) {
-        return !id->empty();
-      }
-      return true; // the string form always names a register
-    }
+    // Whether 'triggeredByInterrupt' declares an interrupt: a numeric id array with at least one element or a
+    // register name.
+    [[nodiscard]] bool hasTriggeredByInterrupt() const;
 
-    // The interrupt id to assign when 'triggeredByInterrupt' carries a non-empty numeric id array. The string form
-    // names another register, so it has no id here yet; the id is resolved after the parse pass (see Imp::parse) and
-    // the reference is collected in the reference map.
-    [[nodiscard]] std::vector<size_t> interruptIdIfNumeric() const {
-      if(hasTriggeredByInterrupt()) {
-        if(const auto* id = std::get_if<std::vector<size_t>>(&*triggeredByInterrupt)) {
-          return *id;
-        }
-      }
-      return {};
-    }
+    // The interrupt id to assign to the register info: the numeric id array, or the register name reference as
+    // written. The reference is resolved after the parse pass (see Imp::parse). Must only be called on an entry whose
+    // 'hasTriggeredByInterrupt()' is true.
+    [[nodiscard]] NumericAddressedRegisterInfo::InterruptId interruptIdOfTriggeredByInterrupt() const;
 
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
         bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy,
         const std::string& selectedBySource) const {
       info.pathName = parentName / name;
       info.pathName.setAltSeparator(".");
+
+      // An empty numeric array and an empty name declare no interrupt: the schema forbids both, but the parser does not
+      // validate against it, so they are rejected here instead of creating an id-less interrupt register.
+      if(triggeredByInterrupt.has_value()) {
+        if(const auto* numericId = std::get_if<std::vector<size_t>>(&*triggeredByInterrupt)) {
+          if(numericId->empty()) {
+            throw ChimeraTK::logic_error(
+                "Register " + info.pathName + ": 'triggeredByInterrupt' must not be an empty array.");
+          }
+        }
+        if(const auto* target = std::get_if<std::string>(&*triggeredByInterrupt)) {
+          if(target->empty()) {
+            throw ChimeraTK::logic_error(
+                "Register " + info.pathName + ": 'triggeredByInterrupt' must not be an empty register name.");
+          }
+        }
+      }
 
       if(!hasTriggeredByInterrupt()) {
         if(access != Access::accessNotSet) {
@@ -357,9 +340,8 @@ namespace ChimeraTK::detail {
           throw ChimeraTK::logic_error(
               "Register " + info.pathName + ": 'access' and 'triggeredByInterrupt' are mutually exclusive.");
         }
-        // The numeric id array is assigned here; a register-name reference leaves the id empty and is filled in when
-        // the reference is resolved after the parse pass.
-        info.interruptId = interruptIdIfNumeric();
+        // The numeric id array, or the register name reference as written, which is resolved after the parse pass.
+        info.interruptId = interruptIdOfTriggeredByInterrupt();
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
       }
 
@@ -413,7 +395,7 @@ namespace ChimeraTK::detail {
         }
         info.nElements = 0;
         info.dataDescriptor = DataDescriptor{DataDescriptor::FundamentalType::nodata};
-        info.interruptId = interruptIdIfNumeric();
+        info.interruptId = interruptIdOfTriggeredByInterrupt();
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
         info.channels.clear();
         info.channels.emplace_back(0, NumericAddressedRegisterInfo::Type::VOID, 0, 0, false);
@@ -496,10 +478,8 @@ namespace ChimeraTK::detail {
 
     std::map<std::string, JsonAddressSpaceEntry> children;
 
-    void addInfos(NumericAddressedRegisterCatalogue& catalogue,
-        std::map<RegisterPath, RegisterPath>& interruptReferences, const std::string& name,
-        const RegisterPath& parentName, bool addressSetByParent,
-        const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt,
+    void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string& name, const RegisterPath& parentName,
+        bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy = std::nullopt,
         const std::string& inheritedSelectedBySource = "") const {
       if(name.empty()) {
         throw ChimeraTK::logic_error("Entry in module " + parentName + " has no name.");
@@ -518,9 +498,6 @@ namespace ChimeraTK::detail {
         fill(my, name, parentName, addressSetByParent, effectiveSelectedBy, effectiveSelectedBySource);
         my.computeDataDescriptor();
         catalogue.addRegister(my);
-        // A string-form entry refers by name; record the entry and, below, every derived interrupt register that
-        // inherits its id, so the reference resolution covers all of them.
-        recordInterruptReference(interruptReferences, my.pathName);
         if(!channels.empty()) {
           // create one register entry per named channel of the 2D register: a read-only 1D slice of the
           // 2D register. The channel's byte offset is folded into the address (so bitOffset == 0), and the full
@@ -566,7 +543,6 @@ namespace ChimeraTK::detail {
             slice.engineeringUnit = channel->engineeringUnit;
             slice.description = channel->description;
             addSliceWithBufferViews(catalogue, slice, slicePath);
-            recordInterruptReference(interruptReferences, slicePath);
             // Create one read-only bit-range slice per bit-field child of the channel, at <channel>/<child>.
             // The child slice behaves exactly like the parent channel slice (same address, stride, interrupt and
             // double-buffer inheritance, including the BUF0/BUF1 buffer views), but extracts the child's bit range
@@ -593,7 +569,6 @@ namespace ChimeraTK::detail {
               childSlice.description = child.description;
               childSlice.computeDataDescriptor();
               addSliceWithBufferViews(catalogue, childSlice, childPath);
-              recordInterruptReference(interruptReferences, childPath);
             }
           }
         }
@@ -622,25 +597,10 @@ namespace ChimeraTK::detail {
             effectiveSelectedBySource); // only updates the name and the representation
         my.computeDataDescriptor();
         catalogue.addRegister(my);
-        // Record the entry's own register-name reference under its path. Every address-less entry takes this branch,
-        // so this is what covers a void referring register, which never has an address. A no-op for a numeric id, an
-        // absent field or a non-interrupt entry.
-        recordInterruptReference(interruptReferences, my.pathName);
-        // Only an entry without a reference of its own that inherits its parent's interrupt id takes over the parent's
-        // unresolved reference, so the child's id resolves with its parent's. A string-form entry has no id yet, so an
-        // empty id together with no own reference means the id is inherited from a string-form parent. A numeric
-        // parent already filled the id, and an own reference was just recorded above.
-        if(my.registerAccess == NumericAddressedRegisterInfo::Access::INTERRUPT && my.interruptId.empty() &&
-            interruptReferences.find(my.pathName) == interruptReferences.end()) {
-          const auto parentReference = interruptReferences.find(parentName);
-          if(parentReference != interruptReferences.end()) {
-            interruptReferences[my.pathName] = parentReference->second;
-          }
-        }
       }
 
       for(const auto& [childName, child] : children) {
-        child.addInfos(catalogue, interruptReferences, childName, parentName / name,
+        child.addInfos(catalogue, childName, parentName / name,
             addressSetByParent || (address.type != AddressType::addressTypeNotSet), effectiveSelectedBy,
             effectiveSelectedBySource);
       }
@@ -650,6 +610,25 @@ namespace ChimeraTK::detail {
         triggeredByInterrupt, numberOfElements, bytesPerElement, pitch, address, representation, children, channels,
         doubleBuffering, selectedBy)
   };
+
+  /********************************************************************************************************************/
+
+  bool JsonAddressSpaceEntry::hasTriggeredByInterrupt() const {
+    if(!triggeredByInterrupt.has_value()) {
+      return false;
+    }
+    if(const auto* numericId = std::get_if<std::vector<size_t>>(&*triggeredByInterrupt)) {
+      return !numericId->empty();
+    }
+    return !std::get<std::string>(*triggeredByInterrupt).empty();
+  }
+
+  /********************************************************************************************************************/
+
+  NumericAddressedRegisterInfo::InterruptId JsonAddressSpaceEntry::interruptIdOfTriggeredByInterrupt() const {
+    assert(hasTriggeredByInterrupt());
+    return *triggeredByInterrupt;
+  }
 
   /********************************************************************************************************************/
 
@@ -766,13 +745,14 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
 
   /**
-   * Follow a 'triggeredByInterrupt' register-name reference chain to the final register and return its resolved
-   * interrupt id. A reference names another register; that register may itself refer to yet another one, so the chain
-   * is followed transitively. A missing target, a non-interrupt target and a cycle (including a register naming
-   * itself) are reported as an error. File-local: only the map file parser resolves these references.
+   * Return the numeric interrupt id of the register the given path names. A reference names another register, which
+   * may itself hold a reference, so the chain is followed transitively while keeping the already visited register
+   * paths: a repeated path is a cycle (a register naming itself included), and it is an error rather than a recursion
+   * without end. A missing target and a non-interrupt target are errors as well. File-local: only the map file parser
+   * resolves these references.
    */
-  static std::vector<size_t> resolveInterruptReference(const RegisterPath& targetPath,
-      const std::map<RegisterPath, RegisterPath>& references, const NumericAddressedRegisterCatalogue& catalogue) {
+  static std::vector<size_t> resolveInterruptReference(
+      const RegisterPath& targetPath, const NumericAddressedRegisterCatalogue& catalogue) {
     std::vector<RegisterPath> chain;
     RegisterPath current = targetPath;
     while(true) {
@@ -786,28 +766,31 @@ namespace ChimeraTK::detail {
       }
       chain.push_back(current);
 
-      // A referred register always exists in the catalogue; the reference map is keyed by the register paths the
-      // parser created, so this only guards against an inconsistent map.
       if(!catalogue.hasRegister(current)) {
         throw ChimeraTK::logic_error(
             "Error parsing JSON map file: 'triggeredByInterrupt' references non-existent register '" +
             std::string(current) + "'.");
       }
 
-      // A reference that names another reference continues the chain.
-      auto it = references.find(current);
-      if(it != references.end()) {
-        current = it->second;
-        continue;
-      }
-
-      // The end of the chain must be an interrupt register with a numeric id.
+      // A target that names another reference continues the chain.
       auto target = catalogue.getBackendRegister(current);
-      if(target.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT || target.interruptId.empty()) {
+      if(target.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
         throw ChimeraTK::logic_error("Error parsing JSON map file: 'triggeredByInterrupt' target '" +
             std::string(current) + "' is not an interrupt register.");
       }
-      return target.interruptId;
+      if(const auto* reference = target.interruptId ? std::get_if<std::string>(&*target.interruptId) : nullptr) {
+        current = *reference;
+        current.setAltSeparator(".");
+        continue;
+      }
+
+      // The end of the chain must carry a numeric id.
+      auto numericId = target.numericInterruptId();
+      if(!numericId.has_value() || numericId->empty()) {
+        throw ChimeraTK::logic_error("Error parsing JSON map file: 'triggeredByInterrupt' target '" +
+            std::string(current) + "' is not an interrupt register.");
+      }
+      return *numericId;
     }
   }
 
@@ -846,10 +829,9 @@ namespace ChimeraTK::detail {
       }
 
       // Parse the "addressSpace" entries recursively
-      std::map<RegisterPath, RegisterPath> interruptReferences;
       std::map<std::string, JsonAddressSpaceEntry> addressSpace = data.at("addressSpace");
       for(const auto& [addressSpaceName, entry] : addressSpace) {
-        entry.addInfos(catalogue, interruptReferences, addressSpaceName, "/", /*addressSetByParent=*/false);
+        entry.addInfos(catalogue, addressSpaceName, "/", /*addressSetByParent=*/false);
       }
 
       // Scan the catalogue for bit ranges.
@@ -892,14 +874,25 @@ namespace ChimeraTK::detail {
       interruptHandlerForAugmentation.augmentCatalogue(catalogue);
 
       // Resolve every 'triggeredByInterrupt' register-name reference now: the implicit ISR ids created by the
-      // augmentation above exist, so a derived register can be a target. Every reference is resolved before the
-      // 'selectedBy' validation and the metadata handling walk the catalogue, so the interrupt ids are final.
-      for(const auto& [referringPath, targetPath] : interruptReferences) {
-        auto resolvedId = resolveInterruptReference(targetPath, interruptReferences, catalogue);
+      // augmentation above exist, so a derived register can be a target. The paths are collected first, so the
+      // catalogue is not modified while it is iterated.
+      std::vector<RegisterPath> referringPaths;
+      for(const auto& reg : catalogue) {
+        if(reg.interruptId.has_value() && std::holds_alternative<std::string>(*reg.interruptId)) {
+          referringPaths.push_back(reg.pathName);
+        }
+      }
+      for(const auto& referringPath : referringPaths) {
         auto referringRegister = catalogue.getBackendRegister(referringPath);
-        referringRegister.interruptId = std::move(resolvedId);
+        RegisterPath targetPath = std::get<std::string>(*referringRegister.interruptId);
+        targetPath.setAltSeparator(".");
+        referringRegister.interruptId = resolveInterruptReference(targetPath, catalogue);
         catalogue.modifyRegister(referringRegister);
       }
+
+      // Build the interrupt indexes now that every id is resolved. Every reference is resolved and the bookkeeping is
+      // final before the 'selectedBy' validation and the metadata handling walk the catalogue.
+      catalogue.finaliseInterruptBookkeeping();
 
       // Validate every 'selectedBy' selector register referenced by any channel: (a) the referenced selector
       // register must exist in the catalogue, and (b) it must not itself be conditionally enabled by a 'selectedBy'

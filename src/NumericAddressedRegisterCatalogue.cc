@@ -20,16 +20,24 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint32_t nElements_,
       uint64_t address_, uint32_t nBytes_, uint64_t bar_, uint32_t width_, int32_t nFractionalBits_, bool signedFlag_,
-      Access dataAccess_, Type dataType_, std::vector<size_t> interruptId_,
+      Access dataAccess_, Type dataType_, std::optional<InterruptId> interruptId_,
       std::optional<DoubleBufferInfo> doubleBufferInfo_, bool isBitRange_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(nElements_ > 0 ? nBytes_ / nElements_ * 8 : 0),
-    bar(bar_), address(address_), registerAccess(dataAccess_), interruptId(std::move(interruptId_)),
-    doubleBuffer(std::move(doubleBufferInfo_)), isBitRange(isBitRange_),
-    channels({{0, dataType_, width_, nFractionalBits_, signedFlag_,
-        nElements_ > 0 ? ChimeraTK::DataType("int" + std::to_string(elementPitchBits)) :
-                         ChimeraTK::DataType(ChimeraTK::DataType::Void),
-        std::nullopt}}) {
+    bar(bar_), address(address_), registerAccess(dataAccess_), doubleBuffer(std::move(doubleBufferInfo_)),
+    isBitRange(isBitRange_), channels({{0, dataType_, width_, nFractionalBits_, signedFlag_,
+                                 nElements_ > 0 ? ChimeraTK::DataType("int" + std::to_string(elementPitchBits)) :
+                                                  ChimeraTK::DataType(ChimeraTK::DataType::Void),
+                                 std::nullopt}}) {
     assert(channels.size() == 1);
+
+    // An empty numeric id is no id: it maps to the register not being an interrupt source. Such a vector is passed by
+    // the *.mapp parser, whose interrupt entry may be empty.
+    if(const auto* numericId = interruptId_ ? std::get_if<std::vector<size_t>>(&*interruptId_) : nullptr) {
+      if(numericId->empty()) {
+        interruptId_.reset();
+      }
+    }
+    interruptId = std::move(interruptId_);
 
     // make sure . and / is treated as similar as possible
     pathName.setAltSeparator(".");
@@ -50,7 +58,7 @@ namespace ChimeraTK {
 
   NumericAddressedRegisterInfo::NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_,
       uint64_t address_, uint32_t nElements_, uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_,
-      Access dataAccess_, std::vector<size_t> interruptId_, std::optional<DoubleBufferInfo> doubleBufferInfo_)
+      Access dataAccess_, std::optional<InterruptId> interruptId_, std::optional<DoubleBufferInfo> doubleBufferInfo_)
   : pathName(pathName_), nElements(nElements_), elementPitchBits(elementPitchBits_), bar(bar_), address(address_),
     registerAccess(dataAccess_), interruptId(std::move(interruptId_)), doubleBuffer(std::move(doubleBufferInfo_)),
     isBitRange(false), channels(std::move(channelInfo_)) {
@@ -174,7 +182,19 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   std::vector<size_t> NumericAddressedRegisterInfo::getQualifiedAsyncId() const {
-    return interruptId;
+    return numericInterruptId().value_or(std::vector<size_t>{});
+  }
+
+  /********************************************************************************************************************/
+
+  std::optional<std::vector<size_t>> NumericAddressedRegisterInfo::numericInterruptId() const {
+    if(!interruptId.has_value()) {
+      return std::nullopt;
+    }
+    if(const auto* numericId = std::get_if<std::vector<size_t>>(&*interruptId)) {
+      return *numericId;
+    }
+    return std::nullopt;
   }
 
   /********************************************************************************************************************/
@@ -300,39 +320,34 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void NumericAddressedRegisterCatalogue::addInterruptBookkeeping(const NumericAddressedRegisterInfo& registerInfo) {
-    if(registerInfo.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
-      return;
-    }
-    // A register whose interrupt id is not (yet) known is added without bookkeeping. A 'triggeredByInterrupt'
-    // register-name reference is added with interrupt access before its id is resolved; the id is written later
-    // through modifyRegister, which then runs this bookkeeping.
-    if(registerInfo.interruptId.empty()) {
-      return;
-    }
-    _listOfInterrupts.insert(registerInfo.interruptId);
-    RegisterPath canonicalName = "!" + std::to_string(registerInfo.interruptId.front());
-    std::vector<size_t> canonicalID = {registerInfo.interruptId.front()};
-    _canonicalInterrupts[canonicalName] = canonicalID;
-    for(auto subId = ++registerInfo.interruptId.begin(); subId != registerInfo.interruptId.end(); ++subId) {
-      canonicalName += ":" + std::to_string(*subId);
-      canonicalID.push_back(*subId);
+  void NumericAddressedRegisterCatalogue::finaliseInterruptBookkeeping() {
+    _listOfInterrupts.clear();
+    _canonicalInterrupts.clear();
+    for(const auto& registerInfo : *this) {
+      // Both incomplete states are programming errors rather than map errors: a reference is resolved before the
+      // bookkeeping is finalised, and an interrupt register without an id cannot be notified.
+      assert(registerInfo.interruptId.has_value() ||
+          registerInfo.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT);
+      assert(!registerInfo.interruptId.has_value() ||
+          std::holds_alternative<std::vector<size_t>>(*registerInfo.interruptId));
+      if(registerInfo.registerAccess != NumericAddressedRegisterInfo::Access::INTERRUPT) {
+        continue;
+      }
+      auto interruptId = registerInfo.numericInterruptId();
+      assert(interruptId.has_value() && !interruptId->empty());
+      if(!interruptId.has_value() || interruptId->empty()) {
+        continue;
+      }
+      _listOfInterrupts.insert(*interruptId);
+      RegisterPath canonicalName = "!" + std::to_string(interruptId->front());
+      std::vector<size_t> canonicalID = {interruptId->front()};
       _canonicalInterrupts[canonicalName] = canonicalID;
+      for(auto subId = ++interruptId->begin(); subId != interruptId->end(); ++subId) {
+        canonicalName += ":" + std::to_string(*subId);
+        canonicalID.push_back(*subId);
+        _canonicalInterrupts[canonicalName] = canonicalID;
+      }
     }
-  }
-
-  /********************************************************************************************************************/
-
-  void NumericAddressedRegisterCatalogue::addRegister(const NumericAddressedRegisterInfo& registerInfo) {
-    addInterruptBookkeeping(registerInfo);
-    BackendRegisterCatalogue<NumericAddressedRegisterInfo>::addRegister(registerInfo);
-  }
-
-  /********************************************************************************************************************/
-
-  void NumericAddressedRegisterCatalogue::modifyRegister(const NumericAddressedRegisterInfo& registerInfo) {
-    addInterruptBookkeeping(registerInfo);
-    BackendRegisterCatalogue<NumericAddressedRegisterInfo>::modifyRegister(registerInfo);
   }
 
   /********************************************************************************************************************/

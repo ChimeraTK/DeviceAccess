@@ -877,8 +877,9 @@ namespace ChimeraTK::async {
       // views as they are.
       NumericAddressedRegisterInfo modified = catalogue.getBackendRegister(childPath);
       modified.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
-      modified.interruptId = interruptId;
-      modified.interruptId.push_back(bitPosition);
+      auto childId = interruptId;
+      childId.push_back(bitPosition);
+      modified.interruptId = childId;
       catalogue.modifyRegister(modified);
     }
   } // augmentCatalogue

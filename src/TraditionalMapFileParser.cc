@@ -71,6 +71,10 @@ namespace ChimeraTK::detail {
       }
     }
 
+    // The *.mapp parser writes numeric interrupt ids only, so nothing needs resolving, but the catalogue requires the
+    // explicit finalisation step to build its interrupt indexes.
+    _pmap.finaliseInterruptBookkeeping();
+
     return {std::move(_pmap), std::move(_metadataCatalogue)};
   }
 

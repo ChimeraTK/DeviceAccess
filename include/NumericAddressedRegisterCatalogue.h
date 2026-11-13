@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <variant>
+#include <vector>
 
 namespace ChimeraTK {
 
@@ -35,6 +37,12 @@ namespace ChimeraTK {
      *  different types in the channels, the type with the biggest value here will "win".
      */
     enum class Type { VOID = 0, FIXED_POINT = 1, IEEE754 = 2, ASCII = 3 };
+
+    /**
+     * An interrupt id is either the numeric id or the name of another interrupt register whose id the register takes.
+     * The name is stored as written, the reference is resolved before the interrupt bookkeeping is finalised.
+     */
+    using InterruptId = std::variant<std::vector<size_t>, std::string>;
 
     /**
      * Per-channel information that contains a pair of register and value determining a condition
@@ -80,7 +88,7 @@ namespace ChimeraTK {
     explicit NumericAddressedRegisterInfo(RegisterPath const& pathName_ = {}, uint32_t nElements_ = 0,
         uint64_t address_ = 0, uint32_t nBytes_ = 0, uint64_t bar_ = 0, uint32_t width_ = 32,
         int32_t nFractionalBits_ = 0, bool signedFlag_ = true, Access dataAccess_ = Access::READ_WRITE,
-        Type dataType_ = Type::FIXED_POINT, std::vector<size_t> interruptId_ = {},
+        Type dataType_ = Type::FIXED_POINT, std::optional<InterruptId> interruptId_ = std::nullopt,
         std::optional<DoubleBufferInfo> doubleBuffer_ = std::nullopt, bool isBitRange_ = false);
 
     /**
@@ -88,7 +96,7 @@ namespace ChimeraTK {
      */
     NumericAddressedRegisterInfo(RegisterPath const& pathName_, uint64_t bar_, uint64_t address_, uint32_t nElements_,
         uint32_t elementPitchBits_, std::vector<ChannelInfo> channelInfo_, Access dataAccess_,
-        std::vector<size_t> interruptId_, std::optional<DoubleBufferInfo> doubleBuffer_ = std::nullopt);
+        std::optional<InterruptId> interruptId_, std::optional<DoubleBufferInfo> doubleBuffer_ = std::nullopt);
 
     NumericAddressedRegisterInfo(const NumericAddressedRegisterInfo&) = default;
 
@@ -138,7 +146,13 @@ namespace ChimeraTK {
     uint64_t address; /**< Lower part of the address relative to BAR, in bytes */
 
     Access registerAccess; /**< Data access direction: Read, write, read and write or interrupt */
-    std::vector<size_t> interruptId;
+
+    /**
+     * Interrupt id, or a not yet resolved register-name reference to another interrupt register that carries the id.
+     * A register is an interrupt source when this holds a value; std::nullopt is a register without interrupt. The
+     * numeric alternative never holds an empty vector.
+     */
+    std::optional<InterruptId> interruptId;
     std::optional<DoubleBufferInfo> doubleBuffer;
     bool isBitRange; // A (sub) bit range of a bit field.
 
@@ -154,6 +168,12 @@ namespace ChimeraTK {
     }
 
     [[nodiscard]] std::vector<size_t> getQualifiedAsyncId() const override;
+
+    /**
+     * Return the numeric interrupt id, or std::nullopt when the register is not an interrupt source or its id is still
+     * a register-name reference.
+     */
+    [[nodiscard]] std::optional<std::vector<size_t>> numericInterruptId() const;
 
     void computeDataDescriptor();
 
@@ -180,15 +200,19 @@ namespace ChimeraTK {
 
     [[nodiscard]] const std::set<std::vector<size_t>>& getListOfInterrupts() const;
 
-    void addRegister(const NumericAddressedRegisterInfo& registerInfo);
-
     /**
-     * Replaces the register information for the matching register, keeping the insertion order of the iterated
-     * catalogue. In addition to the base class behaviour, the derived interrupt bookkeeping is updated, so a register
-     * modified to interrupt access becomes part of getListOfInterrupts() and is reachable through its canonical
-     * interrupt path.
+     * Fill the interrupt bookkeeping from the registers currently in the catalogue: the interrupt id of every
+     * register with interrupt access goes to _listOfInterrupts and its canonical interrupt paths !I, !I:M, ... go to
+     * _canonicalInterrupts. It has to be called once after the catalogue has been filled and every interrupt id has
+     * been resolved, i.e. after the last addRegister() and modifyRegister(). Both indexes are rebuilt from scratch, so
+     * a repeated call is harmless and no completion flag is needed; clone() copies both indexes, so a clone is already
+     * finalised.
+     *
+     * @throw ChimeraTK::logic_error never; both incomplete states are programming errors and are asserted instead: a
+     * register still holding an unresolved register-name reference, and an interrupt register with an absent or empty
+     * id.
      */
-    void modifyRegister(const NumericAddressedRegisterInfo& registerInfo);
+    void finaliseInterruptBookkeeping();
 
     [[nodiscard]] std::unique_ptr<BackendRegisterCatalogueBase> clone() const override;
 
@@ -202,13 +226,6 @@ namespace ChimeraTK {
 
    protected:
     void fillFromThis(NumericAddressedRegisterCatalogue* target) const;
-
-    /**
-     *  Adds the interrupt bookkeeping for a register with interrupt access: the interrupt id to _listOfInterrupts and
-     *  the canonical interrupt paths !I, !I:M, ... to _canonicalInterrupts. Does nothing for a register without
-     *  interrupt access. The insertion is idempotent, so two registers may share one interrupt id.
-     */
-    void addInterruptBookkeeping(const NumericAddressedRegisterInfo& registerInfo);
 
     /**
      *  set of interrupt IDs. Each interrupt ID is a vector of (hierarchical) interrupt numbers.
