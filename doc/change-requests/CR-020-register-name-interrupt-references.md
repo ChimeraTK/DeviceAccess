@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -506,7 +506,7 @@ and the indexes survive `clone()`.
   entry although the function never throws; put the assertion of the two
   incomplete states into plain prose in the description and drop the @throw
   line. No other place in the project uses this construct.
-- DI-23 [NEW] The Test plan's empty-reference-string test case is not
+- DI-23 [IMPLEMENTED] The Test plan's empty-reference-string test case is not
   implemented. The plan requires two cases in
   tests/executables_src/testJsonMapFileParser.cpp ('Empty reference string:
   parse-time logic_error naming the entry' plus the same case for a void

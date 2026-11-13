@@ -2058,4 +2058,32 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyArrayVoidRegister) {
 
 /**********************************************************************************************************************/
 
+// An empty 'triggeredByInterrupt' string is a map error: it names no register, and the parser does not validate
+// against the schema's 'minLength'.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyStringDataRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["BSP"]["children"]["EMPTY_STRING"] = {{"triggeredByInterrupt", ""}, {"access", "RO"},
+      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"representation", {{"type", "fixedPoint"}, {"width", 32}}}};
+
+  std::string tmpFile = "interruptRefEmptyStringData_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
+/**********************************************************************************************************************/
+
+// An empty 'triggeredByInterrupt' string is rejected for a void register as well.
+BOOST_AUTO_TEST_CASE(TestInterruptReferenceEmptyStringVoidRegister) {
+  std::ifstream base("simpleJsonFile.jmap");
+  nlohmann::json map = nlohmann::json::parse(base);
+  map["addressSpace"]["BSP"]["children"]["EMPTY_STRING_VOID"] = {
+      {"triggeredByInterrupt", ""}, {"representation", {{"type", "void"}}}};
+
+  std::string tmpFile = "interruptRefEmptyStringVoid_" + std::to_string(getpid()) + ".jmap";
+  BOOST_CHECK_THROW(parseInjectedInterruptMap(tmpFile, map), ChimeraTK::logic_error);
+  std::remove(tmpFile.c_str());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
