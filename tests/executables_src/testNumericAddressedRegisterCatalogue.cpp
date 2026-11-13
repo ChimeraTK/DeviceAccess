@@ -82,4 +82,26 @@ BOOST_AUTO_TEST_CASE(TestFinaliseIndexesRegisteredAndDerivedInterruptsAndCloneCo
 
 /**********************************************************************************************************************/
 
+// Construction without an interrupt id: a register built by the channel (2D) constructor from an empty id vector has no
+// interrupt id, and neither has one built by the 1D/2D-agnostic constructor. Both constructors map the empty vector to
+// std::nullopt, so a register the map file parsers give an empty id vector is not an interrupt source.
+BOOST_AUTO_TEST_CASE(TestEmptyInterruptIdVectorConstructsRegisterWithoutInterrupt) {
+  // The 2D (channel) constructor.
+  NumericAddressedRegisterInfo channelRegister("CHANNEL_REGISTER", 0, 0, 4, 64,
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")}},
+      NumericAddressedRegisterInfo::Access::READ_WRITE, std::vector<size_t>{});
+  BOOST_TEST(!channelRegister.interruptId.has_value());
+  BOOST_TEST(!channelRegister.numericInterruptId().has_value());
+
+  // The 1D/2D-agnostic constructor.
+  NumericAddressedRegisterInfo scalarRegister("SCALAR_REGISTER", 1, 0x0, 4, 0, 32, 0, true,
+      NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT,
+      std::vector<size_t>{});
+  BOOST_TEST(!scalarRegister.interruptId.has_value());
+  BOOST_TEST(!scalarRegister.numericInterruptId().has_value());
+}
+
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
