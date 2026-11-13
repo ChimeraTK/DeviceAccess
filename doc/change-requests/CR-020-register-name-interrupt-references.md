@@ -549,8 +549,8 @@ on a braced list forming the alternative.
   correction needed: the file includes <set> and <vector> only, and the item
   asks for a fix that is not present in the current tree; the include block must
   be checked against the item wording again.
-- DI-26 [IMPLEMENTED] The 2D/channel-info constructor does not map an empty
-  numeric interrupt id to std::nullopt: only the 1D constructor normalises
+- DI-26 [DONE] The 2D/channel-info constructor does not map an empty numeric
+  interrupt id to std::nullopt: only the 1D constructor normalises
   (src/NumericAddressedRegisterCatalogue.cc:36-40), while the 2D constructor
   assigns the field unchanged (src/NumericAddressedRegisterCatalogue.cc:59-64).
   The *.mapp parser passes its possibly empty id vector to that constructor
@@ -563,8 +563,8 @@ on a braced list forming the alternative.
   (include/NumericAddressedRegisterCatalogue.h:149-155), so such a register also
   compares unequal to one constructed without an id. Apply the normalisation in
   both constructors (e.g. a shared helper).
-- DI-27 [IMPLEMENTED] The documentation obligation of the finalisation step is
-  not implemented where the specification requires it: the catalogue-taking
+- DI-27 [DONE] The documentation obligation of the finalisation step is not
+  implemented where the specification requires it: the catalogue-taking
   NumericAddressedBackend constructor (include/NumericAddressedBackend.h:23-26)
   carries no doxygen comment stating that a passed catalogue must be finalised,
   and the NumericAddressedRegisterCatalogue class documentation
@@ -572,3 +572,12 @@ on a braced list forming the alternative.
   only finaliseInterruptBookkeeping's own comment does. The specifications
   explicitly say 'the class documentation states the obligation, as does the
   catalogue-taking NumericAddressedBackend constructor'. Add those comments.
+- DI-28 [NEW] Environment-only test failure, not caused by this change:
+  testUioBackendUnified fails at
+  tests/executables_src/testUioBackendUnified.cpp:113 with 'UioMmap construction
+  failed'. The host's uio-dummy kernel module exposes /dev/ctkuiodummy and
+  /sys/class/uio/uio0, but mmap of the device resource returns MAP_FAILED. The
+  file is untouched by this branch (only src/TraditionalMapFileParser.cc, which
+  it uses through the plain MapFileParser, gained the
+  finaliseInterruptBookkeeping() call). Re-run once the uio-dummy device is
+  mappable; no code fix is possible or needed here.
