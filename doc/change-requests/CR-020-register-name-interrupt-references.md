@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO TEST (from TESTS REVIEWED)
+Status: TESTS PASSED (from TESTS REVIEWED)
 
 ## Requirements
 
