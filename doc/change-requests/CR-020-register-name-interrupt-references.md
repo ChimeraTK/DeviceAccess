@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -688,8 +688,8 @@ built by the 1D/2D-agnostic constructor.
   tests/executables_src/testNumericAddressedRegisterCatalogue.cpp:24). Drop the
   anonymous namespace and declare the helper as `static`, with the chrome bar
   structure adapted; keep the reason comment stated once.
-- DI-37 [IMPLEMENTED] The Specifications do not mention the new public type
-  alias `NumericAddressedRegisterInfo::InterruptId` (`using InterruptId =
+- DI-37 [FOLDED-IN] The Specifications do not mention the new public type alias
+  `NumericAddressedRegisterInfo::InterruptId` (`using InterruptId =
   std::variant<std::vector<size_t>, std::string>;`,
   include/NumericAddressedRegisterCatalogue.h:45). The header uses it for the
   field (include/NumericAddressedRegisterCatalogue.h:155) and for both
