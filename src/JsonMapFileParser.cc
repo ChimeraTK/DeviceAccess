@@ -299,11 +299,6 @@ namespace ChimeraTK::detail {
     // register name.
     [[nodiscard]] bool hasTriggeredByInterrupt() const;
 
-    // The interrupt id to assign to the register info: the numeric id array, or the register name reference as
-    // written. The reference is resolved after the parse pass (see Imp::parse). Must only be called on an entry whose
-    // 'hasTriggeredByInterrupt()' is true.
-    [[nodiscard]] NumericAddressedRegisterInfo::InterruptId interruptIdOfTriggeredByInterrupt() const;
-
     void fill(NumericAddressedRegisterInfo& info, const std::string& name, const RegisterPath& parentName,
         bool addressSetByParent, const std::optional<SelectedBy>& inheritedSelectedBy,
         const std::string& selectedBySource) const {
@@ -341,7 +336,7 @@ namespace ChimeraTK::detail {
               "Register " + info.pathName + ": 'access' and 'triggeredByInterrupt' are mutually exclusive.");
         }
         // The numeric id array, or the register name reference as written, which is resolved after the parse pass.
-        info.interruptId = interruptIdOfTriggeredByInterrupt();
+        info.interruptId = *triggeredByInterrupt;
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
       }
 
@@ -395,7 +390,7 @@ namespace ChimeraTK::detail {
         }
         info.nElements = 0;
         info.dataDescriptor = DataDescriptor{DataDescriptor::FundamentalType::nodata};
-        info.interruptId = interruptIdOfTriggeredByInterrupt();
+        info.interruptId = *triggeredByInterrupt;
         info.registerAccess = NumericAddressedRegisterInfo::Access::INTERRUPT;
         info.channels.clear();
         info.channels.emplace_back(0, NumericAddressedRegisterInfo::Type::VOID, 0, 0, false);
@@ -621,13 +616,6 @@ namespace ChimeraTK::detail {
       return !numericId->empty();
     }
     return !std::get<std::string>(*triggeredByInterrupt).empty();
-  }
-
-  /********************************************************************************************************************/
-
-  NumericAddressedRegisterInfo::InterruptId JsonAddressSpaceEntry::interruptIdOfTriggeredByInterrupt() const {
-    assert(hasTriggeredByInterrupt());
-    return *triggeredByInterrupt;
   }
 
   /********************************************************************************************************************/

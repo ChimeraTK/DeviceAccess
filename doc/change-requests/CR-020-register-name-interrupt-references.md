@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: READY TO TEST (from TESTS REVIEWED)
+Status: TESTS PASSED (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -412,84 +412,84 @@ and the indexes survive `clone()`.
   registerInfo.getQualifiedAsyncId().front(), i.e. front() on an empty vector
   (undefined behaviour) instead of a clean error. The schema forbids an empty
   array (minItems 1), but the parser does not validate against the schema.
-- DI-7 [IMPLEMENTED] Doxygen build warnings for angle-bracketed placeholders:
+- DI-7 [DONE] Doxygen build warnings for angle-bracketed placeholders:
   doc/jmapFormat.dox:332 writes `&lt;handler id&gt;` and `&lt;bit position&gt;`
   as plain text and include/async/GenericMuxedInterruptDistributor.h:63 writes
   `&lt;path&gt;/ISR`, which doxygen reports as 'Unsupported xml/html tag'.
   Escape them as HTML entities (&lt;handler id&gt;, &lt;bit position&gt;,
   &lt;path&gt;/ISR) so the documentation build is warning-free.
-- DI-8 [IMPLEMENTED] include/JsonExtensions.h carries no doxygen documentation
-  at all: both the pre-existing adl_serializer<std::optional<T>> and the new
+- DI-8 [DONE] include/JsonExtensions.h carries no doxygen documentation at all:
+  both the pre-existing adl_serializer<std::optional<T>> and the new
   adl_serializer<std::variant<Ts...>> need a concise comment stating that
   nlohmann's template-specialisation lookup selects them, and one short sentence
   per member function saying when it is called and what it does.
-- DI-9 [IMPLEMENTED] In include/JsonExtensions.h the new
+- DI-9 [DONE] In include/JsonExtensions.h the new
   adl_serializer<std::variant<Ts...>> members to_json/from_json are defined
   inside the struct body; they must be declared in the struct and defined out of
   it (as templates the definitions stay in the header). The pre-existing
   std::optional specialisation stays unchanged.
-- DI-10 [IMPLEMENTED] In src/JsonMapFileParser.cc the member function added by
-  CR-020 is defined inside the JsonAddressSpaceEntry struct body:
+- DI-10 [DONE] In src/JsonMapFileParser.cc the member function added by CR-020
+  is defined inside the JsonAddressSpaceEntry struct body:
   hasTriggeredByInterrupt (:319). Declare it in the struct and define it after
   it in the same file; pre-existing inline definitions such as fill and addInfos
   stay as they are.
-- DI-11 [IMPLEMENTED] The project coding style requires full-line '/*****/'
-  chrome bars between namespace-level blocks, i.e. between class/struct
-  declarations and between each function implementation, never inside a
-  declaration or implementation body. Several of the files CR-020 touches lack
-  them, so add them also where they were missing before. Scope:
-  include/JsonExtensions.h, include/NumericAddressedRegisterCatalogue.h,
-  src/JsonMapFileParser.cc, src/NumericAddressedRegisterCatalogue.cc,
+- DI-11 [DONE] The project coding style requires full-line '/*****/' chrome bars
+  between namespace-level blocks, i.e. between class/struct declarations and
+  between each function implementation, never inside a declaration or
+  implementation body. Several of the files CR-020 touches lack them, so add
+  them also where they were missing before. Scope: include/JsonExtensions.h,
+  include/NumericAddressedRegisterCatalogue.h, src/JsonMapFileParser.cc,
+  src/NumericAddressedRegisterCatalogue.cc,
   src/async/GenericMuxedInterruptDistributor.cc,
   tests/executables_src/testGenericMuxedInterruptDistributor.cpp and
   tests/executables_src/testJsonMapFileParser.cpp. Not in doc/jmapFormat.dox or
   schemas/jmap.schema.json.
-- DI-12 [IMPLEMENTED] Revision request: hold the not yet resolved reference in
+- DI-12 [DONE] Revision request: hold the not yet resolved reference in
   NumericAddressedRegisterInfo::interruptId itself (std::optional of
   std::variant<std::vector<size_t>, std::string>) instead of a side map
   collected while parsing. Removes recordInterruptReference, the map parameter
   of addInfos and the per-derived-register recording.
-- DI-13 [IMPLEMENTED] Revision request: replace the per-mutation interrupt
-  bookkeeping with one public finalisation step called after the catalogue is
-  filled and all ids are resolved; addRegister and modifyRegister no longer
-  bookkeep. Both map file parsers call it once.
-- DI-14 [IMPLEMENTED] Revision request: an empty interrupt id is a map error
-  instead of a register silently left out of the interrupt indexes. A present
-  empty 'triggeredByInterrupt' array is rejected in fill; the constructor maps
-  an empty vector to std::nullopt, so no empty id reaches the field, and the
+- DI-13 [DONE] Revision request: replace the per-mutation interrupt bookkeeping
+  with one public finalisation step called after the catalogue is filled and all
+  ids are resolved; addRegister and modifyRegister no longer bookkeep. Both map
+  file parsers call it once.
+- DI-14 [DONE] Revision request: an empty interrupt id is a map error instead of
+  a register silently left out of the interrupt indexes. A present empty
+  'triggeredByInterrupt' array is rejected in fill; the constructor maps an
+  empty vector to std::nullopt, so no empty id reaches the field, and the
   finalisation asserts that none is present.
-- DI-15 [IMPLEMENTED] Specifications lost the two non-class change sections
-  during the design revision: `doc/jmapFormat.dox` (already changed: the
-  `jmap_interrupts` text at doc/jmapFormat.dox:301-313) and
-  `schemas/jmap.schema.json` (already changed: the string alternative and
-  `minLength`, schemas/jmap.schema.json:111-123, plus the `interruptHandler`
-  conditional restricted to `type: array` at :71-92). Both were present in the
-  first commit's Specifications and the CR still changes them, so the plan no
-  longer states them and later phases cannot check them.
-- DI-16 [IMPLEMENTED] DI-7 is only partly folded: the `<path>/ISR` escaping is
+- DI-15 [DONE] Specifications lost the two non-class change sections during the
+  design revision: `doc/jmapFormat.dox` (already changed: the `jmap_interrupts`
+  text at doc/jmapFormat.dox:301-313) and `schemas/jmap.schema.json` (already
+  changed: the string alternative and `minLength`,
+  schemas/jmap.schema.json:111-123, plus the `interruptHandler` conditional
+  restricted to `type: array` at :71-92). Both were present in the first
+  commit's Specifications and the CR still changes them, so the plan no longer
+  states them and later phases cannot check them.
+- DI-16 [DONE] DI-7 is only partly folded: the `<path>/ISR` escaping is
   described in the `async::GenericMuxedInterruptDistributor` section, but the
   required escaping of `<handler id>` and `<bit position>` in
   doc/jmapFormat.dox:332 has no place in the Specifications at all (no section
   for that file).
-- DI-17 [IMPLEMENTED] DI-11 is not folded: nothing in Requirements,
-  Specifications or Test plan states the full-line chrome-bar rule for the
-  touched files (include/JsonExtensions.h currently has none), although the item
-  is marked FOLDED-IN.
-- DI-18 [IMPLEMENTED] DI-14 is only partly folded and the document contradicts
-  itself: the `finaliseInterruptBookkeeping` bullet asserts only that 'no
-  register still holds a reference', while DI-14 asks the finalisation to assert
-  that no empty interrupt id is present; the 'Alternatives considered' bullet
-  then calls an empty-id guard 'dead code'. The finalisation assertion must
-  cover both a leftover reference and an absent/empty id.
-- DI-19 [IMPLEMENTED] The modified `resolveInterruptReference` is
-  under-specified: the bullet says it returns the id 'recursively' and loses the
-  reference-map parameter, but neither the new signature nor the cycle-detection
-  mechanism is stated. With the reference now stored in the field, a
-  self-reference or a two-register cycle recurses forever unless the already
-  visited target paths are tracked (the current code uses a chain vector,
+- DI-17 [DONE] DI-11 is not folded: nothing in Requirements, Specifications or
+  Test plan states the full-line chrome-bar rule for the touched files
+  (include/JsonExtensions.h currently has none), although the item is marked
+  FOLDED-IN.
+- DI-18 [DONE] DI-14 is only partly folded and the document contradicts itself:
+  the `finaliseInterruptBookkeeping` bullet asserts only that 'no register still
+  holds a reference', while DI-14 asks the finalisation to assert that no empty
+  interrupt id is present; the 'Alternatives considered' bullet then calls an
+  empty-id guard 'dead code'. The finalisation assertion must cover both a
+  leftover reference and an absent/empty id.
+- DI-19 [DONE] The modified `resolveInterruptReference` is under-specified: the
+  bullet says it returns the id 'recursively' and loses the reference-map
+  parameter, but neither the new signature nor the cycle-detection mechanism is
+  stated. With the reference now stored in the field, a self-reference or a
+  two-register cycle recurses forever unless the already visited target paths
+  are tracked (the current code uses a chain vector,
   src/JsonMapFileParser.cc:774-800). The signature and the visited-chain rule
   must be specified.
-- DI-20 [IMPLEMENTED] The `getQualifiedAsyncId` bullet prescribes
+- DI-20 [DONE] The `getQualifiedAsyncId` bullet prescribes
   `numericInterruptId().value_or({})`, which does not compile:
   `std::optional::value_or` takes a deduced forwarding reference
   (`template<class U> T value_or(U&&)`), so `{}` cannot be deduced. It must name
