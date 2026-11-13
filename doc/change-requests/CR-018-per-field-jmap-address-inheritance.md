@@ -322,8 +322,11 @@ Property inheritance must not depend on whether the entry has an `address`.
   (`schemas/jmap.schema.json:178`, `src/JsonMapFileParser.cc:356-359`). Giving
   `access` (`RO` for instance) switches the inheritance off, which is the way
   out for a child that must not become an interrupt register.
-- `numberOfElements`: never inherited; see B.
-- Word width (`bytesPerElement`, and with it the element pitch): open; see A.
+- `numberOfElements` and `bytesPerElement`: inherited from the nearest ancestor
+  register only where the entry omits its whole `address`; an entry with an
+  `address` of its own states them itself. These two are the sample geometry of
+  a register, not a property of the register's role, so they follow the address.
+  See the decisions at the end.
 - `representation`, `engineeringUnit`, `description`: always the entry's own.
 - Address fields: as specified above (`type`/`channel` per field, `offset` own
   and required, a wholly omitted `address` inherits the offset as well).
@@ -344,8 +347,8 @@ not set it itself; a condition stated here is exhaustive. Columns are master
 | `offset` | yes, if `address` omitted | yes, if `address` omitted |
 | `access` | yes, if `address` omitted | yes |
 | `triggeredByInterrupt` | yes, if `address` omitted | yes, unless `access` |
-| `numberOfElements` | yes, if `address` omitted | no (B) |
-| `bytesPerElement` | yes, if `address` omitted | open (A) |
+| `numberOfElements` | yes, if `address` omitted | yes, if `address` omitted |
+| `bytesPerElement` | yes, if `address` omitted | yes, if `address` omitted |
 | `pitch` | no | no |
 | `representation` | no | no |
 | `engineeringUnit` | no | no |
@@ -355,11 +358,12 @@ not set it itself; a condition stated here is exhaustive. Columns are master
 | `secondaryBufferAddress` | no | no |
 
 The current branch differs from master in the address fields (`type`, `channel`,
-`offset`, and the secondary address), which is this change request. The
-property rows are as in master, except `triggeredByInterrupt`, which the branch
-dropped: an address-less child of an interrupt register now inherits
-`Access::INTERRUPT` but keeps an empty `interruptId`; the proposal repairs
-that.
+`offset`, and the secondary address), which is this change request. Of the
+property rows, `access` changes (see below) and `triggeredByInterrupt` gets
+back what the branch dropped: an address-less child of an interrupt register
+today inherits `Access::INTERRUPT` but keeps an empty `interruptId`, and the
+proposal repairs that. All other property rows, `numberOfElements` and
+`bytesPerElement` included, stay as they are in master.
 
 Notes on the rows that change behaviour:
 
@@ -371,14 +375,15 @@ Notes on the rows that change behaviour:
 - `triggeredByInterrupt`: no fixture reaches this either; interrupt registers
   in the maps use `channels`, and their bit-field children are a separate,
   reduced struct (`ChannelChild`, `:275-281`) that never enters `addInfos`.
-- `bytesPerElement`, `numberOfElements`: see the impact below and A/B. They are
+- `bytesPerElement`, `numberOfElements`: no row changes behaviour here. They are
   different things: `bytesPerElement` is the size of one sample (it fixes the
   raw data type and, without `pitch`, the stride between samples),
   `numberOfElements` is how many samples the register holds. A bit field is cut
   out of one sample of its ancestor, so both decide its geometry: the sample
   size bounds `bitShift + width`, the count says how many samples it spans.
-  Both members exist on master as well (`:117-118`); the question is only
-  whether an omitted one is taken from the ancestor.
+  Both members exist on master as well (`:117-118`). Because they describe the
+  sample and not the register's role, they are inherited exactly where master
+  inherited them: only by an entry that omits its whole `address`.
 - `offset`: master accepted an `address` without `offset` and used a
   meaningless address; requiring the `offset` is already part of this change
   request.
@@ -401,34 +406,32 @@ In `tests/*.jmap` these are the eleven bit-field `children`:
 
 `numberOfElements`: only `ARRAY_REG` sets it (3) for a bit-field parent, and
 `testNumericAddressedBackendUnified.cpp:1084-1123` reads both bit ranges as
-three-element arrays. Not inheriting it makes them one-element registers unless
-the fixture states `numberOfElements: 3` (B).
+three-element arrays. The two children omit their address and inherit the
+count, so nothing changes.
 
 `bytesPerElement`: only `APP/LARGE_STATUS` sets it (8) for a bit-field parent,
 and `testJsonMapFileParser.cpp:236,244,254,261,271,278` asserts its bit fields at
-`elementPitchBits == 64` and `rawType == int64`. Not inheriting it drops them
-to 32 bits unless the fixture states `bytesPerElement: 8` (A).
+`elementPitchBits == 64` and `rawType == int64`. The three children omit their
+address and inherit the sample size, so nothing changes.
 
-The documented example (`doc/jmapFormat.dox:242-261`) claims an identical
-outcome to the example above it, where `APP/STATUS` has one element while
-`APP` has `numberOfElements: 2`. Not inheriting the element count makes that
-statement true.
+No fixture has to be touched. The documented inheritance example
+(`doc/jmapFormat.dox:242-261`) does need attention: `APP` carries
+`numberOfElements: 2` and its `STATUS` child omits the address, so `STATUS`
+holds two elements even though the text claims an identical outcome to the
+example above, where `STATUS` has one element. The example and that claim are
+to be corrected when the format documentation is updated.
 
-### Open decisions
+### Decisions taken
 
-A and B are the same question: does a bit-field child inherit the geometry of
-the sample it is cut from, or does it state that geometry itself?
+Settled on 2026-11-13, so the section records no open points.
 
-- A (`bytesPerElement`): A1 state `bytesPerElement: 8` on the three
-  `LARGE_STATUS` bit fields, one rule for every entry, no special case. A2 a
-  bit field keeps the ancestor's `bytesPerElement`, everything else does not
-  inherit it.
-- B (element count): B1 state `numberOfElements: 3` on the two `ARRAY_REG` bit
-  fields, one rule for every entry. B2 a bit field keeps the ancestor's element
-  count, everything else does not inherit it.
-
-Both A1 and B1 change fixtures that the backend test binaries share, and the
-example in `doc/jmapFormat.dox` should then state the values explicitly as
-well. With A2/B2 the `AncestorRegister` state keeps a purpose (the sample
-geometry of a bit field), with A1/B1 it reduces to the inherited `access` and
-`triggeredByInterrupt` alone.
+- Sample geometry: `numberOfElements` and `bytesPerElement` are inherited if
+  and only if the entry omits its whole `address`. The earlier idea of
+  stating the values on every bit-field child is dropped.
+- Consequences: `AncestorRegister` keeps its purpose, since it carries exactly
+  the sample geometry a bit-field child inherits. No fixture and no test
+  changes. The example in `doc/jmapFormat.dox` is corrected separately.
+- Remaining simplification: carry the inherited `access` and
+  `triggeredByInterrupt` in the same ancestor state, so `fill` gets one
+  ancestor argument instead of the resolved address plus the geometry, and the
+  rule is readable in one place.
