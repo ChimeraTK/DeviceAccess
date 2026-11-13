@@ -7,7 +7,7 @@ implicitly.
 
 Depends on: CR-019
 
-Status: IMPLEMENTED (from TESTS REVIEWED)
+Status: READY TO TEST (from TESTS REVIEWED)
 
 ## Requirements
 
@@ -341,8 +341,9 @@ with a real distributor.
 - `tests/executables_src/testMapFileParser.cpp` (modified)
 - The `*.mapp` parser still yields every interrupt register in
 `getListOfInterrupts()` and through its canonical interrupt path.
-- Its `interruptId` assertion (line 26) likewise reads
-`numericInterruptId()`.
+- Its `numericInterruptId()` uses in `printRegInfo` and in the canonical
+interrupt path assertions are unchanged: they cover a catalogue whose ids
+are all numeric.
 - Its catalogue comparison is unchanged: a register without interrupt
 still compares equal to one constructed without an id.
 - Covers the finalisation call in `TraditionalMapFileParser::parse`,

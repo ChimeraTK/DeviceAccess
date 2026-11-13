@@ -13,6 +13,7 @@ using namespace boost::unit_test_framework;
 
 #include <set>
 #include <sstream>
+#include <variant>
 #include <vector>
 
 using namespace ChimeraTK;
@@ -545,9 +546,12 @@ BOOST_AUTO_TEST_CASE(testInterruptBookkeepingFinalised) {
   BOOST_TEST((regcat.getListOfInterrupts() == expectedInterrupts));
 
   // A hierarchical id resolves through each of its canonical interrupt paths.
-  BOOST_TEST((regcat.getBackendRegister("!22").numericInterruptId() == std::vector<size_t>{22}));
-  BOOST_TEST((regcat.getBackendRegister("!22:3").numericInterruptId() == std::vector<size_t>{22, 3}));
-  BOOST_TEST((regcat.getBackendRegister("!22:3:4").numericInterruptId() == std::vector<size_t>{22, 3, 4}));
+  BOOST_TEST((regcat.getBackendRegister("!22").interruptId ==
+      std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{22})));
+  BOOST_TEST((regcat.getBackendRegister("!22:3").interruptId ==
+      std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{22, 3})));
+  BOOST_TEST((regcat.getBackendRegister("!22:3:4").interruptId ==
+      std::variant<std::vector<size_t>, std::string>(std::vector<size_t>{22, 3, 4})));
   BOOST_CHECK(regcat.hasRegister("!22:3:4"));
 }
 
