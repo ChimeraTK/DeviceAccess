@@ -20,8 +20,9 @@ Aspect: per-field inheritance of a partial `address`.
 - With no ancestor address, an omitted `type`/`channel` defaults to `IO`/`0`.
 - A wholly omitted `address` inherits the ancestor's `offset` as well.
 - A `secondaryBufferAddress` follows the same rule for its `type`/`channel`; its
-  `offset` is its own and required, so a present `secondaryBufferAddress`
-  without `offset` is rejected like a primary `address`.
+  `offset` is its own and required, so a `doubleBuffering` object without a
+  `secondaryBufferAddress` or with one without `offset` is rejected like a
+  primary `address`.
 - A secondary `type`/`channel` resolving to a BAR other than the primary one is
   rejected.
 
@@ -95,7 +96,8 @@ Aspect: documentation and schema.
   - `std::optional<SelectedBy> selectedBy` and `std::string
     selectedByDeclaredBy`, the effective selector and the dotted path of the
     entry that declared it, which the error message names.
-- `Derived derived` (new member), written once per entry by `derive()`.
+- `std::optional<Derived> derived` (new member), written once per entry by
+  `derive()`.
   - It holds the inheritable values only: a child reads `parent->derived` and
     nothing else of its parent.
   - The entry stays the image of the JSON, `derived` is its resolved view.
@@ -104,19 +106,28 @@ Aspect: documentation and schema.
   - Writes `derived`: the only place holding the inheritance rules of the
     register properties. `parent` is null for the entries of the top-level
     `addressSpace`.
-  - `address`: `resolveAddress(pathName, parent->derived.address)`.
+  - `address`: `resolveAddress(pathName, parent != nullptr ?
+    parent->derived.address : std::nullopt)`.
+  - With a null `parent` the entry starts from the defaults: `READ_WRITE`
+    access, no `interruptId`, `sampleWidthBytes` 4 or its own
+    `bytesPerElement`, `elementPitchBits` `sampleWidthBytes * 8`, `nElements`
+    its own `numberOfElements` and no `selectedBy`.
   - A module takes `address`, `access`, `interruptId`, `sampleWidthBytes`,
     `elementPitchBits` and `nElements` from `parent->derived` unchanged; its own
     `access`, `triggeredByInterrupt`, `numberOfElements` and `bytesPerElement`
     are ignored, since a module is no register.
-  - `access`: the entry's own value, else the parent's.
+  - `access`: the entry's own value; else `INTERRUPT` where the entry gives its
+    own `triggeredByInterrupt`; else the parent's.
   - `interruptId`: the entry's own `triggeredByInterrupt`, else the parent's
     together with the `access` it implies; an own `access` suppresses that
     inheritance. An own `access` next to an own `triggeredByInterrupt` stays
     rejected (`:356-359`).
   - `sampleWidthBytes`, `elementPitchBits` and `nElements`: the entry's own
     values where it gives an `address` or `channels`, else the parent's. An own
-    `bytesPerElement` overrides the inherited sample width.
+    `bytesPerElement` overrides the inherited sample width. `sampleWidthBytes`
+    is the entry's `bytesPerElement`, 4 where unset; a non-`channels` child of
+    a 2D register inherits the ancestor's `elementPitchBits / 8` as its sample
+    width, as today.
   - `selectedBy`: the entry's own value, else the parent's, for a module as
     well; `selectedByDeclaredBy` is `pathName` where the entry declares it, else
     the parent's.
@@ -130,7 +141,7 @@ Aspect: documentation and schema.
 - `void fill(NumericAddressedRegisterInfo& info, const RegisterPath& pathName)
   const` (modified): writes `derived` and the non-inheritable members into the
   register info and holds no inheritance logic.
-  - Asserts that `derive()` ran on the entry.
+  - Asserts that `derived` has a value, i.e. that `derive()` ran on the entry.
   - Loses the `resolved` and `ancestor` arguments and both `ownsAddress`
     branches.
   - Takes over `applyRegisterSelectedBy` (`:444`), which disappears.
@@ -204,7 +215,9 @@ Aspect: documentation and schema.
 - `address`: `offset` required, without the "and/or" wording; an omitted `type`
   inherits `type` and `channel`, an own `type` drops the inherited `channel`.
 - `secondaryBufferAddress`: states the same inheritance; the `$ref` to
-  `address` keeps `offset` required.
+  `address` keeps `offset` required. `doubleBuffering` lists
+  `secondaryBufferAddress` as a required member, so the schema matches the
+  rejection.
 
 ### Alternatives considered
 
@@ -287,15 +300,19 @@ more; no case asserts an error message.
       `address`; the existing bit-field `children` sit below such channels, so
       an address-less register passing its address to a channel and on to a
       bit-field child is untested.
-  - `TestAddressInheritanceThroughModule`: an address-bearing entry with a
-    module child holding an address-less child that carries a `representation`;
-    the address reaches the child through the module and the module itself
-    yields no register.
-    - Requirement: register or module, and the inheritance chain.
+  - `TestAddressInheritanceThroughModule`: an address-bearing entry carrying
+    `access: RO` with a module child holding an address-less child that carries
+    a `representation`; the address reaches the child through the module, the
+    child is `READ_ONLY` with the parent's `numberOfElements`, and the module
+    itself yields no register.
+    - Requirement: register or module, and the inheritance chain; also the
+      property pass-through of the module branch.
     - Necessary: the existing maps have modules above a register-bearing entry
       (`APP`, `MY_INTC`) and a module without any address (`MY_INTC.SUB0`), but
       no module between an address-bearing entry and an address-less descendant.
-      One module level suffices, the pass-through is the recursion itself.
+      One module level suffices, the pass-through is the recursion itself. This
+      is the only case reaching the module branch's property pass-through of
+      `derive()`.
   - `TestAddressWithoutOffsetRejected`: a present `address` without `offset` is
     rejected.
     - Requirement: per-field inheritance of a partial `address` (`offset` is
