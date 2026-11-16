@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include <chrono>
+#include <cstdio>
 #include <fstream>
 #include <string>
 #include <thread>

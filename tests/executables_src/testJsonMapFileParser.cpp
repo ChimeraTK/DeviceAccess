@@ -17,6 +17,7 @@ using namespace ChimeraTK;
 
 #include <unistd.h>
 
+#include <cstdio>
 #include <fstream>
 #include <string>
 #include <variant>
@@ -2034,10 +2035,10 @@ BOOST_AUTO_TEST_CASE(TestInterruptReferenceChannelSlice) {
 BOOST_AUTO_TEST_CASE(TestInterruptReferenceInheritedAddress) {
   std::ifstream base("simpleJsonFile.jmap");
   nlohmann::json map = nlohmann::json::parse(base);
-  // A data register referring by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]), with a child
+  // A 2D data register referring by name to the void interrupt register BSP/VOID_INTERRUPT_0 (id [0]), with a child
   // INHERITED that declares no address, so it inherits the parent's address and interrupt reference.
   map["addressSpace"]["BSP"]["children"]["REFERRING"] = {{"triggeredByInterrupt", "BSP.VOID_INTERRUPT_0"},
-      {"numberOfElements", 1}, {"bytesPerElement", 4}, {"address", {{"offset", 16}}},
+      {"numberOfElements", 4}, {"pitch", 8}, {"address", {{"type", "DMA"}, {"offset", "0x2000"}}},
       {"representation", {{"type", "fixedPoint"}, {"width", 32}}},
       {"children", {{"INHERITED", {{"representation", {{"type", "fixedPoint"}, {"width", 32}}}}}}}};
 

@@ -9,6 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -93,12 +94,34 @@ BOOST_AUTO_TEST_CASE(TestEmptyInterruptIdVectorConstructsRegisterWithoutInterrup
   BOOST_TEST(!channelRegister.interruptId.has_value());
   BOOST_TEST(!channelRegister.numericInterruptId().has_value());
 
+  NumericAddressedRegisterInfo channelRegisterWithoutId("CHANNEL_REGISTER", 0, 0, 4, 64,
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")}},
+      NumericAddressedRegisterInfo::Access::READ_WRITE, std::nullopt, std::nullopt);
+  BOOST_TEST((channelRegister == channelRegisterWithoutId));
+
   // The 1D/2D-agnostic constructor.
   NumericAddressedRegisterInfo scalarRegister("SCALAR_REGISTER", 1, 0x0, 4, 0, 32, 0, true,
       NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT,
       std::vector<size_t>{});
   BOOST_TEST(!scalarRegister.interruptId.has_value());
   BOOST_TEST(!scalarRegister.numericInterruptId().has_value());
+
+  NumericAddressedRegisterInfo scalarRegisterWithoutId("SCALAR_REGISTER", 1, 0x0, 4, 0, 32, 0, true,
+      NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT);
+  BOOST_TEST((scalarRegister == scalarRegisterWithoutId));
+
+  // A numeric id passes both constructors unchanged, so the mapping above only affects the empty vector.
+  const std::vector<size_t> numericId{3};
+  NumericAddressedRegisterInfo channelRegisterWithId("CHANNEL_REGISTER", 0, 0, 4, 64,
+      {{0, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")},
+          {32, NumericAddressedRegisterInfo::Type::FIXED_POINT, 32, 0, true, ChimeraTK::DataType("int32")}},
+      NumericAddressedRegisterInfo::Access::READ_WRITE, numericId);
+  BOOST_TEST((channelRegisterWithId.numericInterruptId() == numericId));
+
+  NumericAddressedRegisterInfo scalarRegisterWithId("SCALAR_REGISTER", 1, 0x0, 4, 0, 32, 0, true,
+      NumericAddressedRegisterInfo::Access::READ_WRITE, NumericAddressedRegisterInfo::Type::FIXED_POINT, numericId);
+  BOOST_TEST((scalarRegisterWithId.numericInterruptId() == numericId));
 }
 
 /**********************************************************************************************************************/
