@@ -135,9 +135,9 @@ Aspect: the tools that write JMAP files.
 ### JsonAddressSpaceEntry (modified) in src/JsonMapFileParser.cc (modified)
 
 - Data members become private. All inheritance is resolved by `const` getters that
-  consult the parent entry; only the linking pass is non-`const`. Each rule is
-  stated in one getter only, and no resolved value is threaded down the parsing
-  recursion.
+  consult the parent entry. The only non-`const` step is the descent assigning
+  each child its parent link. Each rule is stated in one getter only, and no
+  resolved value is threaded down the parsing recursion.
   - `NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT` stays inside the class body, so
     the private members deserialise without accessors or a friend declaration.
   - Member names stay the JSON keys. The getters carry an `effective` prefix, since
@@ -148,47 +148,29 @@ Aspect: the tools that write JMAP files.
     deleted. Its value collided with
     `NumericAddressedRegisterInfo::Access::INTERRUPT`; with the sentinel gone, the
     getter expresses the interrupt case with the catalogue's enum.
-  - `parentLink` and `fullPath` are not in the macro's member list, so they are
+  - `parent` and `fullPath` are not in the macro's member list, so they are
     neither read from nor written to JSON.
 - `size_t Address::bar() const` (new): `channel + (type == DMA ? 13 : 0)`, the one
   place for the BAR formula, which `Address::fill` and the secondary same-BAR
   check both use. It reads `type`/`channel` as values, so it
   asserts that `resolve` ran, like `Address::fill`.
-- `struct ParentLink` (new): `const JsonAddressSpaceEntry* parent`, null for a
-  top-level entry, and `bool linked`.
+- `const JsonAddressSpaceEntry* parent` (new): the direct ancestor entry, null at
+  the top level.
+  - The descent assigns it on every child where it recurses, so a getter always
+    finds a complete chain. Neither a linking pass nor a "linked" flag is needed.
   - The pointer refers into the tree of entries. A parent owns its sub-entries
     through `std::map` nodes, so it outlives its child, and no pointer leaves the
     tree: `addressSpace` is a local of the parse function and only copies of
     `NumericAddressedRegisterInfo` leave it.
-  - The entry's move operations assert `!other.linked` through `ParentLink`'s move
-    operations, so a move after linking trips the assertion instead of leaving a
-    second object that claims a parent inside the tree. Parsing moves an entry into
-    its map node before linking, and `std::map` moves nodes but never elements.
-  - The assertions are `assert`s rather than exceptions because neither state is
-    reachable from user input: `parse` runs the whole linking pass before it
-    creates the first register, and no entry leaves the parser, so a getter
-    reached before the pass is a bug inside the parser. `parse` is the only path
-    from a map file to these entries.
-  - The entry stays copyable, because `NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT`
-    expands to `j.value(key, default.x)`, which copies the default `children` map
-    and with it every entry, so deleted copy operations would not compile. All
-    copies happen while parsing, before the linking pass, so no linked entry is
-    copied; the copy operations assert that.
-- `void linkTo(const std::string& name, const JsonAddressSpaceEntry* parent)` (new): the
-  single linking pass, run once per top-level entry after parsing.
-  - Rejects an empty `name` with `logic_error`, taking over the check of the
-    current `addInfos`.
-  - Sets `parentLink.parent`, `parentLink.linked` and `fullPath`, then recurses
-    into the sub-entries.
-  - `fullPath` becomes `parent->path() / name` with the dotted alt separator, and
-    `/` + `name` at the top level, as today.
-  - Asserts that the entry is not linked yet, so a repeated pass cannot rebuild the
-    links silently.
-- `const RegisterPath& path() const` (new): `fullPath`, the fully qualified path of
-  the entry. The getters assert `parentLink.linked`, so a resolution before the
-  pass asserts instead of reading an empty path.
-  - It replaces the `name` and `parentName` arguments of `fill` and `addInfos`, and
-    is what the error messages and `info.pathName` use.
+  - The copies that `NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT` makes exist
+    because `j.value(key, default.x)` copies the default `children` map and with
+    it every entry. All of them happen while parsing, before the descent assigns
+    a pointer, so no copied entry carries a parent.
+- `const RegisterPath& path() const` (new): the `fullPath` member, the fully
+  qualified path of the entry. `addInfos` sets it from its `name` and `parentName`
+  arguments before it does anything else, with the dotted alt separator, as today.
+  - It replaces the `name` and `parentName` arguments of `fill`, and is what the
+    error messages and `info.pathName` use.
   - It needs no second lookup to name the entry that declared the effective
     selector.
 - `bool isRegister() const` (new): an entry for which an address resolves, own
@@ -282,11 +264,14 @@ Aspect: the tools that write JMAP files.
     descriptor and leaves `bar`/`address` empty. It keeps requiring an own
     `triggeredByInterrupt`, and `addInfos` rejects a `doubleBuffering`, `channels`,
     an own `address` or an own geometry on it.
-- `void addInfos(NumericAddressedRegisterCatalogue& catalogue) const` (modified):
+- `void addInfos(NumericAddressedRegisterCatalogue& catalogue)` (modified):
   rejects an own `address` without `offset`, creates a register for `isRegister()`
   entries through `fill`, and recurses into the sub-entries.
-  - The parent entry argument is gone, so no state is passed down and the pass is
-    `const`.
+  - It is non-`const` only to assign `child.parent = this` before it recurses, so
+    `parse` binds the entries by `auto&`.
+  - The `addressSetByParent`, `inheritedSelectedBy` and
+    `inheritedSelectedBySource` arguments are gone: the getters reach the parent
+    through the link.
   - It rejects every non-void entry for which `isRegister()` holds and
     `effectiveAddress()` is empty, with `Address not set but representation or
     channels given`. This covers a `representation` and `channels`, so the rule
@@ -466,11 +451,10 @@ Aspect: the tools that write JMAP files.
 
 - Rejects exactly the maps that the compatibility aspect of the requirements
   lists, without a format version bump: its version check stays untouched, while
-  `addInfos`, `fill` and `linkTo` own the individual rejections specified above.
-- Runs `linkTo` for every top-level entry after parsing and before `addInfos`,
-  which is also where `addInfos` is called with its new signature. The loop binds
-  its entries by `auto&` instead of `const auto&`, since `linkTo` writes into the
-  entry.
+  `addInfos` and `fill` own the individual rejections specified above.
+- Calls `addInfos` for every top-level entry straight after parsing. The loop
+  binds its entries by `auto&` instead of `const auto&`, since `addInfos` assigns
+  the parent link of the sub-entries.
 
 ### chimeratk-device-to-jmap (modified) in tools/src/chimeratk-device-to-jmap.cc (modified)
 
@@ -506,13 +490,21 @@ Aspect: the tools that write JMAP files.
     catalogue, which only works while the direct parent is a register.
   - `fill` had to carry an `addressSetByParent` flag next to the resolved address
     and the ancestor state.
+- Threading the resolved values forward through the recursion, in a struct of
+  address, access, interrupt id, geometry and selector: rejected, it is a second
+  data structure that duplicates what the parent already holds and needs a field
+  for every inherited value. Recursive resolution keeps each rule in one getter.
+- A linking pass that stores the parent pointer before `addInfos`, with a
+  `linked` flag and assertions on move and copy: rejected, the descent assigns
+  the pointer itself, so no state the assertions guard can arise.
 - Holding the parent as `std::shared_ptr` with `enable_shared_from_this`: rejected,
   the child-to-parent direction closes a cycle and needs a `weak_ptr`, each getter
   would lock it, the children container becomes a map of pointers, and every entry
   needs an allocation - all for a tree that lives inside one function call.
-- Making the entries non-movable as well, through `std::unique_ptr` sub-entries or
-  a hand-written deserialiser for the children map: rejected, the move assertion
-  covers the case that matters, and both alternatives cost a custom parsing path.
+- Making the entries non-movable through `std::unique_ptr` sub-entries or a
+  hand-written deserialiser for the children map: rejected, parsing moves each
+  entry into its `std::map` node, and both alternatives cost a custom parsing
+  path without removing the need for the parent pointer.
 - Getters that throw instead of asserting: rejected, a getter has no context to
   name the register in the message, so the rejection lives in `addInfos` and
   `fill`, which know `path()`.
@@ -664,12 +656,6 @@ nothing more; no case asserts an error message.
     - Necessary: `TestAddressInheritanceDocumentedExample` pins the positive half
       of the rule and its `CONTROL` child the own-`address` half; this case adds
       the `channels` half, which no other case reaches.
-  - `TestEmptyEntryNameRejected`: an entry whose key in `children` or
-    `addressSpace` is the empty string is rejected.
-    - Requirement: register or module, and the inheritance chain (the linking
-      pass names every entry).
-    - Necessary: the check moves from `addInfos` into `linkTo`, which
-      sees the map key, and no existing case feeds an empty key.
   - `TestAddressWithoutOffsetRejected`: a present `address` without `offset` is
     rejected.
     - Requirement: per-field inheritance of a partial `address` (`offset` is
