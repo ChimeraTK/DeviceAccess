@@ -8,127 +8,88 @@ Status: IN PROGRESS
 
 ## Requirements
 
-Aspect: per-field inheritance of a partial `address`.
+Aspect: inheritance.
 
-- A present `address` gives its own `offset`, as the schema's `address`
-  definition requires; only `type` and `channel` may be omitted.
-- An omitted `type` inherits the `type` of the nearest ancestor entry that has an
-  address, and with it that ancestor's `channel`.
-- An own `channel` wins over the inherited one.
-- An own `type` drops the inherited `channel`, so an omitted `channel` is then
-  `0`. A channel means something different per `type`, so it is not carried
-  across a type change.
-- Where no ancestor has an address, an omitted `type` and `channel` default to
-  `IO` and `0`.
-- A wholly omitted `address` also inherits the ancestor's `offset`.
-- A `secondaryBufferAddress` inherits an omitted `type` and `channel` from the
-  primary address resolved for the register.
-- The `offset` of a `secondaryBufferAddress` is its own and required, so a
-  `doubleBuffering` object whose `secondaryBufferAddress` omits it, or which has
-  no `secondaryBufferAddress` at all, is rejected.
-- A secondary `type`/`channel` that resolves to a BAR other than the primary one
+- Resolution is per JSON field: an entry inherits each value it does not give
+  itself from the nearest ancestor that gives it.
+- The search stops at a void-typed entry: it takes nothing from its ancestors,
+  so its children are in the position of top-level entries.
+- `address`: an omitted `type` takes the nearest ancestor address's `type` and
+  with it that ancestor's `channel`. An own `channel` wins. An own `type` drops
+  the inherited `channel`, so an omitted `channel` is then `0`, since a channel
+  means something different per `type`.
+- `address`: `offset` is never inherited and a present `address` gives its own; a
+  wholly omitted `address` inherits the ancestor's `offset` as well.
+- `address`: where no ancestor has an address, `type` and `channel` are `IO` and
+  `0`.
+- `secondaryBufferAddress`: an omitted `type`/`channel` inherits from the primary
+  address resolved for the register. Its `offset` is its own and required, so a
+  `doubleBuffering` without `secondaryBufferAddress`, or with an offset-less one,
   is rejected.
+- `secondaryBufferAddress`: a `type`/`channel` resolving to a BAR other than the
+  primary one is rejected.
+- `access`: inherited from the nearest ancestor register where the entry gives
+  neither `access` nor `triggeredByInterrupt`, with an own `address` or without.
+- `triggeredByInterrupt`: inherited together with the `access` it implies,
+  unless the entry gives an `access` of its own. Giving `access` is how a child
+  stays a plain register.
+- `numberOfElements` and `bytesPerElement`: inherited only where the entry omits
+  its whole `address` and gives no `channels`, since they describe the sample the
+  entry is cut from. An own value of either overrides the inherited one.
+- An own `bytesPerElement` changes the sample width only; the stride stays the
+  inherited one. Below a 2D ancestor the sample width is that ancestor's `pitch`.
+- `selectedBy`: inherited from the nearest ancestor entry, module or register. A
+  register-level `selectedBy` next to `channels` applies to the register's
+  channels.
+- `representation`, `engineeringUnit` and `description` are never inherited.
 
-Aspect: register or module, and the inheritance chain.
+Aspect: registers, modules and valid maps.
 
 - An entry with an address in its ancestry, own or inherited, is a register.
 - An entry that gives a `representation` or `channels` is a register as well,
   which is how a void-typed entry is a register without an own `address`.
-- An entry with neither is a module.
-- A module groups nested entries and carries no data of its own. It may give
-  `children`, `selectedBy`, `engineeringUnit` and `description`.
-- A module that gives `access`, `triggeredByInterrupt`, `numberOfElements`,
-  `bytesPerElement`, `pitch` or `doubleBuffering` is rejected.
+- An entry with neither is a module. It may give `children`, `selectedBy`,
+  `engineeringUnit` and `description`, while `access`, `triggeredByInterrupt`,
+  `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering` on it are
+  rejected.
 - A register without a `representation` and without `channels` is a fixed-point
   word of its effective sample width at its resolved address. A grouping entry
   below an address is such a register, so it parses next to its children.
 - An entry with `channels` is a register on the address that resolves for it,
   with or without a non-void `representation` and with or without an own
-  `address`.
+  `address`. Its channels take that address, never carry one of their own, and
+  the bit-field `children` of a channel work off the channel's word.
 - An entry with a non-void `representation` or with `channels` is rejected where
-  it has no address on the way up to the nearest void entry or the top.
-- A void-typed entry requires no own `address`.
-- A void-typed entry carries no data word. A `doubleBuffering`, `channels`, an
-  own `numberOfElements`, `bytesPerElement` or `pitch` on it is rejected, and an
-  own `address` as well.
-- A void-typed entry takes no address from its ancestors either, so the address
-  chain below it starts afresh and its children are in the position of top-level
-  entries. This barrier concerns the address only: the `access` and
-  `triggeredByInterrupt` that a void-typed entry gives reach its descendants like
-  any other register's.
-- A child inherits from the nearest ancestor that has an address, and the search
-  stops at a void entry.
-- Every entry in between inherits that same address too, since an entry below an
-  address is a register.
-- The channel entries below `channels` never carry an address of their own and
-  take the resolved address of their direct 2D parent, which is always a
-  register. The nested bit-field `children` of a channel do the same
-  (`schemas/jmap.schema.json`, the `channels` and `channelChild` definitions).
+  no address resolves on the way up to the nearest void entry or the top.
+- A void-typed entry carries no data word: an own `address`, `doubleBuffering`,
+  `channels`, `numberOfElements`, `bytesPerElement` or `pitch` on it is rejected.
+  It inherits neither `access` nor `triggeredByInterrupt` and gives its own
+  `triggeredByInterrupt`, which reaches its descendants like any other
+  register's.
+- `access` and `triggeredByInterrupt` are mutually exclusive on one entry.
+- `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`, since an
+  absent key states "not set" and `0` does not.
+- A `channels` entry gives its `pitch`, `pitch` without `channels` is rejected,
+  and every channel gives its `offset`, since `0` is a valid offset and cannot
+  stand for "not set".
+- The bit-field `children` of a channel must not give a `bytesPerElement`, since
+  they take the channel's as their word context.
 
-Aspect: inheritance of the register properties.
+Aspect: documentation, format version and tools.
 
-- `access` is inherited from the nearest ancestor register wherever the entry
-  gives no `access` and no `triggeredByInterrupt` of its own, with an `address`
-  or without.
-- `triggeredByInterrupt` is inherited together with the `access` it implies,
-  unless the entry gives an `access` of its own. Giving `access` is the way to
-  keep a child a plain register.
-- `access` and `triggeredByInterrupt` remain mutually exclusive on a single entry
-  (`schemas/jmap.schema.json`, the `access` and `triggeredByInterrupt` definitions).
-- A void-typed entry inherits neither `access` nor `triggeredByInterrupt`; it
-  takes its own `triggeredByInterrupt`, which it must give.
-- The geometry is inherited only where the entry omits its whole `address` and
-  gives no `channels`, since it describes the sample the entry is cut from.
-- An own `numberOfElements` or `bytesPerElement` overrides the inherited value.
-- An own `bytesPerElement` changes the sample width only; the element pitch the
-  entry is strided by stays the inherited one.
-- Below a 2D ancestor the sample width is that ancestor's `pitch`, since a 2D
-  register describes its sample through `pitch` and not through
-  `bytesPerElement`.
-- The bit-field `children` of a channel take the channel's `bytesPerElement` as
-  their word context (`doc/jmapFormat.dox`, section `jmap_bitfields`), so they
-  must not give one of their own.
-- A geometry value of `0` is rejected: `numberOfElements`, `bytesPerElement` and
-  `pitch` are optional members, so an absent key states "not set" and `0` does
-  not.
-- Every entry of `channels` gives its `offset`; one that omits it is rejected,
-  since `0` is a valid offset and cannot stand for "not set".
-- A `channels` entry must give `pitch`.
-- `pitch` is invalid without `channels`.
-- `selectedBy` is inherited from the nearest ancestor entry, module or register.
-- A register-level `selectedBy` next to `channels` applies to the register's
-  channels.
-- `representation`, `engineeringUnit` and `description` are never inherited.
-
-Aspect: documentation and schema.
-
-- `doc/jmapFormat.dox` and `schemas/jmap.schema.json` must state every rule above
-  that they still lack.
-
-Aspect: compatibility of existing maps.
-
-- The map format version stays `1.0`: the stricter grammar and the changed
-  inheritance of `access` described above apply to every file that declares it.
-- A map that parses today stops parsing where it gives an `address` without
-  `offset`, a `doubleBuffering` without a `secondaryBufferAddress` or with an
-  offset-less one, a `representation`, `channels` or a data member on a module, a
-  `doubleBuffering`, `channels`, an own `address` or an own geometry on a
-  void-typed entry, a `pitch` without `channels`, a geometry value of `0`, or a
-  channel without `offset`.
-- A register that gives its own `address` and no `access` below an ancestor whose
-  access is not `READ_WRITE` keeps parsing and resolves differently: it takes the
+- `doc/jmapFormat.dox` and `schemas/jmap.schema.json` state the rules above.
+- The format version stays `1.0`: the rules apply to every file that declares it,
+  and a map that violates them stops parsing.
+- A register with an own `address` and no `access` below an ancestor whose access
+  is not `READ_WRITE` keeps parsing and resolves differently: it takes the
   inherited access and interrupt instead of `READ_WRITE`.
-
-Aspect: the tools that write JMAP files.
-
 - `chimeratk-device-to-jmap` and `chimeratk-map-to-jmap` emit maps that satisfy
-  the rules above: every `address` carries its `offset`, no geometry value is
-  `0`, `type` is always explicit, and `access` is explicit except on an interrupt
-  register, which carries `triggeredByInterrupt` instead.
+  the rules above: an `offset` in every `address`, no geometry value of `0`, an
+  explicit `type`, and `access` explicit except on an interrupt register, which
+  carries `triggeredByInterrupt` instead.
 - A register whose size the source does not determine is left out by
   `chimeratk-device-to-jmap` and written without `bytesPerElement` by
-  `chimeratk-map-to-jmap`, so a converted map keeps the meaning it has today; in
-  both cases the tool reports the register it could not size on stderr.
+  `chimeratk-map-to-jmap`; both report it on stderr.
 
 ## Specifications
 
@@ -449,9 +410,9 @@ Aspect: the tools that write JMAP files.
 
 ### JsonMapFileParser::parse (modified) in src/JsonMapFileParser.cc (modified)
 
-- Rejects exactly the maps that the compatibility aspect of the requirements
-  lists, without a format version bump: its version check stays untouched, while
-  `addInfos` and `fill` own the individual rejections specified above.
+- Rejects the maps that the validity rules of the requirements exclude, without
+  a format version bump: its version check stays untouched, while `addInfos` and
+  `fill` own the individual rejections specified above.
 - Calls `addInfos` for every top-level entry straight after parsing. The loop
   binds its entries by `auto&` instead of `const auto&`, since `addInfos` assigns
   the parent link of the sub-entries.
@@ -547,7 +508,7 @@ nothing more; no case asserts an error message.
     with one child carrying only a `representation` and one child
     whose `address` gives only `offset`; both children land on the parent's
     channel.
-    - Requirement: per-field inheritance of a partial `address`; the example's
+    - Requirement: inheritance (`address`); the example's
       address-less child also inherits `numberOfElements: 2` of the parent,
       which is asserted here.
     - Necessary: the example's root is `APP`, which the fixture already has with
@@ -563,16 +524,14 @@ nothing more; no case asserts an error message.
     and the required `offset` (its `channel` omitted) below a `DMA` address on
     channel 5; the child's own `type` applies and its omitted `channel` falls
     back to `0`.
-    - Requirement: per-field inheritance of a partial `address` (a `type` of its
-      own drops the inherited `channel`).
+    - Requirement: inheritance (`address`: an own `type` drops the inherited `channel`).
     - Necessary: the example above covers the inherited `type`/`channel` pair
       only; this is the only case with a `type` of the entry's own.
   - `TestAddressInheritanceOwnChannelKept`: a child `address` giving `channel`
     and the required `offset` (its `type` omitted) below a `DMA` address on
     channel 5; the inherited `type` applies and the `channel` is the entry's
     own, not the inherited 5.
-    - Requirement: per-field inheritance of a partial `address` (an inherited
-      `type` brings the channel along).
+    - Requirement: inheritance (`address`: an inherited `type` brings the channel along).
     - Necessary: the other cases have the `channel` omitted; only this one pins
       that an own `channel` wins over the inherited one.
   - `TestChannelsEntryInheritsAddressBecomesRegister`: an entry with `channels`
@@ -582,8 +541,7 @@ nothing more; no case asserts an error message.
     address and carry the channel's `bytesPerElement`, and a bit-field `children`
     entry nested below one of the channels, say `bitShift: 8` and `width: 4`,
     resolves there too with a slice of its own.
-    - Requirement: register or module, and the inheritance chain (`channels`
-      makes a register on the address that resolves for it).
+    - Requirement: registers and modules (`channels` makes a register on the address that resolves for it).
     - Necessary: every `channels` entry in the existing maps carries its own
       `address`; the existing bit-field `children` sit below such channels, so
       an address-less register passing its address to a channel and on to a
@@ -595,9 +553,8 @@ nothing more; no case asserts an error message.
     register of its own with a 64-bit fixed-point word, and the grandchild is a
     `READ_ONLY` register on the same address with the parent's
     `numberOfElements`.
-    - Requirement: register or module, and the inheritance chain (an entry below
-      an address is a register, whatever it gives itself); also the inheritance of
-      `access` and `numberOfElements`.
+    - Requirement: registers and modules (an entry below an address is a register,
+      whatever it gives itself); also inheritance (`access`, `numberOfElements`).
     - Necessary: the existing maps have modules above a register-bearing entry
       (`APP`, `MY_INTC`) and a module without any address (`MY_INTC.SUB0`), but no
       grouping entry below an address with properties to inherit. One level
@@ -608,9 +565,8 @@ nothing more; no case asserts an error message.
     that gives `pitch` and a sixth that gives `doubleBuffering` are rejected; a
     seventh one that carries only `engineeringUnit` and `description` next to
     `children` parses.
-    - Requirement: register or module, and the inheritance chain (a module may
-      give `children`, `selectedBy`, `engineeringUnit` and `description`; its data
-      members are rejected).
+    - Requirement: registers and modules (a module may give `children`, `selectedBy`,
+      `engineeringUnit` and `description`; its data members are rejected).
     - Necessary: `MY_INTC` in the fixture is a true module, and
       `TestRegisterWithoutAncestorAddressRejected` covers only the
       `representation`; the other members are rejected by their own check, and no
@@ -622,8 +578,7 @@ nothing more; no case asserts an error message.
     `numberOfElements` 2 and keeps the parent's `elementPitchBits`, the third gives
     `numberOfElements: 1` and keeps its own value even though it equals the
     default.
-    - Requirement: inheritance of the register properties (`numberOfElements`,
-      `bytesPerElement`); an own value of either overrides the inherited one.
+    - Requirement: inheritance (`numberOfElements`, `bytesPerElement`); an own value of either overrides the inherited one.
     - Necessary: no existing case has an address-less child below a parent with a
       non-default geometry; both overrides need a case, and the third child pins
       that the value `1` is told from an omitted field.
@@ -632,8 +587,7 @@ nothing more; no case asserts an error message.
     register's `pitch` as its sample width and `pitch * 8` as its element pitch,
     the second gives an own `bytesPerElement` and takes it as the sample width
     while the stride stays `pitch * 8`.
-    - Requirement: inheritance of the register properties (`bytesPerElement`
-      below a 2D sample, bit-field children of a channel).
+    - Requirement: inheritance (`bytesPerElement` below a 2D sample, bit-field children of a channel).
     - Necessary: the 2D geometry is the one case in which the sample width is not
       a `bytesPerElement` of the ancestor, and no existing map has an address-less
       child of a 2D register. The `pitch` is 8, so the inherited sample width
@@ -643,29 +597,26 @@ nothing more; no case asserts an error message.
     `numberOfElements: 2` and `bytesPerElement: 4` that also gives a
     `representation`; it yields one register whose channels are exactly the named
     ones, so the own `representation` adds no channel of its own.
-    - Requirement: register or module (an entry with `channels` is a register
-      with or without a `representation`).
+    - Requirement: registers and modules (an entry with `channels` is a register with or without a `representation`).
     - Necessary: no fixture gives both, and `Representation::fill` would append a
       channel to a 2D register.
   - `TestChannelsKeepOwnGeometry`: a child of a parent with `numberOfElements: 2`
     giving `channels` with a `pitch` and no `numberOfElements`; it yields one
     element, so the parent's value does not reach it.
-    - Requirement: inheritance of the register properties (`numberOfElements`,
-      `bytesPerElement` are inherited only where the whole `address` is omitted
-      and the entry gives no `channels`).
+    - Requirement: inheritance (`numberOfElements`, `bytesPerElement` are inherited
+      only where the whole `address` is omitted and the entry gives no
+      `channels`).
     - Necessary: `TestAddressInheritanceDocumentedExample` pins the positive half
       of the rule and its `CONTROL` child the own-`address` half; this case adds
       the `channels` half, which no other case reaches.
   - `TestAddressWithoutOffsetRejected`: a present `address` without `offset` is
     rejected.
-    - Requirement: per-field inheritance of a partial `address` (`offset` is
-      always the entry's own, as the schema's `address` definition states).
+    - Requirement: inheritance (`address`: `offset` is always the entry's own, as the schema's `address` definition states).
     - Necessary: no existing map has an address without `offset`.
   - `TestSecondaryBufferAddressWithoutOffsetRejected`: a present
     `secondaryBufferAddress` without `offset`, and a `doubleBuffering` object that
     omits `secondaryBufferAddress` altogether, are rejected.
-    - Requirement: per-field inheritance of a partial `address`
-      (`secondaryBufferAddress`, whose `offset` is its own and required).
+    - Requirement: inheritance (`secondaryBufferAddress`: its `offset` is its own and required).
     - Necessary: no existing map has a secondary address without `offset`, and
       every existing `doubleBuffering` gives `secondaryBufferAddress`, so both
       injected maps are new: one with the member present without `offset`, one
@@ -674,9 +625,8 @@ nothing more; no case asserts an error message.
     register whose primary `address` is `DMA` on channel 1 and whose
     `secondaryBufferAddress` gives only its `offset`; it parses, with the
     secondary on the primary's channel 1.
-    - Requirement: per-field inheritance of a partial `address` (a
-      `secondaryBufferAddress` inherits an omitted `type`/`channel` from the
-      primary `address` of the same entry).
+    - Requirement: inheritance (`secondaryBufferAddress` inherits an omitted
+      `type`/`channel` from the primary `address` of the same entry).
     - Necessary: every `secondaryBufferAddress` in the existing maps gives `type`
       explicitly, and no map puts the primary `address` on a non-zero channel, so
       the inherited pair and the accepted same-BAR outcome are untested.
@@ -684,8 +634,7 @@ nothing more; no case asserts an error message.
     fixture, a `secondaryBufferAddress` giving its own `type: IO` and `offset`
     but omitting `channel` does not take the primary's channel 1 over, so it
     resolves to BAR 0 instead of BAR 14 and is rejected by the same-BAR check.
-    - Requirement: per-field inheritance of a partial `address`
-      (`secondaryBufferAddress`, the `type`/`channel` tie).
+    - Requirement: inheritance (`secondaryBufferAddress`: the `type`/`channel` tie).
     - Necessary: the case above covers the inherited pair only; this is the only
       case with an own secondary `type`, and the primary sits on channel 1 so the
       inherited channel would put both buffers on one BAR.
@@ -695,9 +644,7 @@ nothing more; no case asserts an error message.
     first gives its own `representation` and is not reinterpreted by the parent's;
     the second omits it and gets the defaulted fixed-point word, not the parent's.
     Both leave `engineeringUnit` and `description` empty, so neither is inherited.
-    - Requirement: inheritance of the register properties (`access`); the
-      parent's `representation`, `engineeringUnit` and `description` stay its
-      own.
+    - Requirement: inheritance (`access`); the parent's `representation`, `engineeringUnit` and `description` stay its own.
     - Necessary: no fixture combines an own `address` with an omitted `access`
       below a parent whose access is not the default.
   - `TestTriggeredByInterruptInheritance`: an address-bearing parent with
@@ -706,9 +653,9 @@ nothing more; no case asserts an error message.
     the parent's interrupt id, the one giving `access: RO` is `READ_ONLY`
     without an interrupt id, and a void-typed one with its own
     `triggeredByInterrupt` keeps that id instead of the parent's.
-    - Requirement: inheritance of the register properties
-      (`triggeredByInterrupt`), also for a child with an own `address`, which the
-      case covers with a fourth child whose `address` gives only `offset`.
+    - Requirement: inheritance (`triggeredByInterrupt`), also for a child with an
+      own `address`, which the case covers with a fourth child whose `address`
+      gives only `offset`.
     - Necessary: no fixture reaches this rule, since no interrupt register in the
       fixture has address-less children; `DAQ.CTRL` and `DAQ.FD` carry
       `triggeredByInterrupt` but stand alone, and the interrupt registers that use
@@ -717,42 +664,37 @@ nothing more; no case asserts an error message.
   - `TestRegisterWithoutAncestorAddressRejected`: an entry with `channels` and an
     entry with a `representation`, each with no address anywhere in its ancestry,
     are rejected.
-    - Requirement: register or module, and the inheritance chain.
+    - Requirement: registers and modules.
     - Necessary: no existing map has a register without an address in its
       ancestry. Both entries reach the same rejection, but they cover the two
       members that make an entry a register without an address.
   - `TestChannelsEntryWithoutPitchRejected`: a `channels` entry without `pitch`
     is rejected, now that an address-less `channels` entry parses.
-    - Requirement: inheritance of the register properties (a `channels` entry
-      must give `pitch`, and `0` is not a valid geometry value).
+    - Requirement: valid maps (a `channels` entry must give `pitch`).
     - Necessary: the schema requires `pitch` next to `channels`
       (the schema requires it), the parser does not, and a stride of 0
       would otherwise be accepted silently.
   - `TestZeroGeometryRejected`: a `numberOfElements: 0` and a `bytesPerElement: 0`
     are rejected on an otherwise valid register, a channel's `bytesPerElement: 0`
     on a 2D register, and a `pitch: 0` on that 2D register.
-    - Requirement: the geometry members are optional, so `0` is an invalid value.
+    - Requirement: valid maps (`0` is an invalid geometry value).
     - Necessary: `0` means "not set" today, and both generators write it, so the
       new reading needs its own case.
   - `TestPitchWithoutChannelsRejected`: an own `pitch` on a register that gives no
     `channels` is rejected.
-    - Requirement: inheritance of the register properties (`pitch` describes a 2D
-      sample and is only valid next to `channels`).
+    - Requirement: valid maps (`pitch` describes a 2D sample and is only valid next to `channels`).
     - Necessary: the schema forbids the combination and the
       parser ignores it today.
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register
     without an own `address`, below an address-bearing entry, gets its `BUF0`
     view on the resolved address and its `BUF1` view on the address from
     `secondaryBufferAddress`.
-    - Requirement: per-field inheritance of a partial `address`
-      (`secondaryBufferAddress` inherits from the resolved primary address) and
-      the inheritance chain.
+    - Requirement: inheritance (`secondaryBufferAddress` inherits from the resolved primary address) and registers and modules.
     - Necessary: every existing `doubleBuffering` gives its own `address`, and the
       views are created for every register with the member.
   - `TestAccessAndInterruptRejected`: an entry giving both `access` and
     `triggeredByInterrupt` is rejected.
-    - Requirement: inheritance of the register properties (the two are mutually
-      exclusive).
+    - Requirement: valid maps (`access` and `triggeredByInterrupt` are mutually exclusive).
     - Necessary: the check moves from the entry branch into `fill`,
       and no existing case reaches it.
   - `TestVoidEntryRejections`: a VOID-typed entry with a `doubleBuffering`, a
@@ -760,9 +702,7 @@ nothing more; no case asserts an error message.
     an own `numberOfElements`, a fifth one with an own `bytesPerElement`, a sixth
     one with an own `pitch` and a seventh one without `triggeredByInterrupt` are
     rejected.
-    - Requirement: register or module, and the inheritance chain (a void-typed
-      entry carries no data word, no own address, and gives its own
-      `triggeredByInterrupt`).
+    - Requirement: registers and modules (a void-typed entry carries no data word, no own address, and gives its own `triggeredByInterrupt`).
     - Necessary: the existing VOID entries carry none of the seven and all sit
       below an address-bearing entry, so all seven rejections are untested; the
       `fill` branch that holds them is rewritten by this change.
@@ -772,8 +712,7 @@ nothing more; no case asserts an error message.
     own `address` is rejected, and a sibling child whose `address` gives only
     `offset` parses. The top-level VOID entries of the interrupt example in
     `doc/jmapFormat.dox` parse as well.
-    - Requirement: register or module, and the inheritance chain (a void-typed
-      entry carries no address and does not continue the ancestor's).
+    - Requirement: registers and modules (a void-typed entry carries no address and does not continue the ancestor's).
     - Necessary: the VOID entries of the fixture (`BSP.VOID_INTERRUPT_0` and its
       sibling `BSP.VOID_INTERRUPT_3_0_1`) sit below an address-bearing entry and
       only their `pathName` is asserted today, so that they take no address over
