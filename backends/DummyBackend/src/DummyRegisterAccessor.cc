@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "DummyRegisterAccessor.h"
 
+#include <cstring>
+
 namespace ChimeraTK::proxies {
 
   /********************************************************************************************************************/
@@ -14,6 +16,8 @@ namespace ChimeraTK::proxies {
     UserType toCooked(std::byte* raw) override;
 
     void toRaw(UserType cooked, std::byte* raw) override;
+
+    [[nodiscard]] size_t rawSize() const override { return sizeof(typename RawConverter::raw_type); }
 
    private:
     RawConverter _converter;

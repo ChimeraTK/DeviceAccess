@@ -14,8 +14,10 @@
 #include <boost/move/unique_ptr.hpp>
 #include <boost/unordered_set.hpp>
 
+#include <cstddef>
 #include <list>
 #include <map>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -23,8 +25,12 @@
 // Define shared-memory compatible vector type and corresponding allocator
 using ShmemAllocator =
     boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>;
-using SharedMemoryVector = boost::interprocess::vector<int32_t, ShmemAllocator>;
 using PidSet = boost::interprocess::vector<int32_t, ShmemAllocator>;
+
+// Separate byte allocator and vector type for the lazily materialised storage chunks.
+using ShmemByteAllocator =
+    boost::interprocess::allocator<std::byte, boost::interprocess::managed_shared_memory::segment_manager>;
+using SharedMemoryByteVector = boost::interprocess::vector<std::byte, ShmemByteAllocator>;
 
 namespace ChimeraTK {
 
@@ -61,19 +67,63 @@ namespace ChimeraTK {
 
     VersionNumber triggerInterrupt(uint32_t interruptNumber) override;
 
+    /// Version of the shared-memory layout. It is appended to the segment base name, so processes running different
+    /// library versions derive different names and never attach to each other's objects, in either direction.
+    static constexpr unsigned SHARED_MEMORY_LAYOUT_VERSION = 2;
+
+    /// Compute the (versioned) shared-memory base name for the given instance. All segments (the home segment, the
+    /// interprocess mutex and every chunk segment) derive from this name.
+    static std::string getSharedMemoryName(
+        std::size_t instanceIdHash, const std::string& mapFileName, const std::string& userName);
+
    private:
     /** name of the map file */
     std::string _mapFile;
 
-    // Bar contents with shared-memory compatible vector type. Plain pointers are
-    // used here since this is what we get from the shared memory allocation.
-    std::map<uint64_t, SharedMemoryVector*> _barContents;
+    /// Bar contents with shared-memory compatible byte vector type, keyed by (bar, chunkIndex). Plain pointers are
+    /// used since this is what we get from the shared memory allocation. Each value is a CHUNK_SIZE big,
+    /// zero-initialised chunk.
+    std::map<std::pair<uint64_t, uint64_t>, SharedMemoryByteVector*> _barChunks;
 
-    // Bar sizes
-    std::map<uint64_t, size_t> _barSizesInBytes;
+    /// Number of characters reserved for a segment name in the chunk chain header.
+    static constexpr size_t SHARED_MEMORY_CHUNK_NAME_LENGTH = 512;
 
-    // Naming of bars as shared memory elements
-    const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";
+    /// Header of a chunk segment. It stores the chunk's (bar, chunkIndex) key and the name of the next segment in the
+    /// chain, empty for the last one.
+    struct SharedMemoryChunkHeader {
+      uint64_t bar{};
+      uint64_t chunkIndex{};
+      // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+      char nextName[SHARED_MEMORY_CHUNK_NAME_LENGTH]{};
+    };
+
+    /// Anchors of the singly linked list of chunk segments, stored in the home segment. They name, rather than map,
+    /// the first and last segment, because mapped addresses differ between processes.
+    struct SharedMemoryChunkList {
+      // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+      char headName[SHARED_MEMORY_CHUNK_NAME_LENGTH]{};
+      // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+      char tailName[SHARED_MEMORY_CHUNK_NAME_LENGTH]{};
+    };
+
+    /// Suffix of the shared-memory object holding a chunk segment.
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+    static constexpr char SHARED_MEMORY_CHUNK_SUFFIX[] = "_BAR_";
+
+    /// Name of the shared-memory object holding the pid set in the home segment.
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+    static constexpr char SHARED_MEMORY_PID_SET_NAME[] = "PidSet";
+
+    /// Name of the shared-memory object holding the chunk chain anchors in the home segment.
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+    static constexpr char SHARED_MEMORY_CHUNK_LIST_NAME[] = "ChunkList";
+
+    /// Name of the shared-memory object holding a chunk's bytes inside its own segment.
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+    static constexpr char SHARED_MEMORY_CHUNK_VECTOR_NAME[] = "chunk";
+
+    /// Size of a chunk segment: one CHUNK_SIZE big vector plus the fixed header and the allocator overhead.
+    static constexpr size_t CHUNK_SEGMENT_SIZE = CHUNK_SIZE + 65536;
 
     class InterruptDispatcherInterface;
 
@@ -86,10 +136,9 @@ namespace ChimeraTK {
       SharedMemoryManager(SharedDummyBackend&, std::size_t instanceIdHash, const std::string&);
       ~SharedMemoryManager();
 
-      /**
-       * Finds or constructs a vector object in the shared memory.
-       */
-      SharedMemoryVector* findOrConstructVector(const std::string& objName, size_t size);
+      /// Return the chunk for the given (bar, chunkIndex), creating it zero-initialised on first access. The
+      /// interprocess mutex must be held by the caller.
+      SharedMemoryByteVector* findOrConstructChunk(uint64_t bar, uint64_t chunkIndex);
 
       /**
        * Get information on the shared memory segment
@@ -99,34 +148,50 @@ namespace ChimeraTK {
       std::pair<size_t, size_t> getInfoOnMemory();
 
      private:
-      // Constants to take overhead of managed shared memory into respect
-      // (approx. linear function, meta data for memory and meta data per vector)
-      // Uses overestimates for robustness.
-      static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
-      static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 160;
-
-      const char* SHARED_MEMORY_PID_SET_NAME = "PidSet";
-      const char* SHARED_MEMORY_REQUIRED_VERSION_NAME = "RequiredVersion";
-
       SharedDummyBackend& sharedDummyBackend;
 
-      // the name of the segment
+      // the name of the home segment (and the base of all derived names)
       std::string name;
 
-      // the shared memory segment
+      // the shared memory home segment
       boost::interprocess::managed_shared_memory segment;
 
-      // the allocator instance
+      // the allocator instance for the pid set
       const ShmemAllocator sharedMemoryIntAllocator;
 
-      // Pointers to the set of process IDs and the required version
-      // specifier in shared memory
+      // Pointers to the set of process IDs in shared memory
       PidSet* pidSet{nullptr};
-      // Version number is not used for now, but included in shared memory
-      // to facilitate compatibility checks later
-      unsigned* requiredVersion{nullptr};
 
+      // head and tail of the chunk chain
+      SharedMemoryChunkList* _chunkList{nullptr};
+
+      /// The mapped chunk segments, keyed by (bar, chunkIndex). Keeps the shared memory objects alive for as long as
+      /// the process uses them, because the chunk vectors are only valid while their segment is mapped. Cached
+      /// SharedMemoryByteVector pointers stay valid because chunks are never relocated.
+      std::map<std::pair<uint64_t, uint64_t>, std::unique_ptr<boost::interprocess::managed_shared_memory>>
+          _chunkSegments;
+
+      /// size of the home segment
       size_t getRequiredMemoryWithOverhead();
+
+      /// the full name of a chunk segment
+      [[nodiscard]] std::string getChunkSegmentName(uint64_t bar, uint64_t chunkIndex) const;
+
+      /// whether a chunk segment with the given name currently exists
+      static bool chunkSegmentExists(const std::string& segmentName);
+
+      /// Follow the chain from the given start name to its last existing segment. Returns an empty string when the
+      /// chain starting there is empty.
+      static std::string walkToTail(const std::string& startName);
+
+      /// Create the chunk segment for the given key and map it. The interprocess mutex must be held by the caller.
+      /// On failure the created (or partially created) segment is removed and the error is propagated as
+      /// ChimeraTK::runtime_error.
+      void createChunk(uint64_t bar, uint64_t chunkIndex);
+
+      /// Append a chunk to the chain in a crash-safe order. The interprocess mutex must be held by the caller.
+      void appendToChain(uint64_t bar, uint64_t chunkIndex);
+
       /**
        * Checks and if needed corrects the state of the pid set, i.e
        * if accessing processes have been terminated and could not clean up for
@@ -135,9 +200,10 @@ namespace ChimeraTK {
        * returns bool reInitRequired
        */
       bool checkPidSetConsistency();
-      /// Resets all elements in shared memory except for the pidSet.
+      /// Walks the chunk chain and resets/removes the chunk segments, except for the pidSet.
       void reInitMemory();
-      std::vector<std::string> listNamedElements();
+      /// Removes every chunk segment of the chain and clears the head and tail.
+      void removeAllChunks();
 
      protected:
       // interprocess mutex, has to be accessible by SharedDummyBackend class
@@ -149,11 +215,12 @@ namespace ChimeraTK {
     // Managed shared memory object
     std::unique_ptr<SharedMemoryManager> sharedMemoryManager;
 
-    // Setup register bars in shared memory
+    // Reset the per-process chunk map. The chunks themselves live in shared memory and are managed by the chain.
     void setupBarContents();
 
-    // Helper routines called in init list
-    size_t getTotalRegisterSizeInBytes() const;
+    /// Return a pointer to the requested chunk, materialising it in shared memory on first access. The interprocess
+    /// mutex must be held by the caller.
+    std::byte* getChunk(uint64_t bar, uint64_t chunkIndex);
 
     static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
@@ -244,7 +311,6 @@ namespace ChimeraTK {
       /// cleanup our objects in given shm. This is only needed when corrupt shm was detected which
       ///  needs re-initialization
       /// If pidSet given, remove unmatching entries. Otherwise, remove whole object in shm
-      static void cleanupShm(boost::interprocess::managed_shared_memory& shm);
       static void cleanupShm(boost::interprocess::managed_shared_memory& shm, PidSet* pidSet);
 
       /// to be called from process which wishes to trigger some interrupt

@@ -20,8 +20,7 @@ namespace ChimeraTK {
 
   SharedDummyBackend::SharedDummyBackend(
       size_t instanceIdHash, const std::string& mapFileName, const std::string& dataConsistencyKeyDescriptor)
-  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(_resolvedMapFileName),
-    _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()) {
+  : DummyBackendBase(mapFileName, dataConsistencyKeyDescriptor), _mapFile(_resolvedMapFileName) {
   retry:
     try {
       sharedMemoryManager = std::make_unique<SharedMemoryManager>(*this, instanceIdHash, _resolvedMapFileName);
@@ -29,7 +28,7 @@ namespace ChimeraTK {
     catch(boost::interprocess::lock_exception&) {
       std::cerr << "SharedDummyBackend: boost::interprocess error, clearing shared memory segment." << std::endl;
       // remove shared memory and mutex
-      std::string name = Utilities::createShmName(instanceIdHash, _resolvedMapFileName, getUserName());
+      std::string name = SharedDummyBackend::getSharedMemoryName(instanceIdHash, _resolvedMapFileName, getUserName());
       boost::interprocess::shared_memory_object::remove(name.c_str());
       boost::interprocess::named_mutex::remove(name.c_str());
       goto retry;
@@ -44,36 +43,33 @@ namespace ChimeraTK {
     // all other objects clean up for themselves when they go out of scope.
   }
 
-  // Construct a segment for each bar and set required size
+  // Reset the per-process chunk map. The chunks themselves live in shared memory and are managed by the chain.
   void SharedDummyBackend::setupBarContents() {
-    for(auto& _barSizesInByte : _barSizesInBytes) {
-      std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(_barSizesInByte.first);
-
-      size_t barSizeInWords = (_barSizesInByte.second + sizeof(int32_t) - 1) / sizeof(int32_t);
-
-      try {
-        std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
-        _barContents[_barSizesInByte.first] = sharedMemoryManager->findOrConstructVector(barName, barSizeInWords);
-      }
-      catch(boost::interprocess::bad_alloc&) {
-        // Clean up
-        sharedMemoryManager.reset();
-
-        std::string errMsg{"Could not allocate shared memory while constructing registers. "
-                           "Please file a bug report at "
-                           "https://github.com/ChimeraTK/DeviceAccess."};
-        throw ChimeraTK::logic_error(errMsg);
-      }
-    } /* for(barSizesInBytesIter) */
+    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
+    _barChunks.clear();
   }
+
+  /********************************************************************************************************************/
+
+  std::byte* SharedDummyBackend::getChunk(uint64_t bar, uint64_t chunkIndex) {
+    auto* chunk = sharedMemoryManager->findOrConstructChunk(bar, chunkIndex);
+    _barChunks[{bar, chunkIndex}] = chunk;
+    return chunk->data();
+  }
+
+  /********************************************************************************************************************/
 
   void SharedDummyBackend::open() {
     setOpenedAndClearException();
   }
 
+  /********************************************************************************************************************/
+
   void SharedDummyBackend::closeImpl() {
     _opened = false;
   }
+
+  /********************************************************************************************************************/
 
   void SharedDummyBackend::read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) {
     if(!_opened) {
@@ -81,13 +77,17 @@ namespace ChimeraTK {
     }
     checkActiveException();
     checkSizeIsMultipleOfWordSize(sizeInBytes);
-    uint64_t wordBaseIndex = address / sizeof(int32_t);
 
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
-    for(uint64_t wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
-      TRY_REGISTER_ACCESS(data[wordIndex] = _barContents[bar]->at(wordBaseIndex + wordIndex););
-    }
+    transferChunked(
+        bar, address, sizeInBytes, [this](uint64_t b, uint64_t chunkIndex) { return getChunk(b, chunkIndex); },
+        [data](size_t size, const std::byte* chunk, size_t bytesDone) {
+          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+          std::memcpy(reinterpret_cast<std::byte*>(data) + bytesDone, chunk, size);
+        });
   }
+
+  /********************************************************************************************************************/
 
   void SharedDummyBackend::write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) {
     if(!_opened) {
@@ -95,14 +95,17 @@ namespace ChimeraTK {
     }
     checkActiveException();
     checkSizeIsMultipleOfWordSize(sizeInBytes);
-    uint64_t wordBaseIndex = address / sizeof(int32_t);
 
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager->interprocessMutex);
-
-    for(uint64_t wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
-      TRY_REGISTER_ACCESS(_barContents[bar]->at(wordBaseIndex + wordIndex) = data[wordIndex];);
-    }
+    transferChunked(
+        bar, address, sizeInBytes, [this](uint64_t b, uint64_t chunkIndex) { return getChunk(b, chunkIndex); },
+        [data](size_t size, std::byte* chunk, size_t bytesDone) {
+          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+          std::memcpy(chunk, reinterpret_cast<const std::byte*>(data) + bytesDone, size);
+        });
   }
+
+  /********************************************************************************************************************/
 
   std::string SharedDummyBackend::readDeviceInfo() {
     std::stringstream info;
@@ -110,13 +113,7 @@ namespace ChimeraTK {
     return info.str();
   }
 
-  size_t SharedDummyBackend::getTotalRegisterSizeInBytes() const {
-    size_t totalRegSize = 0;
-    for(const auto& pair : _barSizesInBytes) {
-      totalRegSize += pair.second;
-    }
-    return totalRegSize;
-  }
+  /********************************************************************************************************************/
 
   void SharedDummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes) {
     if(sizeInBytes % sizeof(int32_t)) {
@@ -179,9 +176,6 @@ namespace ChimeraTK {
     }
   }
 
-  void SharedDummyBackend::InterruptDispatcherInterface::cleanupShm(boost::interprocess::managed_shared_memory& shm) {
-    shm.destroy<SharedMemoryVector>(boost::interprocess::unique_instance);
-  }
   void SharedDummyBackend::InterruptDispatcherInterface::cleanupShm(
       boost::interprocess::managed_shared_memory& shm, PidSet* pidSet) {
     ShmForSems* semBuf = shm.find_or_construct<ShmForSems>(boost::interprocess::unique_instance)();

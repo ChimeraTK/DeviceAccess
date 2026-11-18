@@ -8,7 +8,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cxxabi.h>
 #include <execinfo.h>
@@ -359,19 +358,6 @@ namespace ChimeraTK {
       str += e.first + "=" + e.second + ";";
     }
     return std::hash<std::string>{}(str);
-  }
-
-  /********************************************************************************************************************/
-
-  std::string Utilities::createShmName(
-      std::size_t instanceIdHash, const std::string& mapFileName, const std::string& userName) {
-    // always use absolute mapFileName
-    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
-
-    std::string mapFileHash{std::to_string(std::hash<std::string>{}(absPathToMapFile.string()))};
-    std::string userHash{std::to_string(std::hash<std::string>{}(userName))};
-
-    return "ChimeraTK_SharedDummy_" + std::to_string(instanceIdHash) + "_" + mapFileHash + "_" + userHash;
   }
 
   /********************************************************************************************************************/

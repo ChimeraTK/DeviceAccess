@@ -10,6 +10,7 @@ using namespace boost::unit_test_framework;
 #include "DummyBackend.h"
 #include "Exception.h"
 #include "ProcessManagement.h"
+#include "SharedDummyBackend.h"
 #include "Utilities.h"
 
 #include <boost/filesystem.hpp>
@@ -194,8 +195,8 @@ BOOST_FIXTURE_TEST_CASE(SharedDummyShmNameDerivedFromResolvedPath, MapFileSearch
 
   std::size_t instanceIdHash = Utilities::shmDummyInstanceIdHash("1", {{"map", "shared.map"}});
   std::string userName = getUserName();
-  BOOST_CHECK_EQUAL(Utilities::createShmName(instanceIdHash, backend1.resolvedMapFileName(), userName),
-      Utilities::createShmName(instanceIdHash, backend2.resolvedMapFileName(), userName));
+  BOOST_CHECK_EQUAL(SharedDummyBackend::getSharedMemoryName(instanceIdHash, backend1.resolvedMapFileName(), userName),
+      SharedDummyBackend::getSharedMemoryName(instanceIdHash, backend2.resolvedMapFileName(), userName));
 }
 
 /**********************************************************************************************************************/
