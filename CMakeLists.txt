@@ -183,6 +183,11 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_N
 
 # Install JSON schemas (if any) into the doc directory, so they get published to
 # chimeratk.github.io/<Project>/head/ by the jenkins update_documentation script.
+# The jmap JSON schema lives in the jmap-formatter submodule, which is canonical.
 if(EXISTS ${CMAKE_SOURCE_DIR}/schemas)
   install(DIRECTORY ${CMAKE_SOURCE_DIR}/schemas DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc)
+endif()
+if(EXISTS ${CMAKE_SOURCE_DIR}/submodules/jmap-formatter/jmap.schema.json)
+  install(FILES ${CMAKE_SOURCE_DIR}/submodules/jmap-formatter/jmap.schema.json
+    DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}/schemas COMPONENT doc)
 endif()

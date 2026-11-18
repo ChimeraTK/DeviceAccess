@@ -1,0 +1,3 @@
+[submodule "submodules/jmap-formatter"]
+	path = submodules/jmap-formatter
+	url = https://github.com/ChimeraTK/DeviceAccess.git
