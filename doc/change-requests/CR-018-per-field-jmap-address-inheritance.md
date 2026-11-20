@@ -536,55 +536,46 @@ shared with the backend test binaries, which no case affects; a case relying on 
 existing entry names it below, so a fixture edit that changes what it inherits
 shows up in review. A case's `Requirement:` names the `R` bullets it covers, and
 its `Necessary:` states why no other case covers them. A rejection case expects
-`ChimeraTK::logic_error` and nothing more, except the one case that checks the
-declaring path in the `selectedBy` message.
+`ChimeraTK::logic_error` and nothing more.
 
 - `tests/executables_src/testJsonMapFileParser.cpp` (modified)
-  - `TestAddressInheritanceDocumentedExample`: the documented inheritance
-    example in `doc/jmapFormat.dox` - an address-bearing parent on `IO` channel 2
-    at a non-zero `offset`, with one child carrying only a `representation` and
-    one child whose `address` gives its own `offset`; both children take the
-    parent's `type` and `channel`, the first its `offset` as well.
-    - Requirement: R1 (inherited `type`/`channel`), R4 (inherited geometry).
-    - Necessary: the example's root is `APP`, which the fixture already has with
-      the children `STATUS`, `LARGE_STATUS`, `SomeTable` and `SomeFloat`, so the
-      case replaces that module instead of adding one. `BSP` already has partial
-      child addresses (`BSP.VERSION` gives only `offset`, `BSP.SOME_INFO` gives
-      `channel` 0 and `offset`), but its channel is 0, so an omitted `channel`
-      yields 0 whether inherited or defaulted; the example's parent on channel 2
-      is the case that tells the two apart. The example's `CONTROL` child, which
-      gives its own partial `address`, keeps one element of four bytes, which pins
-      that an own `address` stops the geometry inheritance.
   - `TestAddressInheritanceOwnTypeDropsChannel`: a child `address` giving `type`
     and the required `offset` (its `channel` omitted) below a `DMA` address on
     channel 5; the child's own `type` applies and its omitted `channel` falls
     back to `0`.
     - Requirement: R1 (an own `type` drops the inherited `channel`).
-    - Necessary: the example above covers the inherited `type`/`channel` pair
-      only; this is the only case with a `type` of the entry's own.
+    - Necessary: `BSP.VERSION` and `BSP.SOME_INFO` inherit `type` and `channel`,
+      so they pin the inherited pair; this is the only case with a `type` of the
+      entry's own.
   - `TestAddressInheritanceOwnChannelKept`: a child `address` giving `channel`
     and the required `offset` (its `type` omitted) below a `DMA` address on
     channel 5; the inherited `type` applies and the `channel` is the entry's
-    own, `2`, not the inherited 5.
-    - Requirement: R1 (an own `channel` is kept, the `type` inherited).
+    own, `2`, not the inherited 5. The same mutation adds a top-level entry whose
+    `address` gives only `offset`, which resolves to `IO`, channel `0`.
+    - Requirement: R1 (an own `channel` is kept, the `type` inherited; `IO`/`0`
+      without a parent).
     - Necessary: the other cases have the `channel` omitted; only this one pins
       that an own `channel` is kept while an omitted `type` still takes the
-      parent's `type`.
+      parent's `type`, and no fixture entry sits at the top level with a partial
+      address.
   - `TestChannelsEntryInheritsAddressBecomesRegister`: an entry with `channels`
     and a `pitch`, neither an own `address` nor a `representation`, below an
-    address-bearing entry on `DMA` channel 3 at a non-zero offset; it yields a register on that address with one element
+    address-bearing entry on `DMA` channel 3 at a non-zero offset with
+    `numberOfElements: 2`; it yields a register on that address with one element
     and its `pitch * 8` as the pitch, its channel slices resolve to that
     address and carry the channel's `bytesPerElement`, and a bit-field `children`
     entry nested below one of the channels, say `bitShift: 8` and `width: 4`,
     resolves there too with a slice of its own. A second channel omits its
     `bytesPerElement`. It defaults to `4`, and its bit-field child is cut from that
     4-byte word; a third channel omits its `representation` and gets a fixed-point
-    word of its `bytesPerElement` times 8.
-    - Requirement: R5 (a 2D register and its channels).
+    word of its element size in bits.
+    - Requirement: R5 (a 2D register and its channels), R4 (no geometry
+      inheritance with `channels`).
     - Necessary: every `channels` entry in the existing maps carries its own
       `address`; the existing bit-field `children` sit below such channels, so
       an address-less register passing its address to a channel and on to a
-      bit-field child is untested.
+      bit-field child is untested, and the parent's `numberOfElements` reaching no
+      channel is not covered elsewhere.
   - `TestGroupingEntryBelowAddressBecomesRegister`: an address-bearing entry on
     `DMA` channel 3 at a non-zero offset, with `bytesPerElement: 8`, `access: RO`
     and `numberOfElements: 3`, whose child gives only `children`, with an
@@ -610,19 +601,22 @@ declaring path in the `selectedBy` message.
       `representation`; the other members are rejected by their own check, and no
       fixture module carries `engineeringUnit` or `description`.
   - `TestGeometryInheritanceAndOwnSampleWidth`: an address-bearing parent with
-    `numberOfElements: 2` and `bytesPerElement: 8` and three address-less children
-    carrying a `representation`: the first inherits both values and the parent's
-    `elementPitchBits` of 64, the second gives `bytesPerElement: 2`, keeps
-    `numberOfElements` 2 and keeps the inherited `elementPitchBits` of 64, the
-    third gives `numberOfElements: 3`, which supersedes the inherited 2, and a
-    fourth gives `representation` with only its `type`, so its `width` defaults to
-    the element size in bits.
+    `numberOfElements: 2` and `bytesPerElement: 8` and four children: the first
+    three are address-less and carry a `representation` - the first inherits both
+    values and the parent's `elementPitchBits` of 64, the second gives
+    `bytesPerElement: 2`, keeps `numberOfElements` 2 and keeps the inherited
+    `elementPitchBits` of 64, the third gives `numberOfElements: 3`, which
+    supersedes the inherited 2 - and the fourth gives `representation` with only
+    its `type`, so its `width` defaults to the element size in bits. A fifth
+    child gives an own `address` with only its `offset`, which stops the geometry
+    inheritance, so it keeps one element of four bytes.
     - Requirement: R4, R6 (inherited geometry and overrides), R7 (an omitted
       `width`).
     - Necessary: no existing case has an address-less child below a parent with a
       non-default geometry; both overrides need a case, the third child shows an
-      own value winning over an inherited one, and no case gives a `representation`
-      without `width`.
+      own value winning over an inherited one, no case gives a `representation`
+      without `width`, and the fixture's partial child addresses sit under a
+      parent that gives no geometry.
   - `TestChannelsWithOwnRepresentationRejected`: a register with `channels`, a
     `pitch`, `numberOfElements: 2` and `bytesPerElement: 4` that also gives a
     `representation` is rejected.
@@ -641,19 +635,13 @@ declaring path in the `selectedBy` message.
       `representation`).
     - Necessary: no fixture gives either, and the parser previously ignored the
       extra members.
-  - `TestChannelsKeepOwnGeometry`: a child of a parent with `numberOfElements: 2`
-    giving `channels` with a `pitch` and no `numberOfElements`; it yields one
-    element, so the parent's value does not reach it.
-    - Requirement: R4 (no geometry inheritance with `channels`).
-    - Necessary: `TestAddressInheritanceDocumentedExample` pins the positive half
-      of the rule and the example's `CONTROL` child the own-`address` half; this
-      case adds the `channels` half, which no other case reaches.
-  - `TestAddressDefaultsWithoutAncestor`: a top-level entry whose `address` gives
-    only `offset` resolves to `IO`, channel `0`, at that offset.
-    - Requirement: R1 (`IO`/`0` without a parent).
-    - Necessary: no case has a top-level entry without any parent, while
-      `TestVoidEntryBlocksAddressInheritance` reaches the same default below a
-      chain that a VOID entry ends.
+  - `TestChannelsEntryWithoutPitchRejected`: a `channels` entry without `pitch`
+    is rejected, and so is an own `pitch` on a register that gives no `channels`,
+    the two directions of the one rule.
+    - Requirement: R5 (`pitch` exactly where `channels` are).
+    - Necessary: the schema requires `pitch` next to `channels` and forbids it
+      elsewhere, while the parser does neither, and an omitted `pitch` would
+      otherwise be accepted silently.
   - `TestAddressWithoutOffsetRejected`: an entry below a parent with an `offset`
     that gives its own `address` without one is rejected.
     - Requirement: R1 (`offset` is never inherited).
@@ -714,11 +702,6 @@ declaring path in the `selectedBy` message.
     - Necessary: no existing map has a register without an address in its
       ancestry. Both entries reach the same rejection, but they cover the two
       members that make an entry a register without an address.
-  - `TestChannelsEntryWithoutPitchRejected`: a `channels` entry without `pitch`
-    is rejected, now that an address-less `channels` entry parses.
-    - Requirement: R5 (`channels` requires `pitch`).
-    - Necessary: the schema requires `pitch` next to `channels`, the parser does
-      not, and an omitted `pitch` would otherwise be accepted silently.
   - `TestChannelWithoutOffsetRejected`: a channel of a 2D register with its
     `offset` removed is rejected.
     - Requirement: R5 (a channel gives its `offset`).
@@ -729,12 +712,6 @@ declaring path in the `selectedBy` message.
     on a 2D register, and a `pitch: 0` on that 2D register.
     - Requirement: R4 (`0` is no geometry value).
     - Necessary: `0` means "not set" today, so the new reading needs its own case.
-  - `TestPitchWithoutChannelsRejected`: an own `pitch` on a register that gives no
-    `channels` is rejected, the counterpart of
-    `TestChannelsEntryWithoutPitchRejected`.
-    - Requirement: R5 (`pitch` exactly where `channels` are).
-    - Necessary: the schema forbids the combination and the parser ignores it
-      today.
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register
     without an own `address`, below an address-bearing entry on `DMA` channel 3 at
     a non-zero offset, gets its `BUF0`
@@ -743,21 +720,11 @@ declaring path in the `selectedBy` message.
     - Requirement: R2, R1 (a `doubleBuffering` register below an address).
     - Necessary: every existing `doubleBuffering` gives its own `address`, so an
       inherited one with its views is untested.
-  - `TestSelectedByReadOnlyMessage`: a writable register whose `selectedBy` is
-    declared on a parent is rejected, and the message names the parent's path.
-    - Requirement: R8 (`selectedBy` is inherited).
-    - Necessary: `getSelectedBySource()` replaces the `addInfos` argument, and no
-      case checks the declaring path in the message.
   - `TestSelectedByOverrideRejected`: a child below a `selectedBy`-declaring
     parent that gives its own `selectedBy` is rejected.
     - Requirement: R8 (`selectedBy` is inherited and never overridden).
     - Necessary: the fixture's `selectedBy` cases declare it on one entry only, so
       an own value below a declarer parses today.
-  - `TestAccessAndInterruptRejected`: an entry giving both `access` and
-    `triggeredByInterrupt` is rejected.
-    - Requirement: R3 (mutually exclusive).
-    - Necessary: the check moves from the entry branch into `addInfos`, and no
-      existing case reaches it.
   - `TestVoidEntryWithDoubleBufferingRejected`: a VOID-typed entry that gives
     `doubleBuffering` is rejected.
     - Requirement: R10.
@@ -766,32 +733,13 @@ declaring path in the `selectedBy` message.
     and a `pitch` is rejected.
     - Requirement: R10.
     - Necessary: no fixture VOID entry gives `channels`.
-  - `TestVoidEntryWithAddressRejected`: a VOID-typed entry that gives an own
-    `address` is rejected.
-    - Requirement: R10.
-    - Necessary: every fixture VOID entry has none, so no case reaches the rule.
-  - `TestVoidEntryWithNumberOfElementsRejected`: a VOID-typed entry that gives an
-    own `numberOfElements` is rejected.
-    - Requirement: R10.
-    - Necessary: no fixture VOID entry gives one.
-  - `TestVoidEntryWithBytesPerElementRejected`: a VOID-typed entry that gives an
-    own `bytesPerElement` is rejected.
-    - Requirement: R10.
-    - Necessary: no fixture VOID entry gives one.
-  - `TestVoidEntryWithPitchRejected`: a VOID-typed entry that gives an own `pitch`
-    is rejected by the `pitch`-without-`channels` rule.
-    - Requirement: R5 (`pitch` exactly where `channels` are), R10.
-    - Necessary: no fixture VOID entry gives `pitch`, and the rule that catches it
-      is the 2D one, so the case pins which of the two rules a VOID entry meets.
-  - `TestVoidEntryWithSelectedByRejected`: a VOID-typed entry that gives its own
-    `selectedBy` is rejected.
-    - Requirement: R10.
-    - Necessary: no fixture VOID entry gives one.
-  - `TestVoidEntryWithoutInterruptRejected`: a VOID-typed entry without an own
-    `triggeredByInterrupt` is rejected; `fill` rejects it today and the check moves
-    into `validate()`.
-    - Requirement: R10.
-    - Necessary: every fixture VOID entry gives one, so no case reaches the rule.
+  - `TestVoidEntryDataMembersRejected`: a VOID-typed entry that gives an own
+    `numberOfElements`, a second one that gives `bytesPerElement`, a third one
+    that gives `pitch` and a fourth one that gives `selectedBy` are rejected, each
+    as its own mutation.
+    - Requirement: R10, R5 (the `pitch` case).
+    - Necessary: no fixture VOID entry gives any of the four, and the parser
+      ignored them today.
   - `TestVoidEntryTakesNoAddress`: a VOID-typed entry below an address-bearing
     parent on `DMA` channel 3 at a non-zero offset is a register with `address` 0
     and `nElements` 0.
@@ -799,19 +747,15 @@ declaring path in the `selectedBy` message.
     - Necessary: the VOID entries of the fixture (`BSP.VOID_INTERRUPT_0` and its
       sibling `BSP.VOID_INTERRUPT_3_0_1`) sit below an address-bearing entry and
       only their `pathName` is asserted today.
-  - `TestVoidEntryChildWithoutAddressRejected`: a child below the VOID entry that
-    gives a `representation` but no own `address` is rejected, the VOID entry
-    passing none on.
-    - Requirement: R10, R1.
-    - Necessary: no fixture has children below a VOID entry.
-  - `TestVoidEntryChildStartsAddressChainAfresh`: a sibling child whose `address`
-    gives only `offset` and which gives no `access` parses as an `INTERRUPT`
-    register with the VOID entry's id, resolved to `IO` and channel `0`, so it took
-    the `IO` default rather than a value from above; a `selectedBy` declared above
-    the VOID entry reaches it.
-    - Requirement: R10, R8 (`selectedBy` passes through).
-    - Necessary: no fixture has children below a VOID entry, and no other case
-      reaches the default behind a VOID entry.
+  - `TestVoidEntryChildren`: one child below the VOID entry that gives a
+    `representation` but no own `address` is rejected, the VOID entry passing none
+    on, while a sibling whose `address` gives only `offset` and which gives no
+    `access` parses as an `INTERRUPT` register with the VOID entry's id, resolved
+    to `IO` and channel `0`, so it took the `IO` default rather than a value from
+    above; a `selectedBy` declared above the VOID entry reaches it.
+    - Requirement: R10, R1, R8 (`selectedBy` passes through).
+    - Necessary: no fixture has children below a VOID entry, so neither the
+      rejection nor the default behind a VOID entry is reached elsewhere.
   - `TestTopLevelVoidEntryParses`: the top-level VOID entries of the interrupt
     example in `doc/jmapFormat.dox` parse.
     - Requirement: R10.
