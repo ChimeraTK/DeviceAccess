@@ -13,9 +13,8 @@ Status: IN PROGRESS
 - module: an entry that only groups nested entries and describes no data.
 - 2D register: a register with `channels`.
 - void-typed entry: an entry whose `representation` is `void`.
-- sample: one element a register reads or writes.
-- sample width: the length of a sample in bytes, `bytesPerElement`.
-- stride: the distance between two samples, `pitch` in bytes for a 2D register.
+- element: one value a register reads or writes.
+- pitch: the byte distance between two elements of the same channel in a 2D register.
 - grouping entry: an entry below an address that gives only `children`.
 
 ## Requirements
@@ -48,12 +47,12 @@ Aspect: inheritance.
   stays a plain register.
 - R9: `numberOfElements` and `bytesPerElement`: inherited per value from the
   nearest ancestor register that gives it, and only where the entry omits its whole
-  `address` and gives no `channels`, since they describe the sample the entry is
+  `address` and gives no `channels`, since they describe the element the entry is
   cut from. An own value of either overrides the inherited one. A 2D ancestor gives
   no `bytesPerElement`, so its children take their own or `4`.
-- R10: The element pitch is inherited with them, so an own `bytesPerElement` changes
-  the sample width only and the stride stays the inherited one. A 2D ancestor gives
-  no element pitch to inherit, so a child of one is strided by its sample width.
+- R10: The pitch is inherited with them, so an own `bytesPerElement` changes the
+  element size only and the pitch stays the inherited one. A 2D ancestor gives no
+  pitch to inherit, so a child of one advances by its element size.
 - R11: A channel gives its own `bytesPerElement` or `4` and never inherits one; it is
   the word context of the channel's bit-field `children`.
 - R12: `selectedBy`: inherited from the nearest ancestor entry, module or register. A
@@ -71,7 +70,7 @@ Aspect: registers, modules and valid maps.
   `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering` on it are
   rejected.
 - R17: A register without a `representation` and without `channels` is a fixed-point
-  word of its effective sample width at its resolved address. A grouping entry
+  word of its effective element size at its resolved address. A grouping entry
   below an address is such a register, so it parses next to its children.
 - R18: An entry with `channels` is a register on the address that resolves for it,
   with or without a non-void `representation` and with or without an own
@@ -110,7 +109,7 @@ Aspect: documentation, format version and tools.
     ignored
   - an entry below an address that gives only `children` becomes a register of
     its own
-  - an address-less child of a 2D register is strided by its sample width instead
+  - an address-less child of a 2D register advances by its element size instead
     of the 2D `pitch`
   - a register without a `representation` gets a word of its effective width
     instead of a 32-bit word
@@ -191,15 +190,15 @@ Aspect: documentation, format version and tools.
   suppresses the inheritance. An own `access` next to an own
   `triggeredByInterrupt` stays rejected, so the tie lives in `effectiveAccess()`
   and this getter derives from it.
-- `size_t effectiveNumberOfElements() const`, `size_t effectiveSampleWidthBytes()
+- `size_t effectiveNumberOfElements() const`, `size_t effectiveElementBytes()
   const` and `size_t effectiveElementPitchBits() const` (new): the geometry is
   inherited per JSON field, and only where the entry omits its whole `address`
   and gives no `channels`. Elsewhere each getter returns the entry's own value,
-  `1` and `4` where it gives none, and the pitch `sampleWidthBytes * 8`.
+  `1` and `4` where it gives none, and the pitch `effectiveElementBytes() * 8`.
   - Where the entry omits its whole `address` and gives no `channels`, it inherits
-    the element pitch (the stride in bits) from the nearest ancestor that gives
-    one, an own `bytesPerElement` changing only the sample width. A 2D ancestor
-    gives none, so the child's stride follows its sample width.
+    the pitch in bits from the nearest ancestor that gives one, an own
+    `bytesPerElement` changing only the element size. A 2D ancestor gives none, so
+    the child's pitch follows its element size.
   - An entry with `channels` uses its own `pitch` in bytes times 8, `addInfos`
     having rejected a `channels` entry without `pitch`.
   - One private predicate and one helper reaching the nearest ancestor register
@@ -230,7 +229,7 @@ Aspect: documentation, format version and tools.
   - It writes an own `representation` only where the entry gives no `channels`;
     `Representation::fill` would otherwise append a channel to a 2D register.
   - A register that gives no `representation` and no `channels` gets a fixed-point
-    `Representation` whose `width` is the effective sample width in bits and whose
+    `Representation` whose `width` is the effective element size in bits and whose
     `bytesPerElement` is the effective value, so `bytesPerElement: 8` yields a
     64-bit word.
   - A `representation` without `width` keeps the default of `32` from the member
@@ -339,7 +338,7 @@ Aspect: documentation, format version and tools.
   register's BAR.
 - The register section points to the nearest ancestor instead of a parent module.
 - `jmap_representation`: a register that omits its whole `representation` and
-  gives no `channels` gets a fixed-point word of its effective sample width, not a
+  gives no `channels` gets a fixed-point word of its effective element size, not a
   32-bit word.
 - `jmap_elements`: `numberOfElements` and `bytesPerElement` are inherited from the
   nearest ancestor register that gives it, where the entry omits its whole
@@ -514,7 +513,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
   - `TestChannelsEntryInheritsAddressBecomesRegister`: an entry with `channels`
     and a `pitch`, neither an own `address` nor a `representation`, below an
     address-bearing entry; it yields a register on that address with one element
-    and its `pitch * 8` as the element pitch, its channel slices resolve to that
+    and its `pitch * 8` as the pitch, its channel slices resolve to that
     address and carry the channel's `bytesPerElement`, and a bit-field `children`
     entry nested below one of the channels, say `bitShift: 8` and `width: 4`,
     resolves there too with a slice of its own. A second channel omits its
@@ -637,7 +636,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     is rejected, now that an address-less `channels` entry parses.
     - Requirement: R24 (`channels` requires `pitch`).
     - Necessary: the schema requires `pitch` next to `channels`, the parser does
-      not, and a stride of 0 would otherwise be accepted silently.
+      not, and a pitch of 0 would otherwise be accepted silently.
   - `TestChannelWithoutOffsetRejected`: a channel of a 2D register with its
     `offset` removed is rejected.
     - Requirement: R24 (a channel gives its `offset`).
