@@ -30,9 +30,8 @@ Aspect: inheritance.
     included.
   - An own `address` must give its own `offset`. `offset` is never inherited.
   - An omitted `type` takes the parent's `type` and with it its `channel`.
-  - An own `channel` wins. An own `type` drops the inherited `channel`, because a
-    channel means something different per `type`. Where the entry gives an own
-    `type` and omits `channel`, the `channel` is `0`.
+  - An own `type` drops the inherited `channel`, because a channel means something
+    different per `type`. An omitted `channel` is `0` in that case.
   - Without a parent address, `type` and `channel` are `IO` and `0`; `offset` has
     no default.
   - An entry that gives a non-void `representation` or `channels` needs an address,
