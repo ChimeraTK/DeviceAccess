@@ -23,42 +23,42 @@ Aspect: inheritance.
 
 - R1: Resolution is per JSON field: an entry inherits each value it does not give
   itself from the nearest ancestor that gives that value.
-- R2: The search for an address stops at a void-typed entry, which has no data
-  word, so its children are in the position of top-level entries. `selectedBy`
-  passes through it like any other entry's; `access` and `triggeredByInterrupt` do
-  not, since a void-typed entry gives its own `triggeredByInterrupt` and that value
-  reaches its descendants.
-- R3: `address`: an omitted `type` takes the nearest ancestor address's `type` and
+- R2: `address`: an omitted `type` takes the nearest ancestor address's `type` and
   with it that ancestor's `channel`. An own `channel` wins. An own `type` drops
   the inherited `channel`, so an omitted `channel` is then `0`, since a channel
   means something different per `type`.
-- R4: `address`: an own `address` must give `offset`, which is never inherited; an
+- R3: `address`: an own `address` must give `offset`, which is never inherited; an
   entry without an `address` takes the ancestor's whole address, `offset`
   included.
-- R5: `address`: where no ancestor has an address, `type` and `channel` are `IO` and
+- R4: `address`: where no ancestor has an address, `type` and `channel` are `IO` and
   `0`.
-- R6: `secondaryBufferAddress` gives only its own `offset`, and both buffers lie on
+- R5: `secondaryBufferAddress` gives only its own `offset`, and both buffers lie on
   the register's BAR. A `doubleBuffering` without `secondaryBufferAddress`, with an
   offset-less one, or with a `type` or `channel` on it is rejected.
-- R7: `access`: inherited from the nearest ancestor register where the entry gives
+- R6: `access`: inherited from the nearest ancestor register where the entry gives
   neither `access` nor `triggeredByInterrupt`, with an own `address` or without.
-- R8: `triggeredByInterrupt`: inherited together with the `access` it implies,
+- R7: `triggeredByInterrupt`: inherited together with the `access` it implies,
   unless the entry gives an `access` of its own. Giving `access` is how a child
   stays a plain register.
-- R9: `numberOfElements` and `bytesPerElement`: inherited per value from the
+- R8: `numberOfElements` and `bytesPerElement`: inherited per value from the
   nearest ancestor register that gives it, and only where the entry omits its whole
   `address` and gives no `channels`, since they describe the element the entry is
   cut from. An own value of either overrides the inherited one. A 2D ancestor gives
   no `bytesPerElement`, so its children take their own or `4`.
-- R10: The pitch is inherited with them, so an own `bytesPerElement` changes the
+- R9: The pitch is inherited with them, so an own `bytesPerElement` changes the
   element size only and the pitch stays the inherited one. A 2D ancestor gives no
   pitch to inherit, so a child of one advances by its element size.
-- R11: A channel gives its own `bytesPerElement` or `4` and never inherits one; it is
+- R10: A channel gives its own `bytesPerElement` or `4` and never inherits one; it is
   the word context of the channel's bit-field `children`.
-- R12: `selectedBy`: inherited from the nearest ancestor entry, module or register. A
+- R11: `selectedBy`: inherited from the nearest ancestor entry, module or register. A
   register-level `selectedBy` next to `channels` applies to the register's
   channels.
-- R13: `representation`, `engineeringUnit` and `description` are never inherited.
+- R12: `representation`, `engineeringUnit` and `description` are never inherited.
+- R13: The search for an address stops at a void-typed entry, which has no data
+  word, so its children are in the position of top-level entries. `selectedBy`
+  passes through it like any other entry's; `access` and `triggeredByInterrupt` do
+  not, since a void-typed entry gives its own `triggeredByInterrupt` and that value
+  reaches its descendants.
 
 Aspect: registers, modules and valid maps.
 
@@ -486,7 +486,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     at a non-zero `offset`, with one child carrying only a `representation` and
     one child whose `address` gives its own `offset`; both children take the
     parent's `type` and `channel`, the first its `offset` as well.
-    - Requirement: R3 (inherited `type`/`channel`), R9 (inherited geometry).
+    - Requirement: R2 (inherited `type`/`channel`), R8 (inherited geometry).
     - Necessary: the example's root is `APP`, which the fixture already has with
       the children `STATUS`, `LARGE_STATUS`, `SomeTable` and `SomeFloat`, so the
       case replaces that module instead of adding one. `BSP` already has partial
@@ -500,14 +500,14 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     and the required `offset` (its `channel` omitted) below a `DMA` address on
     channel 5; the child's own `type` applies and its omitted `channel` falls
     back to `0`.
-    - Requirement: R3 (an own `type` drops the inherited `channel`).
+    - Requirement: R2 (an own `type` drops the inherited `channel`).
     - Necessary: the example above covers the inherited `type`/`channel` pair
       only; this is the only case with a `type` of the entry's own.
   - `TestAddressInheritanceOwnChannelKept`: a child `address` giving `channel`
     and the required `offset` (its `type` omitted) below a `DMA` address on
     channel 5; the inherited `type` applies and the `channel` is the entry's
     own, not the inherited 5.
-    - Requirement: R3 (an own `channel` wins).
+    - Requirement: R2 (an own `channel` wins).
     - Necessary: the other cases have the `channel` omitted; only this one pins
       that an own `channel` wins over the inherited one.
   - `TestChannelsEntryInheritsAddressBecomesRegister`: an entry with `channels`
@@ -519,7 +519,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     resolves there too with a slice of its own. A second channel omits its
     `bytesPerElement`, so it defaults to `4`, and its bit-field child is cut from
     that 4-byte word.
-    - Requirement: R18 (`channels` makes a register), R11 (`bytesPerElement` of a
+    - Requirement: R18 (`channels` makes a register), R10 (`bytesPerElement` of a
       channel).
     - Necessary: every `channels` entry in the existing maps carries its own
       `address`; the existing bit-field `children` sit below such channels, so
@@ -532,7 +532,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     register of its own with a 64-bit fixed-point word, and the grandchild is a
     `READ_ONLY` register on the same address with the parent's
     `numberOfElements`.
-    - Requirement: R14, R17 (an entry below an address is a register), R7, R9.
+    - Requirement: R14, R17 (an entry below an address is a register), R6, R8.
     - Necessary: the existing maps have modules above a register-bearing entry
       (`APP`, `MY_INTC`) and a module without any address (`MY_INTC.SUB0`), but no
       grouping entry below an address with properties to inherit. One level
@@ -555,7 +555,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     `numberOfElements` 2 and keeps the parent's `elementPitchBits`, the third gives
     `numberOfElements: 1` and keeps its own value even though it equals the
     default.
-    - Requirement: R9, R10 (inherited geometry and overrides).
+    - Requirement: R8, R9 (inherited geometry and overrides).
     - Necessary: no existing case has an address-less child below a parent with a
       non-default geometry; both overrides need a case, and the third child pins
       that the value `1` is told from an omitted field.
@@ -574,23 +574,23 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
   - `TestChannelsKeepOwnGeometry`: a child of a parent with `numberOfElements: 2`
     giving `channels` with a `pitch` and no `numberOfElements`; it yields one
     element, so the parent's value does not reach it.
-    - Requirement: R9 (no geometry inheritance with `channels`).
+    - Requirement: R8 (no geometry inheritance with `channels`).
     - Necessary: `TestAddressInheritanceDocumentedExample` pins the positive half
       of the rule and its `CONTROL` child the own-`address` half; this case adds
       the `channels` half, which no other case reaches.
   - `TestAddressDefaultsWithoutAncestor`: a top-level entry whose `address` gives
     only `offset` resolves to `bar` `0` at that offset.
-    - Requirement: R5 (`IO`/`0` without an ancestor).
+    - Requirement: R4 (`IO`/`0` without an ancestor).
     - Necessary: no case asserts `bar` or `address` for that default;
       `TestSelectedByInheritance` asserts selector values only.
   - `TestAddressWithoutOffsetRejected`: a present `address` without `offset` is
     rejected.
-    - Requirement: R4 (`offset` is never inherited).
+    - Requirement: R3 (`offset` is never inherited).
     - Necessary: no existing map has an address without `offset`.
   - `TestSecondaryBufferAddressWithoutOffsetRejected`: a present
     `secondaryBufferAddress` without `offset`, and a `doubleBuffering` object that
     omits `secondaryBufferAddress` altogether, are rejected.
-    - Requirement: R6 (`offset` is required).
+    - Requirement: R5 (`offset` is required).
     - Necessary: no existing map has a secondary address without `offset`, and
       every existing `doubleBuffering` gives `secondaryBufferAddress`, so both
       injected maps are new: one with the member present without `offset`, one
@@ -599,7 +599,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     primary `address` is `DMA` on channel 1 and whose `secondaryBufferAddress`
     gives its own `type: DMA` next to the required `offset` is rejected, and a
     second mutation giving a `channel` is rejected too.
-    - Requirement: R6 (`type`/`channel` are invalid).
+    - Requirement: R5 (`type`/`channel` are invalid).
     - Necessary: every existing map gives a `type` there, so both mutations are
       new; without the rejection the value would silently have to match the
       primary BAR.
@@ -609,7 +609,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     first gives its own `representation` and is not reinterpreted by the parent's;
     the second omits it and gets the defaulted fixed-point word, not the parent's.
     Both leave `engineeringUnit` and `description` empty, so neither is inherited.
-    - Requirement: R7 (`access`), R13 (never inherited).
+    - Requirement: R6 (`access`), R12 (never inherited).
     - Necessary: no fixture combines an own `address` with an omitted `access`
       below a parent whose access is not the default.
   - `TestTriggeredByInterruptInheritance`: an address-bearing parent with
@@ -619,7 +619,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     the one whose own `address` gives only `offset` is `INTERRUPT` as well, and a
     void-typed child with its own `triggeredByInterrupt` keeps that id instead of
     the parent's.
-    - Requirement: R8 (`triggeredByInterrupt`).
+    - Requirement: R7 (`triggeredByInterrupt`).
     - Necessary: no fixture reaches this rule, since no interrupt register in the
       fixture has address-less children; `DAQ.CTRL` and `DAQ.FD` carry
       `triggeredByInterrupt` but stand alone, and the interrupt registers that use
@@ -657,7 +657,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     without an own `address`, below an address-bearing entry, gets its `BUF0`
     view on the resolved address and its `BUF1` view on the address from
     `secondaryBufferAddress`, both on the register's `bar`.
-    - Requirement: R6, R14 (a `doubleBuffering` register below an address).
+    - Requirement: R5, R14 (a `doubleBuffering` register below an address).
     - Necessary: every existing `doubleBuffering` gives its own `address`, so an
       inherited one with its views is untested.
   - `TestAccessAndInterruptRejected`: an entry giving both `access` and
@@ -683,7 +683,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     so it took the `IO` default and not the ancestor above; it also carries a
     `selectedBy` declared above the VOID entry, which passes through. The top-level
     VOID entries of the interrupt example in `doc/jmapFormat.dox` parse as well.
-    - Requirement: R2, R20 (the barrier), R12 (`selectedBy` passes through).
+    - Requirement: R13, R20 (the barrier), R11 (`selectedBy` passes through).
     - Necessary: the VOID entries of the fixture (`BSP.VOID_INTERRUPT_0` and its
       sibling `BSP.VOID_INTERRUPT_3_0_1`) sit below an address-bearing entry and
       only their `pathName` is asserted today, so that they take no address over
