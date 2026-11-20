@@ -556,7 +556,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     `numberOfElements: 2` and `bytesPerElement: 4` that also gives a
     `representation`; it yields one register whose channels are exactly the named
     ones, so the own `representation` adds no channel of its own.
-    - Requirement: R6 (a `channels` entry may give a `representation`).
+    - Requirement: R6 (a `representation` next to `channels` adds no channel).
     - Necessary: no fixture gives both, and `Representation::fill` would append a
       channel to a 2D register.
   - `TestVoidChannelRejected`: a channel of a 2D register whose `representation`
