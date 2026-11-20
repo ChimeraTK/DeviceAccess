@@ -22,39 +22,38 @@ Status: IN PROGRESS
 Aspect: inheritance.
 
 - R1: Resolution is per JSON field: an entry inherits each value it does not give
-  itself from the nearest ancestor that gives that value.
+  itself from its parent, which resolves its own value by the same rule.
 - R2: `address`
-  - An entry without an `address` takes the ancestor's whole address, `offset`
+  - An entry without an `address` takes the parent's whole address, `offset`
     included.
   - An own `address` must give its own `offset`, which is never inherited.
-  - An omitted `type` takes the nearest ancestor address's `type` and with it that
-    ancestor's `channel`.
+  - An omitted `type` takes the parent's `type` and with it its `channel`.
   - An own `channel` wins. An own `type` drops the inherited `channel`, so an
     omitted `channel` is then `0`, since a channel means something different per
     `type`.
-  - Where no ancestor has an address, `type` and `channel` are `IO` and `0`. An
+  - Where the parent has no address, `type` and `channel` are `IO` and `0`. An
     `offset` has no default.
 - R3: `secondaryBufferAddress` gives only its own `offset`, and both buffers lie on
   the register's BAR. A `doubleBuffering` without `secondaryBufferAddress`, with an
   offset-less one, or with a `type` or `channel` on it is rejected.
 - R4: `access` and `triggeredByInterrupt`
-  - `access` is inherited from the nearest ancestor register where the entry gives
-    neither `access` nor `triggeredByInterrupt`, with an own `address` or without.
+  - `access` is inherited from the parent where the entry gives neither `access`
+    nor `triggeredByInterrupt`, with an own `address` or without.
   - `triggeredByInterrupt` is inherited together with the `access` it implies,
     unless the entry gives an `access` of its own. Giving `access` is how a child
     stays a plain register.
   - The two are mutually exclusive on one entry.
 - R5: `numberOfElements` and `bytesPerElement`: inherited per value from the
-  nearest ancestor register that gives it, and only where the entry omits its whole
-  `address` and gives no `channels`, since they describe the element the entry is
-  cut from. An own value of either overrides the inherited one. A 2D ancestor gives
-  no `bytesPerElement`, so its children take their own or `4`.
+  parent, and only where the entry omits its whole `address` and gives no
+  `channels`, since they describe the element the entry is cut from. An own value
+  of either overrides the inherited one. A 2D parent gives no `bytesPerElement`, so
+  its children take their own or `4`.
 - R6: The pitch is inherited with them, so an own `bytesPerElement` changes the
-  element size only and the pitch stays the inherited one. A 2D ancestor gives no
+  element size only and the pitch stays the inherited one. A 2D parent gives no
   pitch to inherit, so a child of one advances by its element size.
 - R7: A channel gives its own `bytesPerElement` or `4` and never inherits one; it is
   the word context of the channel's bit-field `children`.
-- R8: `selectedBy`: inherited from the nearest ancestor entry, module or register. A
+- R8: `selectedBy`: inherited from the parent. A
   register-level `selectedBy` next to `channels` applies to the register's
   channels.
 - R9: `representation`, `engineeringUnit` and `description` are never inherited.
@@ -82,7 +81,7 @@ Aspect: registers, modules and valid maps.
   `address`. Its channels take that address, and the bit-field `children` of a
   channel work off the channel's word.
 - R14: An entry with a non-void `representation` or with `channels` is rejected where
-  no address resolves on the way up to the nearest void entry or the top.
+  no address resolves on the way up to a void entry or the top.
 - R15: A void-typed entry carries no data word: an own `address`, `doubleBuffering`,
   `channels`, `numberOfElements`, `bytesPerElement` or `pitch` on it is rejected,
   and so is one without an own `triggeredByInterrupt`. It inherits neither
@@ -103,13 +102,13 @@ Aspect: documentation, format version and tools.
 - R19: The format version stays `1.0`: the rules apply to every file that declares
   it, and a map that violates them stops parsing.
 - R20: These maps parse today and resolve differently without being violations:
-  - a register with an own `address` and no `access` below an ancestor whose
+  - a register with an own `address` and no `access` below a parent whose
     access is not `READ_WRITE` takes the inherited access and interrupt instead
     of `READ_WRITE`
-  - a child with an own `access` below an interrupt-bearing ancestor loses the
+  - a child with an own `access` below an interrupt-bearing parent loses the
     inherited interrupt id
-  - an own `address` with an omitted `type` below an ancestor on another BAR
-    takes the ancestor's `type`, so its `bar` changes
+  - an own `address` with an omitted `type` below a parent on another BAR takes
+    the parent's `type`, so its `bar` changes
   - an own `numberOfElements` on an address-less child is honoured instead of
     ignored
   - an entry below an address that gives only `children` becomes a register of
@@ -147,7 +146,7 @@ Aspect: documentation, format version and tools.
   `chimeratk-map-to-jmap` and in the `channel` bullet of `doc/jmapFormat.dox`. It
   reads `type`/`channel` as values, so it asserts that `resolve` ran, like
   `Address::fill`.
-- `const JsonAddressSpaceEntry* parent` (new): the direct ancestor entry, null at
+- `const JsonAddressSpaceEntry* parent` (new): the direct parent entry, null at
   the top level.
   - The descent assigns it on every child where it recurses, so a getter always
     finds a complete chain. Neither a linking pass nor a "linked" flag is needed.
@@ -173,12 +172,12 @@ Aspect: documentation, format version and tools.
   none of these is a module. A void-typed entry is thus a register without an
   address, which is why this test reads the members and not `effectiveAddress()`.
 - `std::optional<Address> effectiveAddress() const` (new): the resolved address.
-  - An own `address` resolves with `Address::resolveTypeAndChannel` to the nearest
-    ancestor's `type`/`channel`; its `offset` is its own and mandatory.
+  - An own `address` resolves with `Address::resolveTypeAndChannel` to the parent's
+    resolved `type`/`channel`; its `offset` is its own and mandatory.
   - Without an own `address` the entry returns the parent's `effectiveAddress()`,
-    so the per-field search continues above it, and `std::nullopt` where no
-    ancestor has an address.
-  - A void-typed entry returns `std::nullopt` whatever its ancestors give, so it
+    so the per-field search continues above it, and `std::nullopt` where the parent
+    has none.
+  - A void-typed entry returns `std::nullopt` whatever the parent gives, so it
     is the one register without a resolved address; it consequently neither
     writes an address into the register info nor passes one on, and the search of
     a child stops at it.
@@ -201,13 +200,13 @@ Aspect: documentation, format version and tools.
   and gives no `channels`. Elsewhere each getter returns the entry's own value,
   `1` and `4` where it gives none, and the pitch `effectiveElementBytes() * 8`.
   - Where the entry omits its whole `address` and gives no `channels`, it inherits
-    the pitch in bits from the nearest ancestor that gives one, an own
-    `bytesPerElement` changing only the element size. A 2D ancestor gives none, so
+    the pitch in bits from the parent, an own `bytesPerElement` changing only the
+    element size. A 2D parent gives none, so
     the child's pitch follows its element size.
   - An entry with `channels` uses its own `pitch` in bytes times 8, `addInfos`
     having rejected a `channels` entry without `pitch`.
-  - One private predicate and one helper reaching the nearest ancestor register
-    serve all three getters, so the rule and the walk exist once.
+  - One private predicate serves all three getters, each asking the parent for its
+    own value.
   - Bit-field `children` of a channel take the channel's `bytesPerElement` as
     their word context (`doc/jmapFormat.dox`, section `jmap_channel_bitfields`).
     An own `bytesPerElement`, like an own `address` on a channel, is ignored: the
@@ -334,23 +333,22 @@ Aspect: documentation, format version and tools.
 ### Format documentation (modified) in doc/jmapFormat.dox (modified)
 
 - `jmap_access`: a register that gives no `access` inherits the access of the
-  nearest ancestor register, together with its `triggeredByInterrupt` unless the
+  parent, together with its `triggeredByInterrupt` unless the
   entry gives an `access` of its own; a void-typed entry inherits neither, while
   its own interrupt reaches its descendants like any other register's. A register
   with an own `address` inherits as well.
 - `doubleBuffering`: `secondaryBufferAddress` is mandatory and gives only its
   `offset`; a `type` or `channel` on it is invalid, and both buffers lie on the
   register's BAR.
-- The register section points to the nearest ancestor instead of a parent module.
 - `jmap_representation`: a register that omits its whole `representation` and
   gives no `channels` gets a fixed-point word of its effective element size, not a
   32-bit word.
 - `jmap_elements`: `numberOfElements` and `bytesPerElement` are inherited from the
-  nearest ancestor register that gives it, where the entry omits its whole
+  parent, where the entry omits its whole
   `address` and gives no `channels`, own values overriding them, and default to
   `1`/`4` otherwise. A value of `0` is invalid. A channel gives its own
   `bytesPerElement` or `4`.
-- `jmap_modules`: an entry without an address on the way up to the nearest void
+- `jmap_modules`: an entry without an address on the way up to a void
   entry or the top that gives neither `representation` nor `channels` is a module.
   A module may give `children`, `selectedBy`, `engineeringUnit` and `description`,
   and `access`, `triggeredByInterrupt`, `numberOfElements`, `bytesPerElement`,
@@ -359,9 +357,9 @@ Aspect: documentation, format version and tools.
   `channels` but no such address is rejected.
 - `jmap_address_inheritance`, the `type`, `channel` and `offset` bullets of the
   `address` object: a present `address` always gives `offset`; only `type` and
-  `channel` may be omitted. Both inherit from the nearest ancestor, and a `type`
-  of its own drops the inherited `channel`, so an omitted `channel` is `0` then.
-  Only where no ancestor has an address do they default to `IO`/`0`.
+  `channel` may be omitted. Both inherit from the parent, and a `type` of its own
+  drops the inherited `channel`, so an omitted `channel` is `0` then. Only where the
+  parent has no address do they default to `IO`/`0`.
 - `jmap_channel_bitfields`: the bit-field `children` of a channel take the
   channel's `bytesPerElement` as their word context.
 - `jmap_channel_selection`: neither a channel nor a bit-field child of one may
@@ -382,11 +380,10 @@ Aspect: documentation, format version and tools.
 - `numberOfElements` and the `bytesPerElement` definition: the inheritance and
   defaults of `jmap_elements` above, plus `minimum: 1` on both, which covers the
   register member and the channel's; `pitch` already has it.
-- `channels`, `children`, the 2D-register block and `address`: say nearest
-  ancestor instead of parent, and `address` states that only `type`/`channel` are
-  inherited, `offset` being the entry's own. The 2D block drops its
-  `selectedBy: false` and the "must not combine" description, since the
-  register-level selector is the default for the channels.
+- `address`: states that only `type` and `channel` are inherited, `offset` being
+  the entry's own.
+- The 2D-register block drops its `selectedBy: false` and the "must not combine"
+  description, since the register-level selector is the default for the channels.
 - The `type` and `channel` fields: the inheritance of the `address` bullets
   above.
 - `width` and the `representation` description: the defaults of
@@ -421,7 +418,7 @@ Aspect: documentation, format version and tools.
 - Writes `type` and `access` explicitly, since both are inherited now:
   `_make_address` omits `"type"` for `IO` and the serialiser omits a default `RW`
   `access`, which a converted map would resolve differently below a `DMA`, `RO` or
-  interrupt-bearing ancestor. The `INTERRUPT` guard stays, so an interrupt register
+  interrupt-bearing parent. The `INTERRUPT` guard stays, so an interrupt register
   keeps writing `triggeredByInterrupt` and no `access`, which `fill` rejects as a
   pair.
 - Drops `_ensure_void_parents` and the unused `parent_data` parameter: a top-level
@@ -438,7 +435,7 @@ Aspect: documentation, format version and tools.
   - The address-less register had to copy its parent's register out of the
     catalogue, which only works while the direct parent is a register.
   - `fill` had to carry an `addressSetByParent` flag next to the resolved address
-    and the ancestor state.
+    and the parent state.
 - Threading the resolved values forward through the recursion, in a struct of
   address, access, interrupt id, geometry and selector: rejected, it is a second
   data structure that duplicates what the parent already holds and needs a field
@@ -459,7 +456,7 @@ Aspect: documentation, format version and tools.
   `fill`, which know `path()`.
 - Requiring a void-typed entry to have an address in its ancestry, as a register
   is located by one: rejected, a void-typed entry carries no data word to locate.
-  Taking the ancestor's address instead would make the top-level interrupt
+  Taking the parent's address instead would make the top-level interrupt
   example of `doc/jmapFormat.dox` an error and force both generators to
   invent an address-bearing parent. Letting it inherit nothing terminates the
   address chain, which leaves its children in the position of top-level entries.
@@ -585,7 +582,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
       the `channels` half, which no other case reaches.
   - `TestAddressDefaultsWithoutAncestor`: a top-level entry whose `address` gives
     only `offset` resolves to `bar` `0` at that offset.
-    - Requirement: R2 (`IO`/`0` without an ancestor).
+    - Requirement: R2 (`IO`/`0` without a parent).
     - Necessary: no case asserts `bar` or `address` for that default;
       `TestSelectedByInheritance` asserts selector values only.
   - `TestAddressWithoutOffsetRejected`: a present `address` without `offset` is
@@ -680,12 +677,12 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
       below an address-bearing entry. The missing `triggeredByInterrupt` is
       rejected by `fill` today and moves into `addInfos` with the other six.
   - `TestVoidEntryBlocksAddressInheritance`: a VOID-typed entry below an
-    address-bearing ancestor is a register with `bar` and `address` `0`, while its
-    ancestor sits at a non-zero offset, and with `nElements` 0; a child injected
+    address-bearing parent is a register with `bar` and `address` `0`, while that
+    parent sits at a non-zero offset, and with `nElements` 0; a child injected
     below it that gives a `representation` but no own `address` is rejected, and a
     sibling child whose `address` gives only `offset` and which gives no `access`
     parses as an `INTERRUPT` register with the VOID entry's id and with `bar` `0`,
-    so it took the `IO` default and not the ancestor above; it also carries a
+    so it took the `IO` default rather than a value from above; it also carries a
     `selectedBy` declared above the VOID entry, which passes through. The top-level
     VOID entries of the interrupt example in `doc/jmapFormat.dox` parse as well.
     - Requirement: R10, R15 (the barrier), R8 (`selectedBy` passes through).
