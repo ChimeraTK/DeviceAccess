@@ -20,11 +20,11 @@ Aspect: inheritance.
 
 - R1: Resolution is per JSON field: an entry inherits each value it does not give
   itself from the nearest ancestor that gives that value.
-- R2: The search for an address and for the geometry stops at a void-typed entry,
-  which has no data word, so its children are in the position of top-level
-  entries. `selectedBy` passes through it like any other entry's; `access` and
-  `triggeredByInterrupt` do not, since a void-typed entry gives its own
-  `triggeredByInterrupt` and that value reaches its descendants.
+- R2: The search for an address stops at a void-typed entry, which has no data
+  word, so its children are in the position of top-level entries. `selectedBy`
+  passes through it like any other entry's; `access` and `triggeredByInterrupt` do
+  not, since a void-typed entry gives its own `triggeredByInterrupt` and that value
+  reaches its descendants.
 - R3: `address`: an omitted `type` takes the nearest ancestor address's `type` and
   with it that ancestor's `channel`. An own `channel` wins. An own `type` drops
   the inherited `channel`, so an omitted `channel` is then `0`, since a channel
@@ -42,13 +42,14 @@ Aspect: inheritance.
 - R8: `triggeredByInterrupt`: inherited together with the `access` it implies,
   unless the entry gives an `access` of its own. Giving `access` is how a child
   stays a plain register.
-- R9: `numberOfElements` and `bytesPerElement`: inherited only from an ancestor that
-  gives `bytesPerElement`, and only where the entry omits its whole `address` and
-  gives no `channels`, since they describe the sample the entry is cut from. An
-  own value of either overrides the inherited one. Where no ancestor gives them,
-  they are `1` and `4`.
+- R9: `numberOfElements` and `bytesPerElement`: inherited per value from the
+  nearest ancestor register that gives it, and only where the entry omits its whole
+  `address` and gives no `channels`, since they describe the sample the entry is
+  cut from. An own value of either overrides the inherited one. A 2D ancestor gives
+  no `bytesPerElement`, so its children take their own or `4`.
 - R10: The element pitch is inherited with them, so an own `bytesPerElement` changes
-  the sample width only and the stride stays the inherited one.
+  the sample width only and the stride stays the inherited one. A 2D ancestor gives
+  no element pitch to inherit, so a child of one is strided by its sample width.
 - R11: A channel gives its own `bytesPerElement` or `4` and never inherits one; it is
   the word context of the channel's bit-field `children`.
 - R12: `selectedBy`: inherited from the nearest ancestor entry, module or register. A
@@ -93,14 +94,20 @@ Aspect: documentation, format version and tools.
 - R25: `doc/jmapFormat.dox` and `schemas/jmap.schema.json` state the rules above.
 - R26: The format version stays `1.0`: the rules apply to every file that declares it,
   and a map that violates them stops parsing.
-- R27: Four maps that parse today resolve differently without being violations:
+- R27: These maps parse today and resolve differently without being violations:
   - a register with an own `address` and no `access` below an ancestor whose
     access is not `READ_WRITE` takes the inherited access and interrupt instead
     of `READ_WRITE`
+  - a child with an own `access` below an interrupt-bearing ancestor loses the
+    inherited interrupt id
   - an own `address` with an omitted `type` below an ancestor on another BAR
     takes the ancestor's `type`, so its `bar` changes
   - an own `numberOfElements` on an address-less child is honoured instead of
     ignored
+  - an entry below an address that gives only `children` becomes a register of
+    its own
+  - an address-less child of a 2D register is strided by its sample width instead
+    of the 2D `pitch`
   - a register without a `representation` gets a word of its effective width
     instead of a 32-bit word
 - R28: `chimeratk-map-to-jmap` emits maps that satisfy the rules above: an `offset` in
@@ -192,8 +199,8 @@ Aspect: documentation, format version and tools.
   `1` and `4` where it gives none, and the pitch `sampleWidthBytes * 8`.
   - Where the entry omits its whole `address` and gives no `channels`, it inherits
     the element pitch (the stride in bits) from the nearest ancestor that gives
-    `bytesPerElement`, an own `bytesPerElement` changing only the sample width. The
-    search stops at a void-typed entry.
+    one, an own `bytesPerElement` changing only the sample width. A 2D ancestor
+    gives none, so the child's stride follows its sample width.
   - An entry with `channels` uses its own `pitch` in bytes times 8, `addInfos`
     having rejected a `channels` entry without `pitch`.
   - One private predicate and one helper reaching the nearest ancestor register
@@ -264,7 +271,7 @@ Aspect: documentation, format version and tools.
     bit-field child of one.
   - It rejects a VOID entry with a `doubleBuffering`, `channels`, an own `address`
     or an own `numberOfElements`, `bytesPerElement` or `pitch`, since such an entry
-    has no data word.
+    has no data word, and one without an own `triggeredByInterrupt`.
   - It calls `info.computeDataDescriptor()` after `fill`, as today,
     so the descriptor matches the filled channels.
   - It enters every register through `addSliceWithBufferViews`, which adds the
@@ -336,7 +343,7 @@ Aspect: documentation, format version and tools.
   gives no `channels` gets a fixed-point word of its effective sample width, not a
   32-bit word.
 - `jmap_elements`: `numberOfElements` and `bytesPerElement` are inherited from the
-  nearest ancestor that gives `bytesPerElement`, where the entry omits its whole
+  nearest ancestor register that gives it, where the entry omits its whole
   `address` and gives no `channels`, own values overriding them, and default to
   `1`/`4` otherwise. A value of `0` is invalid. A channel gives its own
   `bytesPerElement` or `4`.
@@ -417,8 +424,9 @@ Aspect: documentation, format version and tools.
 - Omits a `bytesPerElement` that would be `0`, which reads as the default `4`
   exactly as `0` does today, and reports the register on stderr.
 - Skips a register or 2D container whose emitted `numberOfElements` or `pitch`
-  would be `0`, a container together with its channel registers, and reports it on
-  stderr as the orphaned-sequence case does.
+  would be `0` and reports it on stderr as the orphaned-sequence case does. A
+  dropped register leaves the `children` of its path node in place; a dropped 2D
+  container takes the channel registers it consumes with it.
 - Drops `_ensure_void_parents` and the unused `parent_data` parameter: a top-level
   void-typed entry parses without an address-bearing parent, and the synthetic one
   would become a register under the new rules.
@@ -516,8 +524,11 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     and its `pitch * 8` as the element pitch, its channel slices resolve to that
     address and carry the channel's `bytesPerElement`, and a bit-field `children`
     entry nested below one of the channels, say `bitShift: 8` and `width: 4`,
-    resolves there too with a slice of its own.
-    - Requirement: R18 (`channels` makes a register).
+    resolves there too with a slice of its own. A second channel omits its
+    `bytesPerElement`, so it defaults to `4`, and its bit-field child is cut from
+    that 4-byte word.
+    - Requirement: R18 (`channels` makes a register), R11 (`bytesPerElement` of a
+      channel).
     - Necessary: every `channels` entry in the existing maps carries its own
       `address`; the existing bit-field `children` sit below such channels, so
       an address-less register passing its address to a channel and on to a
@@ -653,7 +664,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register
     without an own `address`, below an address-bearing entry, gets its `BUF0`
     view on the resolved address and its `BUF1` view on the address from
-    `secondaryBufferAddress`.
+    `secondaryBufferAddress`, both on the register's `bar`.
     - Requirement: R6, R14 (a `doubleBuffering` register below an address).
     - Necessary: every existing `doubleBuffering` gives its own `address`, so an
       inherited one with its views is untested.
@@ -669,8 +680,8 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     rejected.
     - Requirement: R20 (what a void-typed entry rejects).
     - Necessary: the existing VOID entries carry none of the seven and all sit
-      below an address-bearing entry. Six of the checks are new in `addInfos`; the
-      missing `triggeredByInterrupt` is rejected by `fill` today.
+      below an address-bearing entry. The missing `triggeredByInterrupt` is
+      rejected by `fill` today and moves into `addInfos` with the other six.
   - `TestVoidEntryBlocksAddressInheritance`: a VOID-typed entry below an
     address-bearing ancestor is a register with `bar` and `address` `0`, while its
     ancestor sits at a non-zero offset, and with `nElements` 0; a child injected
@@ -687,7 +698,9 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
       is untested; no fixture has children below a VOID entry, nor a top-level one.
 - `TestIsrChildWithChannels` and `TestIsrWithChannels` inject `channels` without a
   `pitch`, which the new rejection now catches first. They get a `pitch` so they
-  keep testing the ISR-child rule they exist for.
+  keep testing the ISR-child rule they exist for. `TestIsrDoubleBuffered` gives
+  `type`/`channel` in its injected `secondaryBufferAddress`, which the same
+  rejection catches first; it keeps only the `offset`.
 - `TestDoubleBufferDiffBarThrows` is removed with `tests/simpleJsonFile.diffBar.jmap`:
   a secondary cannot name another BAR any more.
 - Fixtures (modified): `tests/simpleJsonFile.jmap`, `tests/muxedDataAccessor.jmap`
