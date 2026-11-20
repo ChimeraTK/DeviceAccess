@@ -53,12 +53,12 @@ Aspect: inheritance.
     plain register.
   - An entry cannot specify both `access` and `triggeredByInterrupt`.
 - R5: `numberOfElements` and `bytesPerElement`
-  - Inherited per value from the parent. Inheritance applies only where the entry
-    omits its whole `address` and gives no `channels`. The values describe the
-    element the entry is cut from.
+  - `numberOfElements` and `bytesPerElement` are inherited per value from the
+    parent. Inheritance applies only where the entry omits its whole `address` and
+    gives no `channels`. The values describe the element the entry is cut from.
   - An own value of either overrides the inherited one.
-  - `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`: an
-    absent key means "not set", whereas `0` does not mean "not set".
+  - `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`. An
+    absent key means "not set"; a `0` does not.
 - R6: 2D registers and their channels
   - A `representation` next to `channels` adds no channel; the register's channels
     are exactly those named.
@@ -154,9 +154,9 @@ Aspect: documentation, format version and tools.
     JSON before the descent starts, and nothing copies a linked entry afterwards,
     so no copy can carry a stale parent.
 - `const RegisterPath& path() const` (new): the `fullPath` member, the fully
-  qualified path of the entry. Before `addInfos` does anything else, it sets
-  `fullPath` from its `name` and `parentName` arguments, with the dotted alt
-  separator, as today.
+  qualified path of the entry. `addInfos` sets `fullPath` before it does anything
+  else, from the `name` and `parentName` arguments, with the dotted alt separator,
+  as today.
   - It replaces the `name` and `parentName` arguments of `fill`, and is what the
     error messages and `info.pathName` use.
   - It needs no second lookup to name the entry that declared the effective
@@ -525,8 +525,8 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     address and carry the channel's `bytesPerElement`, and a bit-field `children`
     entry nested below one of the channels, say `bitShift: 8` and `width: 4`,
     resolves there too with a slice of its own. A second channel omits its
-    `bytesPerElement`, so it defaults to `4`, and its bit-field child is cut from
-    that 4-byte word.
+    `bytesPerElement`. It defaults to `4`, and its bit-field child is cut from that
+    4-byte word.
     - Requirement: R6 (a 2D register and its channels).
     - Necessary: every `channels` entry in the existing maps carries its own
       `address`; the existing bit-field `children` sit below such channels, so
