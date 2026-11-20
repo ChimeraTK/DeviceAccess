@@ -111,13 +111,8 @@ Aspect: documentation, format version and tools.
   - a register without a `representation` gets a word of its effective width
     instead of a 32-bit word
 - R28: `chimeratk-map-to-jmap` emits maps that satisfy the rules above: an `offset` in
-  every `address`, no geometry value of `0`, an explicit `type`, and `access`
-  explicit except on an interrupt register, which carries `triggeredByInterrupt`
-  instead.
-- R29: `chimeratk-map-to-jmap` writes no `bytesPerElement` where it would be `0`,
-  which reads as the default, and leaves out a register or 2D container whose
-  `numberOfElements` or `pitch` would be `0`, a container with its channels,
-  reporting it on stderr.
+  every `address`, an explicit `type`, and `access` explicit except on an interrupt
+  register, which carries `triggeredByInterrupt` instead.
 
 ## Specifications
 
@@ -421,11 +416,6 @@ Aspect: documentation, format version and tools.
   interrupt-bearing ancestor. The `INTERRUPT` guard stays, so an interrupt register
   keeps writing `triggeredByInterrupt` and no `access`, which `fill` rejects as a
   pair.
-- Omits a `bytesPerElement` that would be `0`, which reads as the default `4`
-  exactly as `0` does today, and reports the register on stderr.
-- Skips a register or 2D container whose emitted `numberOfElements` or `pitch`
-  would be `0`, a container together with its channel registers, and reports it on
-  stderr as the orphaned-sequence case does.
 - Drops `_ensure_void_parents` and the unused `parent_data` parameter: a top-level
   void-typed entry parses without an address-bearing parent, and the synthetic one
   would become a register under the new rules.
