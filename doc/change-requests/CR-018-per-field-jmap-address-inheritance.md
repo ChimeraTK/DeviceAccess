@@ -424,9 +424,8 @@ Aspect: documentation, format version and tools.
 - Omits a `bytesPerElement` that would be `0`, which reads as the default `4`
   exactly as `0` does today, and reports the register on stderr.
 - Skips a register or 2D container whose emitted `numberOfElements` or `pitch`
-  would be `0` and reports it on stderr as the orphaned-sequence case does. A
-  dropped register leaves the `children` of its path node in place; a dropped 2D
-  container takes the channel registers it consumes with it.
+  would be `0`, a container together with its channel registers, and reports it on
+  stderr as the orphaned-sequence case does.
 - Drops `_ensure_void_parents` and the unused `parent_data` parameter: a top-level
   void-typed entry parses without an address-bearing parent, and the synthetic one
   would become a register under the new rules.
