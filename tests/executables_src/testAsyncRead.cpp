@@ -9,7 +9,10 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 #include "DeviceAccessVersion.h"
 #include "DeviceBackendImpl.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "ReadAnyGroup.h"
+#include "ReadCountingBackend.h"
 
 #include <boost/thread.hpp>
 
@@ -760,6 +763,327 @@ BOOST_AUTO_TEST_CASE(testReadAnyInvalid) {
     // direct read on accessor in ReadAnyGroup is not allowed and should issue exception.
     BOOST_CHECK_THROW(a1.read(), ChimeraTK::logic_error);
   }
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+// Runtime 'selectedBy' gating on the interrupt path (plan tests I1-I5).
+//
+// The fixture selectedByInterrupt.jmap defines an interrupt-triggered, double-buffered data register
+// DAQ.DATA that is only active while DAQ.MUX_SEL == 1, plus a mutually exclusive alternative DAQ.DATA_ALT
+// (active while DAQ.MUX_SEL == 2) sharing the same buffer base and handshake. Both are serviced by interrupt
+// domain 1. A consumer subscribing only to DAQ.DATA must not wake while MUX_SEL != 1, and must never observe
+// data tagged with the wrong selection.
+
+// Writes the selector register through a DummyRegisterAccessor so it can be changed between subscriptions.
+class SelectedByInterruptFixture {
+ public:
+  SelectedByInterruptFixture()
+  : dummy(openDeviceAndGetDummy(device)),
+    accessor(device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA", 1, 0, {AccessMode::wait_for_new_data})),
+    muxSel(dummy.get(), "DAQ", "MUX_SEL"), enable(dummy.get(), "DAQ/DOUBLE_BUF", "ENA"),
+    inactive(dummy.get(), "DAQ/DOUBLE_BUF", "INACTIVE_BUF_ID"), buffer0(dummy.get(), "DAQ/DATA", "BUF0"),
+    buffer1(dummy.get(), "DAQ/DATA", "BUF1") {
+    // Enable double buffering for handshake index 0.
+    enable[0] = 1;
+  }
+
+  // Simulate the firmware finishing a buffer: fill the freshly finished buffer and point INACTIVE_BUF_ID at it,
+  // then raise the interrupt on domain 1. This is only meaningful while DAQ.DATA is selected (MUX_SEL == 1).
+  void firmwareFinishesBuffer(uint32_t value, uint32_t newInactiveBuffer) {
+    if(newInactiveBuffer == 1) {
+      buffer0 = value;
+    }
+    else {
+      buffer1 = value;
+    }
+    inactive[0] = newInactiveBuffer;
+    dummy->triggerInterrupt(1);
+  }
+
+  Device device;
+  boost::shared_ptr<DummyBackend> dummy;
+  OneDRegisterAccessor<uint32_t> accessor;
+  DummyRegisterAccessor<uint32_t> muxSel;
+  DummyRegisterAccessor<uint32_t> enable;
+  DummyRegisterAccessor<uint32_t> inactive;
+  DummyRegisterAccessor<uint32_t> buffer0;
+  DummyRegisterAccessor<uint32_t> buffer1;
+
+ private:
+  static boost::shared_ptr<DummyBackend> openDeviceAndGetDummy(Device& dev) {
+    dev.open("(dummy?map=selectedByInterrupt.jmap)");
+    auto backend = boost::dynamic_pointer_cast<DummyBackend>(dev.getBackend());
+    if(!backend) {
+      BOOST_FAIL("Device did not produce a DummyBackend");
+    }
+    return backend;
+  }
+};
+
+/**********************************************************************************************************************/
+
+// I1: with MUX_SEL == 1, each interrupt returns the freshly filled buffer over several consecutive swaps.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptSelectedDelivers) {
+  SelectedByInterruptFixture f;
+  f.muxSel[0] = 1; // select DAQ.DATA
+  f.device.activateAsyncRead();
+
+  // An initial value is delivered when the async domain is activated.
+  BOOST_REQUIRE(f.accessor.readNonBlocking());
+
+  // No further data before the firmware completes the next buffer.
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Swap 1: buffer0 (=100) finished.
+  f.firmwareFinishesBuffer(100, 1);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 100);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Swap 2: buffer1 (=200) finished.
+  f.firmwareFinishesBuffer(200, 0);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 200);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  f.device.close();
+}
+
+/**********************************************************************************************************************/
+
+// I2: while the selector points to the OTHER alternative (MUX_SEL == 2), the DAQ.DATA consumer does not wake:
+// the interrupt is handled but the data is delivered with an unchanged version number, so readNonBlocking()
+// stays false.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptUnselectedDoesNotWake) {
+  SelectedByInterruptFixture f;
+  f.muxSel[0] = 2; // select DATA_ALT, so DAQ.DATA is inactive
+  f.device.activateAsyncRead();
+
+  // The initial value is delivered (marked faulty since the selection is not met).
+  BOOST_REQUIRE(f.accessor.readNonBlocking());
+  BOOST_CHECK(f.accessor.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // The firmware finishes several buffers while DAQ.DATA is unselected. The consumer must not wake.
+  f.firmwareFinishesBuffer(111, 1);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+  f.firmwareFinishesBuffer(222, 0);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  f.device.close();
+}
+
+/**********************************************************************************************************************/
+
+// I3: while a consumer is pending, switch the selector 1 -> 2 -> 1. The consumer only wakes after MUX_SEL is
+// restored to 1, and never observes data tagged with the wrong selection.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptSwitchSelector) {
+  SelectedByInterruptFixture f;
+  f.muxSel[0] = 1; // select DAQ.DATA
+  f.device.activateAsyncRead();
+
+  // Initial value arrives immediately.
+  BOOST_REQUIRE(f.accessor.readNonBlocking());
+
+  // Point the selector away: the next interrupt must not wake the DAQ.DATA consumer.
+  f.muxSel[0] = 2;
+  f.firmwareFinishesBuffer(333, 1);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Still not selected: another inactive interrupt stays silent.
+  f.firmwareFinishesBuffer(444, 0);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Restore the selection and fill a fresh buffer: the consumer now wakes with that buffer.
+  f.muxSel[0] = 1;
+  f.firmwareFinishesBuffer(555, 1);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK_EQUAL(f.accessor[0], 555);
+
+  f.device.close();
+}
+
+/**********************************************************************************************************************/
+
+// I4: activateAsyncRead while the selection is not met delivers the initial value immediately, marked
+// DataValidity::faulty; it becomes valid once the selector matches and new data arrives.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptInitialValueUnselected) {
+  SelectedByInterruptFixture f;
+  f.muxSel[0] = 2; // DAQ.DATA unselected at activation
+  f.device.activateAsyncRead();
+
+  // Initial value is delivered but marked faulty.
+  BOOST_REQUIRE(f.accessor.readNonBlocking());
+  BOOST_CHECK(f.accessor.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // While still unselected, further interrupts do not deliver new (valid) data.
+  f.firmwareFinishesBuffer(10, 1);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Now select DAQ.DATA and finish a buffer: a valid value follows.
+  f.muxSel[0] = 1;
+  f.firmwareFinishesBuffer(20, 0);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK(f.accessor.dataValidity() != ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(f.accessor[0], 20);
+
+  f.device.close();
+}
+
+/**********************************************************************************************************************/
+
+// I5: double-buffered + muxed: drive several buffer swaps while alternating the selector and assert that every
+// delivered version corresponds to a buffer filled while DAQ.DATA was selected.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptAlternatingSwaps) {
+  SelectedByInterruptFixture f;
+  f.device.activateAsyncRead();
+
+  // Start unselected: the initial value arrives faulty.
+  f.muxSel[0] = 2;
+  BOOST_REQUIRE(f.accessor.readNonBlocking());
+  BOOST_CHECK(f.accessor.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Swap 1 while selected: buffer0 (=1001) delivered.
+  f.muxSel[0] = 1;
+  f.firmwareFinishesBuffer(1001, 1);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK(f.accessor.dataValidity() != ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(f.accessor[0], 1001);
+
+  // Swap 2 while unselected: not delivered (stays on the previous valid version).
+  f.muxSel[0] = 2;
+  f.firmwareFinishesBuffer(9999, 0);
+  BOOST_CHECK(!f.accessor.readNonBlocking());
+
+  // Swap 3 while selected again: the newly finished buffer is delivered.
+  f.muxSel[0] = 1;
+  f.firmwareFinishesBuffer(1002, 1);
+  BOOST_CHECK(f.accessor.readNonBlocking());
+  BOOST_CHECK(f.accessor.dataValidity() != ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(f.accessor[0], 1002);
+
+  f.device.close();
+}
+
+/**********************************************************************************************************************/
+
+// I6: Two subscriptions to mutually exclusive alternatives (DAQ.DATA sel 1, DAQ.DATA_ALT sel 2) that share the
+// SAME selector register DAQ.MUX_SEL. Each subscription's low-level transfer element (SelectedByDecorator) reads
+// the shared selector and only its own selection wakes the consumer: when unselected the physical data read is
+// skipped on interrupt and the delivery is suppressed.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptSharedSelector) {
+  Device device;
+  device.open("(dummy?map=selectedByInterrupt.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy);
+  auto data = device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA", 1, 0, {AccessMode::wait_for_new_data});
+  auto dataAlt = device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA_ALT", 1, 0, {AccessMode::wait_for_new_data});
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+  DummyRegisterAccessor<uint32_t> enable(dummy.get(), "DAQ/DOUBLE_BUF", "ENA");
+  DummyRegisterAccessor<uint32_t> inactive(dummy.get(), "DAQ/DOUBLE_BUF", "INACTIVE_BUF_ID");
+  DummyRegisterAccessor<uint32_t> buffer0(dummy.get(), "DAQ/DATA", "BUF0");
+  DummyRegisterAccessor<uint32_t> buffer1(dummy.get(), "DAQ/DATA", "BUF1");
+  enable[0] = 1;
+
+  auto finishBuffer = [&](uint32_t v, uint32_t buf) {
+    if(buf == 1) {
+      buffer0 = v;
+    }
+    else {
+      buffer1 = v;
+    }
+    inactive[0] = buf;
+    dummy->triggerInterrupt(1);
+  };
+
+  // Select DATA_ALT (MUX_SEL==2). Both initial values arrive: DATA is faulty, DATA_ALT valid.
+  muxSel[0] = 2;
+  device.activateAsyncRead();
+  BOOST_REQUIRE(data.readNonBlocking());
+  BOOST_CHECK(data.dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_REQUIRE(dataAlt.readNonBlocking());
+  BOOST_CHECK(dataAlt.dataValidity() != ChimeraTK::DataValidity::faulty);
+
+  // A finished buffer while DATA_ALT is selected: DATA_ALT wakes with it, DATA stays quiet.
+  finishBuffer(100, 1);
+  BOOST_CHECK(!data.readNonBlocking());
+  BOOST_CHECK(dataAlt.readNonBlocking());
+  BOOST_CHECK_EQUAL(dataAlt[0], 100);
+
+  // Switch to DATA: DATA wakes with the freshly finished buffer, DATA_ALT stays quiet.
+  muxSel[0] = 1;
+  finishBuffer(200, 0);
+  BOOST_CHECK(data.readNonBlocking());
+  BOOST_CHECK(data.dataValidity() != ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(data[0], 200);
+  BOOST_CHECK(!dataAlt.readNonBlocking());
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// I7: While the physical data read is skipped on an unselected interrupt, the selector register is still read (so a
+// change of selection is picked up later). Using a backend that counts every DeviceBackend::read, compare the number
+// of reads in a window of two SELECTED interrupts with a window of one UNSELECTED + one SELECTED interrupt. Both
+// windows perform the same selector and interrupt-controller reads; the only difference is exactly one physical data
+// read (skipped while unselected). So the double-selected window must do exactly one read more than the mixed window.
+BOOST_AUTO_TEST_CASE(testSelectedByInterruptSkipsDataReadWhenUnselected) {
+  Device device;
+  device.open("(ReadCountingDummy?map=selectedByInterrupt.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<ReadCountingBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy);
+  auto data = device.getOneDRegisterAccessor<uint32_t>("/DAQ/DATA", 1, 0, {AccessMode::wait_for_new_data});
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+  DummyRegisterAccessor<uint32_t> enable(dummy.get(), "DAQ/DOUBLE_BUF", "ENA");
+  DummyRegisterAccessor<uint32_t> inactive(dummy.get(), "DAQ/DOUBLE_BUF", "INACTIVE_BUF_ID");
+  DummyRegisterAccessor<uint32_t> buffer0(dummy.get(), "DAQ/DATA", "BUF0");
+  DummyRegisterAccessor<uint32_t> buffer1(dummy.get(), "DAQ/DATA", "BUF1");
+  enable[0] = 1;
+
+  auto finishBuffer = [&](uint32_t v, uint32_t buf) {
+    if(buf == 1) {
+      buffer0 = v;
+    }
+    else {
+      buffer1 = v;
+    }
+    inactive[0] = buf;
+    dummy->triggerInterrupt(1);
+  };
+
+  // Consume the initial value while selected.
+  muxSel[0] = 1;
+  device.activateAsyncRead();
+  BOOST_REQUIRE(data.readNonBlocking());
+
+  // Scenario A: two SELECTED interrupts (each reads selector + data).
+  auto baseA_data = dummy->dataReadCount;
+  finishBuffer(101, 1);
+  BOOST_REQUIRE(data.readNonBlocking()); // sync: interrupt processed & delivered
+  BOOST_CHECK_EQUAL(data[0], 101);
+  finishBuffer(102, 0);
+  BOOST_REQUIRE(data.readNonBlocking()); // sync
+  auto deltaA_data = dummy->dataReadCount - baseA_data;
+
+  // Scenario B: one UNSELECTED (selector read, data read SKIPPED) then one SELECTED interrupt (selector + data).
+  muxSel[0] = 2;
+  auto baseB_data = dummy->dataReadCount;
+  finishBuffer(201, 1); // unselected: no data read
+  muxSel[0] = 1;        // re-select DATA so the next interrupt delivers
+  finishBuffer(202, 0); // selected: reads selector + data
+  BOOST_REQUIRE(data.readNonBlocking()); // sync: confirms both interrupts processed
+  BOOST_CHECK_EQUAL(data[0], 202);
+  auto deltaB_data = dummy->dataReadCount - baseB_data;
+
+  // Both scenarios perform the same selector reads and interrupt handling; the double-selected window reads the
+  // physical data buffer exactly once more than the mixed window (the data read that was skipped while unselected).
+  // Only the data-read counter is asserted, because the total read count additionally includes a redundant selector
+  // read made by the inner per-buffer SelectedByDecorator in the selected path (not relevant to the skip).
+  BOOST_CHECK_EQUAL(deltaA_data, 2); // two selected interrupts -> both data reads happen
+  BOOST_CHECK_EQUAL(deltaB_data, 1); // one unselected (data read skipped) + one selected
 
   device.close();
 }

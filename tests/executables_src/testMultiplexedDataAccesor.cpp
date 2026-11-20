@@ -5,6 +5,8 @@
 
 #include "BackendFactory.h"
 #include "Device.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "MapFileParser.h"
 #include "TwoDRegisterAccessor.h"
 
@@ -460,6 +462,133 @@ BOOST_DATA_TEST_CASE(testAreaOfInterestLength, boost::unit_test::data::make({ARE
     BOOST_TEST(myMixedData[9][i] == 0);
     BOOST_TEST(myMixedData[10][i] == 0);
   }
+}
+
+/**********************************************************************************************************************/
+
+// Runtime 'selectedBy' gating on polled 2D muxed registers (plan tests PD1-PD2).
+//
+// simpleJsonFile.jmap's DAQ.MUXED_WITH_STATUS is a muxed 2D register with per-channel selections: AmplitudeCh0 and
+// PhaseCh0 are active while DAQ.MUX_SEL == 0, StatusCh0 and StatusCh1 while DAQ.MUX_SEL == 2. Because the framework
+// has no per-channel DataValidity (dataValidity() is accessor-global) and the muxed per-channel gating collapses to
+// a global "faulty if any channel inactive" signal on the full register, these tests assert the gate on the
+// single-channel slice accessors, where the accessor-global validity equals that channel's own selection state.
+BOOST_AUTO_TEST_CASE(testSelectedByMuxedChannelSlices) {
+  Device device;
+  device.open("(dummy?map=simpleJsonFile.jmap)");
+  auto dummy = boost::dynamic_pointer_cast<DummyBackend>(device.getBackend());
+  BOOST_REQUIRE(dummy != nullptr);
+
+  DummyRegisterAccessor<uint32_t> muxSel(dummy.get(), "DAQ", "MUX_SEL");
+  DummyRegisterAccessor<int16_t> amp0(dummy.get(), "DAQ/MUXED_WITH_STATUS", "AmplitudeCh0");
+  DummyRegisterAccessor<int16_t> status0(dummy.get(), "DAQ/MUXED_WITH_STATUS", "StatusCh0");
+
+  auto amp0Acc = device.getOneDRegisterAccessor<int16_t>("/DAQ/MUXED_WITH_STATUS/AmplitudeCh0");
+  auto status0Acc = device.getOneDRegisterAccessor<int16_t>("/DAQ/MUXED_WITH_STATUS/StatusCh0");
+
+  // PD1: select DAQ.MUX_SEL == 0 -> the AmplitudeCh0 channel is active and delivers valid data.
+  muxSel[0] = 0;
+  amp0[0] = 321;
+  amp0Acc.read();
+  BOOST_CHECK(amp0Acc.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  // The StatusCh0 channel (selected by MUX_SEL == 2) is inactive while MUX_SEL == 0.
+  status0Acc.read();
+  BOOST_CHECK(status0Acc.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // PD2: select DAQ.MUX_SEL == 2 -> StatusCh0 becomes active, AmplitudeCh0 becomes faulty.
+  muxSel[0] = 2;
+  status0[0] = 654;
+  status0Acc.read();
+  BOOST_CHECK(status0Acc.dataValidity() == ChimeraTK::DataValidity::ok);
+
+  amp0Acc.read();
+  BOOST_CHECK(amp0Acc.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// The full-2D read of a muxed register does NOT apply per-channel 'selectedBy' gating: that gating belongs to the
+// named channel-slice accessors, which are individually wrapped in a SelectedByDecorator. Since the framework has
+// no per-channel DataValidity, a single read of the whole register reports its accessor-global validity (ok) for
+// every channel; the per-channel gate is only visible on the slice accessors (see testSelectedByMuxedChannelSlices).
+// Uses MQ.FD (2D DMA, Ch0 sel 0, Ch1 sel 1, uniform 16-bit channels) so the whole register reads cleanly as int16_t.
+BOOST_AUTO_TEST_CASE(testSelectedByMuxedFullReadNoPerChannelGate) {
+  Device device;
+  device.open("(dummy?map=muxedPolled.jmap)");
+
+  DummyRegisterAccessor<int32_t> mux(boost::dynamic_pointer_cast<DummyBackend>(device.getBackend()).get(), "MQ", "MUX");
+  auto fd = device.getBackend()->getRegisterAccessor<int16_t>("/MQ/FD", 0, 0, {});
+  BOOST_REQUIRE(fd->getNumberOfChannels() == 2);
+
+  // Regardless of the selector value, the full-2D read carries no per-channel gating: it reports its
+  // accessor-global validity (ok), since per-channel 'selectedBy' gating only lives on the slice accessors.
+  mux[0] = 0;
+  fd->read();
+  BOOST_CHECK(fd->dataValidity() == ChimeraTK::DataValidity::ok);
+
+  mux[0] = 1;
+  fd->read();
+  BOOST_CHECK(fd->dataValidity() == ChimeraTK::DataValidity::ok);
+
+  device.close();
+}
+
+/**********************************************************************************************************************/
+
+// A register-level 'selectedBy' on a 2D register gates the WHOLE 2D block: the full-2D accessor is only valid while
+// the selector matches the register-level value, and its physical transfer is skipped (no new data) while the gate
+// is closed. This gate is independent of the per-channel 'selectedBy' the channels may carry, which gate the named
+// channel slices individually (and are unaffected by the register-level gate).
+// Uses MQ.FD_GATED (2D DMA): register-level selectedBy MQ.MUX==2; channel A selectedBy MQ.MUX==2, channel B
+// selectedBy MQ.MUX==3. So while MUX==3, the full-2D accessor is faulty (register gate closed) even though its
+// per-channel slice B is valid.
+BOOST_AUTO_TEST_CASE(testSelectedByRegisterLevelGatesFull2DRead) {
+  Device device;
+  device.open("(dummy?map=muxedPolled.jmap)");
+
+  DummyRegisterAccessor<int32_t> mux(boost::dynamic_pointer_cast<DummyBackend>(device.getBackend()).get(), "MQ", "MUX");
+  auto full = device.getBackend()->getRegisterAccessor<int16_t>("/MQ/FD_GATED", 0, 0, {});
+  BOOST_REQUIRE(full->getNumberOfChannels() == 2);
+
+  auto a = device.getOneDRegisterAccessor<int16_t>("/MQ/FD_GATED/A");
+  auto b = device.getOneDRegisterAccessor<int16_t>("/MQ/FD_GATED/B");
+
+  // Gate open for the whole block (MUX==2 == register-level value): full-2D read is valid.
+  mux[0] = 2;
+  full->read();
+  BOOST_CHECK(full->dataValidity() == ChimeraTK::DataValidity::ok);
+  a.read();
+  BOOST_CHECK(a.dataValidity() == ChimeraTK::DataValidity::ok);
+  b.read();
+  BOOST_CHECK(b.dataValidity() == ChimeraTK::DataValidity::faulty); // per-channel B is gated by MUX==3
+
+  // Gate closed for the whole block (MUX==1): the full-2D accessor is faulty and produces no new data,
+  // even though it carries no per-channel gating of its own.
+  mux[0] = 1;
+  auto versionBefore = full->getVersionNumber();
+  full->read();
+  BOOST_CHECK(full->dataValidity() == ChimeraTK::DataValidity::faulty);
+  BOOST_CHECK(full->getVersionNumber() == versionBefore);
+
+  // Per-channel slices keep their own independent gating while the register-level gate is closed.
+  a.read();
+  BOOST_CHECK(a.dataValidity() == ChimeraTK::DataValidity::faulty);
+  b.read();
+  BOOST_CHECK(b.dataValidity() == ChimeraTK::DataValidity::faulty);
+
+  // Channel B is independently selected while MUX==3, even though the register-level gate (MUX==2) is closed.
+  mux[0] = 3;
+  b.read();
+  BOOST_CHECK(b.dataValidity() == ChimeraTK::DataValidity::ok);
+  a.read();
+  BOOST_CHECK(a.dataValidity() == ChimeraTK::DataValidity::faulty);
+  full->read();
+  BOOST_CHECK(full->dataValidity() == ChimeraTK::DataValidity::faulty); // register-level gate still closed
+
+  device.close();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
