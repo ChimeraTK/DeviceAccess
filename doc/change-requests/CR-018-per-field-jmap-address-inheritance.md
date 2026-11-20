@@ -53,9 +53,8 @@ Aspect: inheritance.
   pitch to inherit, so a child of one advances by its element size.
 - R7: A channel gives its own `bytesPerElement` or `4` and never inherits one; it is
   the word context of the channel's bit-field `children`.
-- R8: `selectedBy`: inherited from the parent. A
-  register-level `selectedBy` next to `channels` applies to the register's
-  channels.
+- R8: `selectedBy`: inherited from the parent. A register-level `selectedBy` next
+  to `channels` applies to the register's channels.
 - R9: `representation`, `engineeringUnit` and `description` are never inherited.
 - R10: The search for an address stops at a void-typed entry, which has no data
   word, so its children are in the position of top-level entries. `selectedBy`
