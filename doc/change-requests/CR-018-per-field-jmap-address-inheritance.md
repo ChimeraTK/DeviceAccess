@@ -75,9 +75,9 @@ Aspect: inheritance.
 - R8: `selectedBy` is inherited.
 - R9: `representation`, `engineeringUnit` and `description` are never inherited.
 - R10: A void-typed entry inherits no address: its children are in the position of
-  top-level entries. It inherits neither `access` nor `triggeredByInterrupt`,
-  while `selectedBy` still passes through it. Its own `triggeredByInterrupt`
-  reaches its descendants like the value of any other register.
+  top-level entries. `selectedBy` still passes through it. Its own
+  `triggeredByInterrupt` reaches its descendants like the value of any other
+  register.
 - R11: An entry without a data word
   - A module and a void-typed entry carry no word, so both reject
     `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering`.
@@ -91,7 +91,7 @@ Aspect: documentation, format version and tools.
 - R13: The format version stays `1.0`, so the rules apply to every file that
   declares it and a map that violates them stops parsing.
 - R14: The following maps parse today but resolve differently after the change.
-  They are no violations:
+  These differences are accepted, so no migration follows:
   - a register with its own `address` and no `access` below a parent with a
     non-`READ_WRITE` access takes the inherited access and interrupt
   - a child with its own `access` below an interrupt-bearing parent loses the
@@ -374,6 +374,8 @@ parse.
 
 ### JSON schema (modified) in schemas/jmap.schema.json (modified)
 
+- The schema states the rules for external validators; the parser stays the
+  enforcement point, and no test validates the schema.
 - `addressSpaceEntry`: the register and module classification of `jmap_modules`
   above, as description only, since a per-entry schema cannot see whether an
   address or a void entry sits above the entry.
@@ -473,14 +475,16 @@ parse.
 ## Test plan
 
 All parser cases go into `tests/executables_src/testJsonMapFileParser.cpp`. Each
-loads `tests/simpleJsonFile.jmap` and applies its mutation through one helper that
-injects and writes a temporary file, like the existing selectedBy and
-map-format-version helpers. Thus no fault-only fixtures are added. The fixture is
+loads `tests/simpleJsonFile.jmap` and applies its mutation through one shared helper
+that injects it, writes a temporary file and parses it. The helper is extended from
+the existing selectedBy and map-format-version ones, so no fault-only fixtures are
+added. The fixture is
 shared with the backend test binaries, which no case affects; a case relying on an
 existing entry names it below, so a fixture edit that changes what it inherits
 shows up in review. A case's `Requirement:` names the `R` bullets it covers, and
 its `Necessary:` states why no other case covers them. A rejection case expects
-`ChimeraTK::logic_error` and nothing more.
+`ChimeraTK::logic_error` and nothing more, except the one case that checks the
+declaring path in the `selectedBy` message.
 
 - `tests/executables_src/testJsonMapFileParser.cpp` (modified)
   - `TestAddressInheritanceDocumentedExample`: the documented inheritance
@@ -515,7 +519,7 @@ its `Necessary:` states why no other case covers them. A rejection case expects
       parent's `type`.
   - `TestChannelsEntryInheritsAddressBecomesRegister`: an entry with `channels`
     and a `pitch`, neither an own `address` nor a `representation`, below an
-    address-bearing entry; it yields a register on that address with one element
+    address-bearing entry on `DMA` channel 3 at a non-zero offset; it yields a register on that address with one element
     and its `pitch * 8` as the pitch, its channel slices resolve to that
     address and carry the channel's `bytesPerElement`, and a bit-field `children`
     entry nested below one of the channels, say `bitShift: 8` and `width: 4`,
@@ -527,9 +531,10 @@ its `Necessary:` states why no other case covers them. A rejection case expects
       `address`; the existing bit-field `children` sit below such channels, so
       an address-less register passing its address to a channel and on to a
       bit-field child is untested.
-  - `TestGroupingEntryBelowAddressBecomesRegister`: an address-bearing entry
-    with `bytesPerElement: 8` carrying `access: RO` and `numberOfElements: 3`
-    whose child gives only `children`, with an address-less grandchild carrying a
+  - `TestGroupingEntryBelowAddressBecomesRegister`: an address-bearing entry on
+    `DMA` channel 3 at a non-zero offset, with `bytesPerElement: 8`, `access: RO`
+    and `numberOfElements: 3`, whose child gives only `children`, with an
+    address-less grandchild carrying a
     `representation`; the child inherits the address and the access and yields a
     register of its own with a 64-bit fixed-point word, and the grandchild is a
     `READ_ONLY` register on the same address with the parent's
@@ -541,10 +546,10 @@ its `Necessary:` states why no other case covers them. A rejection case expects
       suffices, the pass-through is the recursion itself.
   - `TestModuleWithPropertiesRejected`: a true module (no address in its ancestry)
     that gives `access`, a second one that gives `triggeredByInterrupt`, a third
-    that gives `numberOfElements`, a fourth that gives `bytesPerElement`, a fifth
-    that gives `pitch` and a sixth that gives `doubleBuffering` are rejected; a
-    seventh one that carries only `engineeringUnit` and `description` next to
-    `children` parses.
+    that gives `numberOfElements`, a fourth that gives `bytesPerElement` and a
+    fifth that gives `doubleBuffering` are rejected; a sixth one that carries only
+    `engineeringUnit` and `description` next to `children` parses. A module with
+    `pitch` is left to the `pitch`-without-`channels` rule, which fires first.
     - Requirement: R11 (a module rejects data members).
     - Necessary: `MY_INTC` in the fixture is a true module, and
       `TestRegisterWithoutAncestorAddressRejected` covers only the
@@ -592,8 +597,8 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     - Requirement: R1 (`IO`/`0` without a parent).
     - Necessary: no case asserts the resolved `type`/`channel` default;
       `TestSelectedByInheritance` asserts selector values only.
-  - `TestAddressWithoutOffsetRejected`: a present `address` without `offset` is
-    rejected.
+  - `TestAddressWithoutOffsetRejected`: an entry below a parent with an `offset`
+    that gives its own `address` without one is rejected.
     - Requirement: R1 (`offset` is never inherited).
     - Necessary: no existing map has an address without `offset`.
   - `TestSecondaryBufferAddressWithoutOffsetRejected`: a present
@@ -613,7 +618,8 @@ its `Necessary:` states why no other case covers them. A rejection case expects
       new; without the rejection the value would silently have to match the
       primary channel.
   - `TestAccessInheritanceWithOwnAddress`: an address-bearing parent with
-    `access: RO`, a `representation`, `engineeringUnit` and `description` and two
+    `access: RO`, a `representation` of its own (`IEEE754`, `width: 64`),
+    `engineeringUnit` and `description` and two
     children whose own `address` carries only `offset`; both are `READ_ONLY`. The
     first gives its own `representation` and is not reinterpreted by the parent's;
     the second omits it and gets the defaulted fixed-point word, not the parent's.
@@ -642,9 +648,10 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     - Requirement: R3 (`triggeredByInterrupt`).
     - Necessary: CR-020 lets the field name a register; the declaration is a
       variant and nothing covers a name inherited from a parent.
-  - `TestRegisterWithoutAncestorAddressRejected`: an entry with `channels` and an
-    entry with a `representation`, each with no address anywhere in its ancestry,
-    are rejected.
+  - `TestRegisterWithoutAncestorAddressRejected`: an entry with `channels` and a
+    `pitch`, and an entry with a `representation`, each with no address anywhere
+    in its ancestry, are rejected. The `pitch` keeps the `channels` case from
+    being caught by the `pitch`-without-`channels` rule first.
     - Requirement: R1 (no address on the way up).
     - Necessary: no existing map has a register without an address in its
       ancestry. Both entries reach the same rejection, but they cover the two
@@ -671,12 +678,18 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     - Necessary: the schema forbids the combination and the
       parser ignores it today.
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register
-    without an own `address`, below an address-bearing entry, gets its `BUF0`
+    without an own `address`, below an address-bearing entry on `DMA` channel 3 at
+    a non-zero offset, gets its `BUF0`
     view on the resolved address and its `BUF1` view on the address from
     `secondaryBufferAddress`, both on the same channel.
     - Requirement: R2, R1 (a `doubleBuffering` register below an address).
     - Necessary: every existing `doubleBuffering` gives its own `address`, so an
       inherited one with its views is untested.
+  - `TestSelectedByReadOnlyMessage`: a writable register whose `selectedBy` is
+    declared on a parent is rejected, and the message names the parent's path.
+    - Requirement: R8 (`selectedBy` is inherited).
+    - Necessary: `selectedBySource()` replaces the `addInfos` argument, and no
+      case checks the declaring path in the message.
   - `TestAccessAndInterruptRejected`: an entry giving both `access` and
     `triggeredByInterrupt` is rejected.
     - Requirement: R3 (mutually exclusive).
@@ -693,7 +706,8 @@ its `Necessary:` states why no other case covers them. A rejection case expects
       rejected by `fill` today and moves into `addInfos` with the other six.
   - `TestVoidEntryBlocksAddressInheritance`: a VOID-typed entry below an
     address-bearing parent is a register with `address` `0` and with `nElements`
-    0, while that parent sits at a non-zero offset. A child injected
+    0, while that parent sits at a non-zero offset on `DMA` channel 3. A child
+    injected
     below the VOID entry that gives a `representation` but no own `address` is
     rejected. A sibling child whose `address` gives only `offset` and which gives
     no `access` parses as an `INTERRUPT` register with the VOID entry's id,
