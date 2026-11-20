@@ -13,7 +13,7 @@ Status: IN PROGRESS
 - module: an entry that only groups nested entries and describes no data.
 - `channels` entry: a 2D register.
 - void-typed entry: an entry whose `representation` is `void`.
-- sample: the word a register reads or writes.
+- sample: one element a register reads or writes.
 - sample width: the length of a sample in bytes, `bytesPerElement`.
 - stride: the distance between two samples, `pitch` in bytes for a 2D register.
 - grouping entry: an entry below an address that gives only `children`.
