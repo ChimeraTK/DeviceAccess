@@ -6,13 +6,17 @@ the parser follow them; the documentation and the schema state the result.
 
 Status: IN PROGRESS
 
-Terms: a JSON field is one member of a JSON object. A register describes a data
-word, a module only groups nested entries; the rules below tell them apart. A
-`channels` entry is a 2D register, a void-typed entry one whose `representation`
-is `void`. The sample is the word a register reads or writes; its width is
-`bytesPerElement` in bytes. The stride is the distance between two samples,
-`pitch` in bytes for a 2D register. A grouping entry is an entry below an address
-that gives only `children`.
+## Terms
+
+- JSON field: one member of a JSON object.
+- register: an entry that describes a data word.
+- module: an entry that only groups nested entries and describes no data.
+- `channels` entry: a 2D register.
+- void-typed entry: an entry whose `representation` is `void`.
+- sample: the word a register reads or writes.
+- sample width: the length of a sample in bytes, `bytesPerElement`.
+- stride: the distance between two samples, `pitch` in bytes for a 2D register.
+- grouping entry: an entry below an address that gives only `children`.
 
 ## Requirements
 
