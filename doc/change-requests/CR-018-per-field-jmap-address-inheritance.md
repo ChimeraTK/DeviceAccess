@@ -577,8 +577,7 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     - Requirement: R5 (no geometry inheritance with `channels`).
     - Necessary: `TestAddressInheritanceDocumentedExample` pins the positive half
       of the rule and the example's `CONTROL` child the own-`address` half; this
-      case adds
-      the `channels` half, which no other case reaches.
+      case adds the `channels` half, which no other case reaches.
   - `TestAddressDefaultsWithoutAncestor`: a top-level entry whose `address` gives
     only `offset` resolves to `IO`, channel `0`, at that offset.
     - Requirement: R2 (`IO`/`0` without a parent).
