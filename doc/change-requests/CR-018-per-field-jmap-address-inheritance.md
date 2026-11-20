@@ -1,8 +1,8 @@
 # CR-018: per-field inheritance of JMAP addresses
 
-Synopsis: The parser must implement per-field inheritance of the address and the
-register properties. `doc/jmapFormat.dox` and `schemas/jmap.schema.json` promise it
-only in part, so both must state it fully.
+Synopsis: The parser's inheritance of the address and the register properties is
+incomplete and in places wrong. The change defines the rules per value and makes
+the parser follow them; the documentation and the schema state the result.
 
 Status: IN PROGRESS
 
