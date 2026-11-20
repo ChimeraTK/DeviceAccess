@@ -22,6 +22,9 @@ Status: IN PROGRESS
 - element: one value a register reads or writes.
 - pitch: the byte distance between two elements of the same channel in a 2D register.
 - grouping entry: an entry below an address that gives only `children`.
+- bit field: the `children` of a channel, each giving a `representation` with
+  `bitShift` and `width` relative to the channel's element.
+- geometry: `numberOfElements`, `bytesPerElement` and `pitch`.
 
 ## Requirements
 
@@ -52,14 +55,16 @@ Aspect: inheritance.
     given; otherwise the entry uses its own values, `1` and `4` by default.
   - `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`.
 - R5: 2D registers and their channels
-  - `channels` are never inherited.
+  - `channels` are never inherited. A `representation` next to `channels` adds no
+    channel.
   - A 2D register gives `pitch`; `pitch` without `channels` is rejected.
-  - It passes no `bytesPerElement` or `pitch` to its children: each child uses
-    its own `bytesPerElement` or `4` and its element size as pitch.
+  - A 2D register has no `children`; `children` next to `channels` is rejected.
   - Each channel gives its own `offset` (`0` is valid) and `bytesPerElement` or
     `4`.
-  - A channel's `bytesPerElement` is the word context of its bit-field `children`.
-  - A void `representation` on a channel or its bit-field child is rejected.
+  - The `children` of a channel are bit fields of its element. A bit field gives
+    only a `representation`; its address, element size and pitch are the
+    channel's, so any other member on it is rejected.
+  - A void `representation` on a channel or a bit field is rejected.
   - A register-level `selectedBy` next to `channels` applies to the channels.
 - R6: `pitch` is inherited together with the geometry. An own `bytesPerElement`
   changes the element size only.
@@ -76,8 +81,9 @@ Aspect: inheritance.
 - R11: An entry without a data word
   - A module and a void-typed entry carry no word, so both reject
     `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering`.
-  - A module rejects `access` and `triggeredByInterrupt` as well; a void-typed
-    entry rejects `channels`.
+  - A module rejects `access` and `triggeredByInterrupt` as well.
+  - A void-typed entry rejects `channels` and an own `address`, and must give its
+    own `triggeredByInterrupt`.
 
 Aspect: documentation, format version and tools.
 
@@ -95,14 +101,17 @@ Aspect: documentation, format version and tools.
     combination
   - an own `numberOfElements` on an address-less child is honoured
   - an entry below an address that gives only `children` becomes a register
-  - an address-less child of a 2D register advances by its element size, not by
-    the 2D `pitch`
   - a register without a `representation` gets a word of its effective width, not
     32 bits
 - R15: `chimeratk-map-to-jmap` emits maps that satisfy the rules above: an `offset`
   in every `address`, an explicit `type`, and an explicit `access` on every
   register except an interrupt register.
 ## Specifications
+
+The parser rejects a defined key in an invalid place and ignores a key that no
+definition lists; the schema forbids both. CR-020 is on master: a
+`triggeredByInterrupt` may name another register, which is resolved after the
+parse.
 
 ### JsonAddressSpaceEntry (modified) in src/JsonMapFileParser.cc (modified)
 
@@ -136,7 +145,7 @@ Aspect: documentation, format version and tools.
     JSON before the descent starts, and nothing copies a linked entry afterwards,
     so no copy can carry a stale parent.
 - `const RegisterPath& path() const` (new): the `fullPath` member, the fully
-  qualified path of the entry. `addInfos` sets `fullPath` before it does anything
+  qualified path of the entry. `fullPath` (new) is set by `addInfos` before it does anything
   else, from the `name` and `parentName` arguments, with the dotted alt separator,
   as today.
   - It replaces the `name` and `parentName` arguments of `fill`, and is what the
@@ -146,11 +155,9 @@ Aspect: documentation, format version and tools.
 - `std::optional<Address> address` in `JsonAddressSpaceEntry`, so an omitted
   `address` is a `std::nullopt` and an `address: {}` is a present value whose
   fields are all omitted.
-- `bool isRegister() const` (new): an entry for which an address resolves, own
-  or inherited, or which gives a `representation` or `channels`; an entry with
-  none of these is a module. A void-typed entry is thus a register without an
-  address. Consequently, `isRegister()` inspects the members and not
-  `effectiveAddress()`.
+- `bool isRegister() const` (new): true where the entry gives a `representation`
+  (a void one included), gives `channels`, or has an `effectiveAddress()`. An
+  entry with none of the three is a module.
 - `std::optional<Address> effectiveAddress() const` (new): the resolved address.
   - An own `address` resolves with `Address::resolveTypeAndChannel` to the parent's
     resolved `type`/`channel`; its `offset` is its own and mandatory.
@@ -169,31 +176,23 @@ Aspect: documentation, format version and tools.
   - A VOID-typed entry inherits neither and takes its own `triggeredByInterrupt`,
     which gives it `INTERRUPT`.
 - `std::optional<NumericAddressedRegisterInfo::InterruptId>
-  effectiveTriggeredByInterrupt() const` (new): the own declaration. Otherwise it
-  is the parent's, where `effectiveAccess()` is `INTERRUPT`. It is empty where the
-  entry gives an `access` of its own, which suppresses the inheritance. `fill` writes
-  this value into `info.interruptId`, which CR-020 resolves after the parse. An
-  own `access` next to an own `triggeredByInterrupt` stays rejected: the tie lives
-  in `effectiveAccess()`, and this getter derives from that.
+  effectiveTriggeredByInterrupt() const` (new): the own declaration. Otherwise,
+  where `effectiveAccess()` is `INTERRUPT`, the parent's declaration. Empty where
+  the entry gives an `access` of its own, which suppresses the inheritance. `fill`
+  writes this value into `info.interruptId`, which CR-020 resolves after the parse.
+  An own `access` next to an own `triggeredByInterrupt` stays rejected: the tie
+  lives in `effectiveAccess()`, and this getter derives from that.
 - `size_t effectiveNumberOfElements() const`, `size_t effectiveElementBytes()
   const` and `size_t effectiveElementPitchBits() const` (new): the geometry is
-  inherited per JSON field, and only where the entry omits its whole `address`
-  and gives no `channels`. Where the entry gives its own value, the getter returns
-  it. Where it gives no own value and nothing is inherited, the getter returns `1`
-  for the number of elements or `4` for the element size. The pitch is
-  `effectiveElementBytes() * 8`.
-  - In that case the entry inherits the pitch in bits from the parent. An own
-    `bytesPerElement` changes only the element size. A 2D parent gives no pitch, so
-    the child's pitch follows its element size.
+  inherited only where the entry omits its whole `address` and gives no `channels`.
+  Each getter returns the entry's own value, else the inherited one, else the
+  default: `1` for the number of elements, `4` for the element size, and
+  `effectiveElementBytes() * 8` for the pitch.
   - An entry with `channels` uses its own `pitch` in bytes times 8, `addInfos`
     having rejected a `channels` entry without `pitch`.
+  - An own `bytesPerElement` changes the element size only, not an inherited pitch.
   - One private predicate serves all three getters, each asking the parent for its
     own value.
-  - Bit-field `children` of a channel take the channel's `bytesPerElement` as
-    their word context (`doc/jmapFormat.dox`, section `jmap_channel_bitfields`).
-    An own `bytesPerElement`, like an own `address` on a channel, is ignored: the
-    parser skips every key a definition does not list, and the schema's
-    `additionalProperties` forbids both. `addInfos` needs no member for them.
 - `std::optional<SelectedBy> effectiveSelectedBy() const` and `RegisterPath
   selectedBySource() const` (new): the effective selector is the own value, else
   the parent's, for a module and a void-typed entry as well. The source is
@@ -201,16 +200,17 @@ Aspect: documentation, format version and tools.
   empty at the top, as the `addInfos` argument is today.
 - `Representation`, `engineeringUnit`, `description`, `doubleBuffering` and
   `channels` are never inherited. The class's own members read them directly, so
-  they need no getter. `pitch` is an own member too.
+  they need no getter.
 - `void fill(NumericAddressedRegisterInfo& info) const` (modified): writes
   `info.pathName` from `path()` and the non-inheritable members, and takes every
   other value from the getters. It holds no inheritance logic, needs no path
   argument, and adds no rejection; the existing read-only `selectedBy` check and
   CR-020's checks for an empty `triggeredByInterrupt` stay here.
   - It applies the register-level selector through `applyRegisterSelectedBy`,
-    whose signature stays as it is, fed with `effectiveSelectedBy()`, where the
-    entry gives no `channels` and is no VOID. Next to `channels` the selector
-    reaches the channels only, which `Channel::fill` and the slices use as today;
+    fed with `effectiveSelectedBy()`, where the entry gives no `channels` and is
+    no VOID. The helper now takes the selector to apply and no longer chooses
+    between an own and an inherited one. Next to `channels` the selector reaches
+    the channels only, which `Channel::fill` and the slices use as today;
     `selectedBySource()` feeds the read-only message.
   - It writes an own `representation` only where the entry gives no `channels`;
     `Representation::fill` would otherwise append a channel to a 2D register.
@@ -229,13 +229,15 @@ Aspect: documentation, format version and tools.
     descriptor, leaves the address empty, and yields the single channel that
     `fill` emplaces today: bit offset 0, `VOID` type, width 0, fractional bits 0,
     unsigned.
-- `void addInfos(NumericAddressedRegisterCatalogue& catalogue)` (modified):
-  It rejects an own `address` without `offset` before any `effectiveAddress()`
-  call, so `resolve` never reads an absent `offset`. It creates a register for
-  `isRegister()` entries through `fill` and recurses into the sub-entries.
+- `void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string&
+  name, const RegisterPath& parentName)` (modified): rejects an own `address`
+  without `offset` before any `effectiveAddress()` call, so `resolve` never reads
+  an absent `offset`. It creates a register for `isRegister()` entries through
+  `fill` and recurses into the sub-entries.
   - It is non-`const` only to record the links: it sets `fullPath` of the entry
     and `child.parent = this` of each sub-entry before it recurses, so `parse`
-    binds the entries by `auto&`.
+    binds the entries by `auto&`. It keeps its `name` and `parentName` arguments,
+    so the existing empty-name check stays here.
   - The `addressSetByParent`, `inheritedSelectedBy` and
     `inheritedSelectedBySource` arguments are gone: the getters reach the parent
     through the link.
@@ -245,12 +247,14 @@ Aspect: documentation, format version and tools.
     lives in one place, and `fill` never sees a non-void register without an
     address; a void-typed entry has none by definition and passes.
   - It owns every rejection the change adds, and runs them before it calls
-    `fill`, so `fill` never reads a value they guard. The two in
-    `DoubleBufferingInfo::fill` stay there, since only `fill` holds the resolved
-    primary address.
+    `fill`, so `fill` never reads a value they guard. `DoubleBufferingInfo::fill`
+    keeps its three: an omitted `secondaryBufferAddress`, one without `offset`,
+    and one with a `type` or `channel`.
   - It rejects:
     - a channel without `offset`,
     - a `channels` entry without `pitch`,
+    - `children` next to `channels`,
+    - any member other than `representation` on a bit field,
     - an own `pitch` on a register without `channels`,
     - an own `access` next to an own `triggeredByInterrupt`,
     - a `numberOfElements`, `bytesPerElement` or `pitch` of `0` on an entry or a
@@ -270,14 +274,22 @@ Aspect: documentation, format version and tools.
   - A module that gives any of `access`, `triggeredByInterrupt`,
     `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering` is
     rejected with `logic_error`.
-- `Channel::offset` becomes `std::optional<size_t>`, so an omitted `offset` is
-  told from `0`, which stays valid. `addInfos` rejects an omitted `offset` before
-  `Channel::fill` and `channelsInOffsetOrder` dereference it.
 - Channel and bit-field slices are created for every register with `channels`,
   at its resolved address, so an address-less `channels` entry gets them too.
   - A channel slice takes the register's resolved address plus the channel's
-    `offset`, its `bytesPerElement` and the register's geometry; the bit-field
-    `children` of a channel work the same way off the channel's word.
+    `offset`, its `bytesPerElement` and the register's geometry. A bit-field slice
+    takes the channel's address and element size.
+
+### JsonAddressSpaceEntry::Channel (modified) in src/JsonMapFileParser.cc (modified)
+
+- `Channel::offset` becomes `std::optional<size_t>`, so an omitted `offset` is
+  told from `0`, which stays valid. `addInfos` rejects an omitted `offset` before
+  `Channel::fill` and `channelsInOffsetOrder` dereference it.
+- A bit field gives only a `representation`; address, element size and pitch are
+  the channel's. `ChannelChild` loses `engineeringUnit` and `description` and gets
+  a `from_json` that rejects every key except `representation` and `_`-prefixed
+  comments, since the parser otherwise skips unknown keys. Its slice carries
+  neither of the two.
 
 ### JsonAddressSpaceEntry::Address (modified) in src/JsonMapFileParser.cc (modified)
 
@@ -324,7 +336,8 @@ Aspect: documentation, format version and tools.
   its own interrupt reaches its descendants like any other register's.
 - `doubleBuffering`: `secondaryBufferAddress` is mandatory and gives only its
   `offset`; a `type` or `channel` on it is invalid, and both buffers lie on the
-  same channel.
+  same channel. Its example and the sentence "with the same members as a regular
+  `address`" drop `type`/`channel` accordingly.
 - `jmap_representation`: a register that omits its whole `representation` and
   gives no `channels` gets a fixed-point word of its effective element size, not a
   32-bit word.
@@ -346,8 +359,9 @@ Aspect: documentation, format version and tools.
   parent. If the entry gives its own `type`, the inherited `channel` is dropped and
   an omitted `channel` is `0`. Only where the parent has no address do they default
   to `IO`/`0`.
-- `jmap_channel_bitfields`: the bit-field `children` of a channel take the
-  channel's `bytesPerElement` as their word context.
+- `jmap_channel_bitfields`: a bit field gives only a `representation`; the
+  channel supplies its address, element size and pitch.
+- `jmap_2d`: a 2D register has `channels`, not `children`.
 - `jmap_channel_selection`: neither a channel nor a bit-field child of one may
   have a void `representation`.
 - The void-typed entry forbids an own `address` and takes none from its ancestry
@@ -370,15 +384,16 @@ Aspect: documentation, format version and tools.
   the entry's own.
 - The 2D-register block drops its `selectedBy: false` and the "must not combine"
   description, since the register-level selector is the default for the channels.
+  It gains `"children": false`, since a 2D register has no `children`.
 - The `type` and `channel` fields: the inheritance of the `address` bullets
   above.
 - `width` and the `representation` description: the defaults of
   `jmap_representation` above.
 - `access` and `triggeredByInterrupt`: state the inheritance.
 - `channel` and `channelChild`: a `void` `representation` is rejected, since both
-  need a width. The channel-child definition also states that it takes the
-  channel's `bytesPerElement`; `additionalProperties: false` already rejects an own
-  one.
+  need a width. The channel-child definition keeps only `representation`, so
+  `additionalProperties: false` rejects every other member, and its description
+  states that the channel supplies the address, element size and pitch.
 - The void-typed entry: the description says that it forbids an
   own `address` and inherits none, so the address chain below it starts afresh,
   the latter being no constraint a per-entry schema can express;
@@ -401,10 +416,8 @@ Aspect: documentation, format version and tools.
 
 ### chimeratk-map-to-jmap (modified) in tools/chimeratk-map-to-jmap (modified)
 
-- Writes `type` and `access` explicitly, since both are inherited now.
-  `_make_address` omits `"type"` for `IO`, and the serialiser omits a default
-  `RW` `access`; below a `DMA`, `RO` or interrupt-bearing parent, a converted map
-  would resolve both differently. The `INTERRUPT` guard stays, so an interrupt register
+- Writes `type` and `access` on every register, because a converted map would
+  resolve them differently below a `DMA`, `RO` or interrupt-bearing parent. The `INTERRUPT` guard stays, so an interrupt register
   keeps writing `triggeredByInterrupt` and no `access`, which `fill` rejects as a
   pair.
 - Drops `_ensure_void_parents` and the unused `parent_data` parameter: a top-level
@@ -560,6 +573,13 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     - Requirement: R5 (no void channel or channel child).
     - Necessary: no fixture has a void channel, and `Channel::fill` would emplace a
       VOID channel with the default width of `32` instead of rejecting it.
+  - `TestTwoDimensionalEntryRestrictions`: a 2D register that also gives
+    `children` is rejected, and so is a bit field that gives `bytesPerElement` or
+    `engineeringUnit` next to its `representation`.
+    - Requirement: R5 (a 2D register has no `children`, a bit field gives only a
+      `representation`).
+    - Necessary: no fixture gives either, and the parser previously ignored the
+      extra members.
   - `TestChannelsKeepOwnGeometry`: a child of a parent with `numberOfElements: 2`
     giving `channels` with a `pitch` and no `numberOfElements`; it yields one
     element, so the parent's value does not reach it.
