@@ -9,8 +9,10 @@ Status: IN PROGRESS
 ## Terms
 
 - JSON field: one member of a JSON object.
-- register: an entry that describes data, be it one word, several or a 2D block.
-- module: an entry that only groups nested entries and describes no data.
+- register: an entry with an address, own or inherited, or one that gives a
+  `representation` or `channels`.
+- module: an entry with neither; it may give `children`, `selectedBy`,
+  `engineeringUnit` and `description`.
 - 2D register: a register with `channels`.
 - void-typed entry: an entry whose `representation` is `void`.
 - element: one value a register reads or writes.
@@ -59,7 +61,7 @@ Aspect: inheritance.
   gives its own `triggeredByInterrupt`, which reaches its descendants like any
   other register's.
 
-Aspect: registers, modules and valid maps.
+Aspect: register kinds and valid maps.
 
 - R10: 2D registers and their channels
   - An entry with `channels` is a register on the address that resolves for it,
@@ -74,14 +76,8 @@ Aspect: registers, modules and valid maps.
   - A channel and its bit-field child need a width, so a void `representation` on
     either is rejected.
   - A register-level `selectedBy` next to `channels` applies to the channels.
-- R11: register or module
-  - An entry with an address, own or inherited, is a register.
-  - An entry that gives a `representation` or `channels` is a register too, which
-    is how a void-typed entry is a register without an own `address`.
-  - An entry with neither is a module. It may give `children`, `selectedBy`,
-    `engineeringUnit` and `description`; `access`, `triggeredByInterrupt`,
-    `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering` are
-    rejected on it.
+- R11: A module rejects `access`, `triggeredByInterrupt`, `numberOfElements`,
+  `bytesPerElement`, `pitch` and `doubleBuffering`.
 - R12: A register without `representation` and without `channels` is a fixed-point
   word of its effective element size at its resolved address. An entry below an
   address that gives only `children` is such a register, so it parses next to its
@@ -529,7 +525,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     register of its own with a 64-bit fixed-point word, and the grandchild is a
     `READ_ONLY` register on the same address with the parent's
     `numberOfElements`.
-    - Requirement: R11, R12 (an entry below an address is a register), R4, R5.
+    - Requirement: R12 (a grouping entry is a register), R4, R5.
     - Necessary: the existing maps have modules above a register-bearing entry
       (`APP`, `MY_INTC`) and a module without any address (`MY_INTC.SUB0`), but no
       grouping entry below an address with properties to inherit. One level
@@ -540,7 +536,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     that gives `pitch` and a sixth that gives `doubleBuffering` are rejected; a
     seventh one that carries only `engineeringUnit` and `description` next to
     `children` parses.
-    - Requirement: R11 (what a module may give).
+    - Requirement: R11 (a module rejects data members).
     - Necessary: `MY_INTC` in the fixture is a true module, and
       `TestRegisterWithoutAncestorAddressRejected` covers only the
       `representation`; the other members are rejected by their own check, and no
@@ -654,7 +650,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     without an own `address`, below an address-bearing entry, gets its `BUF0`
     view on the resolved address and its `BUF1` view on the address from
     `secondaryBufferAddress`, both on the register's `bar`.
-    - Requirement: R3, R11 (a `doubleBuffering` register below an address).
+    - Requirement: R3, R2 (a `doubleBuffering` register below an address).
     - Necessary: every existing `doubleBuffering` gives its own `address`, so an
       inherited one with its views is untested.
   - `TestAccessAndInterruptRejected`: an entry giving both `access` and
