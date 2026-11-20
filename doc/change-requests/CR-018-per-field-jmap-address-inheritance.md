@@ -5,7 +5,7 @@ and differently per value. The change gives each value one rule, resolves it in 
 `const` getter, rejects the invalid cases in a single `validate()` step, and states
 the result in the format documentation and the schema.
 
-Status: READY TO IMPLEMENT
+Status: IN PROGRESS (from READY TO IMPLEMENT)
 
 ## Requirements
 
@@ -342,7 +342,8 @@ Location: src/JsonMapFileParser.cc (modified)
     and selector.
   - Both build their `ChannelInfo` through `makeChannelInfo` from the same resolved
     `Representation` that `fill` writes, so the word defaults of R5 and R7 exist in
-    one place.
+    one place; the one `effectiveRepresentation` helper serves the register and the
+    channel and `makeChannelInfo` takes its width from it.
 
 ### JsonAddressSpaceEntry::Channel (modified)
 
@@ -396,8 +397,8 @@ Location: src/JsonMapFileParser.cc (modified)
   address and may be empty, for an entry below an address-less or void-typed entry;
   `resolveTypeAndChannel` then takes the `IO`/`0` default. `validate()` has rejected
   an own address without `offset`, so no field is read absent. `getAddress()` returns
-  the result, which `Address::fill` writes into `info` as today; the assertion there
-  documents that `resolve` ran.
+  the result, from which `fill` writes `info.address` and `info.bar`; `Address::fill`
+  is no longer used and goes, since a resolved address always has every field.
 
 ### JsonAddressSpaceEntry::DoubleBufferingInfo (modified)
 
@@ -408,11 +409,12 @@ Location: src/JsonMapFileParser.cc (modified)
   tell a map that still gives them. The whole member is optional, so an omitted
   `secondaryBufferAddress` is told from a present one.
 - `void fill(NumericAddressedRegisterInfo& info) const` (modified): writes the
-  secondary `offset` into `info.doubleBuffer->address` and takes the buffer's
-  `bar` from the primary address's resolved `type`/`channel`, so the second buffer
-  lies on the same channel. It rejects nothing: `validate()` rejects an omitted
-  `secondaryBufferAddress`, one without `offset`, and one that gives `type` or
-  `channel`, and the two channels are not compared any more.
+  secondary `offset` into `info.doubleBuffer->address`. It writes no channel:
+  `NumericAddressedRegisterInfo::DoubleBufferInfo` has no bar member, and the
+  register info already carries the primary address, so the second buffer lies
+  on the same channel as the primary. It rejects nothing: `validate()` rejects an
+  omitted `secondaryBufferAddress`, one without `offset`, and one that gives `type`
+  or `channel`, and the two channels are not compared any more.
 
 ### Format documentation (modified)
 
@@ -944,6 +946,86 @@ mutation and one parse per rule.
 
 ## Deferred issue
 
-- DI-1 [ACCEPTED] `chimeratk-map-to-jmap` has no test harness, so nothing verifies
-  the maps it emits under the rules of this change; its output shape is checked by
-  review only.
+- DI-1 [ACCEPTED] `chimeratk-map-to-jmap` has no test harness, so nothing
+  verifies the maps it emits under the rules of this change; its output shape is
+  checked by review only.
+- DI-2 [SPEC-EDIT] The nested Address type cannot express the specified
+  resolve(own, inherited) signature. Replace ``static Address resolve(const
+  Address& own, const std::optional<Address>& inherited)` (new): resolves an own
+  address to a fully populated `Address` whose `offset` is the `offset` of that
+  own address.`` by ``static JsonAddress resolve(const
+  std::optional<AddressType>& ownType, const std::optional<size_t>& ownChannel,
+  const HexValue& ownOffset, const std::optional<JsonAddress>& inherited)`
+  (new): resolves an own address to a fully populated address whose `offset` is
+  the own one. `getAddress()` passes the own `type`, `channel` and `offset`,
+  which `validate()` has shown to be present, and no field is read absent.``.
+  The address object of an entry lives in the enclosing JsonAddressSpaceEntry; a
+  nested Address type cannot refer to it from getAddress(). Passing the three
+  own fields keeps Address::resolve the single copy of the resolution and needs
+  no std::optional<Address> copy of the own address.
+- DI-3 [SPEC-EDIT] validate() cannot identify a bit field or its channel element
+  width from the specified members alone. Replace ``- `_parent` and `_fullPath`
+  are not among the keys, so they are neither read from nor written to JSON.``
+  by ``- `_parent` and `_fullPath` are not among the keys, so they are neither
+  read from nor written to JSON. - `_bitFieldElementBits` (new) is likewise
+  outside the keys: it is set on a parent entry while `addInfos` creates the
+  slices of a 2D register, and tells `validate()` the element width of the
+  channel that a recursion below it walks. Every other entry holds `0`, so
+  `isBitField()` reduces to `_parent != nullptr && _parent->_bitFieldElementBits
+  != 0`.``. A bit-field child cannot tell from its own members that it is a bit
+  field: a register-level child of an address-bearing 2D register is also a
+  child of an entry with channels. Carrying the channel's element width on the
+  parent during that recursion is what distinguishes the two, and the
+  specification names no mechanism for the channel-element bound the bit-field
+  rejection needs.
+- DI-4 [SPEC-EDIT] DoubleBufferingInfo::fill cannot write a bar, since
+  NumericAddressedRegisterInfo::DoubleBufferInfo has no such member. Replace ``-
+  `void fill(NumericAddressedRegisterInfo& info) const` (modified): writes the
+  secondary `offset` into `info.doubleBuffer->address` and takes the buffer's
+  `bar` from the primary address's resolved `type`/`channel`, so the second
+  buffer lies on the same channel.`` by ``- `void
+  fill(NumericAddressedRegisterInfo& info) const` (modified): writes the
+  secondary `offset` into `info.doubleBuffer->address`. It writes no channel:
+  `NumericAddressedRegisterInfo::DoubleBufferInfo` has no bar member, and the
+  register info already carries the primary address, so the second buffer lies
+  on the same channel as the primary.``.
+  NumericAddressedRegisterInfo::DoubleBufferInfo
+  (include/NumericAddressedRegisterCatalogue.h) has only address,
+  enableRegisterPath, inactiveBufferRegisterPath and index; there is no member
+  to hold the channel.
+- DI-5 [SPEC-EDIT] The specified Address::fill is superseded by writing the
+  resolved address directly in fill. Replace `` `resolveTypeAndChannel` then
+  takes the `IO`/`0` default. `validate()` has rejected an own address without
+  `offset`, so no field is read absent. `getAddress()` returns the result, which
+  `Address::fill` writes into `info` as today; the assertion there documents
+  that `resolve` ran.`` by `` `resolveTypeAndChannel` then takes the `IO`/`0`
+  default. `validate()` has rejected an own address without `offset`, so no
+  field is read absent. `getAddress()` returns the result, from which `fill`
+  writes `info.address` and `info.bar`; `Address::fill` is no longer used and
+  goes, since a resolved address always has every field.``. After getAddress()
+  resolves the whole chain, fill receives a fully populated address and writes
+  the two fields directly; the specified Address::fill with its
+  addressTypeNotSet assertion would be dead code and cannot be written against
+  the resolved type.
+- DI-6 [SPEC-EDIT] The bit-field rejection bullet repeats the missing-bitShift
+  case and leaves the effective width of an omitted width undefined. Replace ``-
+  a bit field without `bitShift` or `width`, or with `bitShift + width` beyond
+  the channel's element width,`` by ``- a bit field whose `representation` is
+  omitted or gives no `width`, or whose `bitShift` plus its effective `width`
+  (the element width where omitted) exceeds the channel's element width,``. The
+  following bullet already rejects a bit field without bitShift, so the first
+  bullet only has to cover width; and the effective width of a bit field, like a
+  register's and a channel's, is the element size where omitted, which the
+  parser must use to make the bound well defined.
+- DI-7 [SPEC-EDIT] makeChannelInfo needs the resolved width, which the plan's
+  signature does not carry. Replace ``Both build their `ChannelInfo` through
+  `makeChannelInfo` from the same resolved `Representation` that `fill` writes,
+  so the word defaults of R5 and R7 exist in one place.`` by ``Both build their
+  `ChannelInfo` through `makeChannelInfo` from the same resolved
+  `Representation` that `fill` writes, so the word defaults of R5 and R7 exist
+  in one place; the one `effectiveRepresentation` helper serves the register and
+  the channel and `makeChannelInfo` takes its width from it.``. makeChannelInfo
+  as specified takes only the Representation and the word bits, while the
+  effective width of an omitted width is no longer a member default but a
+  function of the element size; the resolved representation therefore has to
+  carry it.
