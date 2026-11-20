@@ -53,13 +53,7 @@ Aspect: inheritance.
   - An own value of either overrides the inherited one.
   - `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`; an
     absent key states "not set", `0` does not.
-- R6: The pitch is inherited too, so an own `bytesPerElement` changes the element
-  size only.
-- R7: A register without `representation` and without `channels` gets a fixed-point
-  word of its effective element size at its resolved address. An entry below an
-  address that gives only `children` is such a register and parses next to its
-  children.
-- R8: 2D registers and their channels
+- R6: 2D registers and their channels
   - An entry with `channels` is a register on the address that resolves for it and
     is rejected where none resolves; its `representation` may be non-void, and it
     may give its own `address`.
@@ -72,6 +66,12 @@ Aspect: inheritance.
   - A channel and its bit-field child need a width, so a void `representation` on
     either is rejected.
   - A register-level `selectedBy` next to `channels` applies to the channels.
+- R7: The pitch is inherited too, so an own `bytesPerElement` changes the element
+  size only.
+- R8: A register without `representation` and without `channels` gets a fixed-point
+  word of its effective element size at its resolved address. An entry below an
+  address that gives only `children` is such a register and parses next to its
+  children.
 - R9: `selectedBy` is inherited from the parent.
 - R10: `representation`, `engineeringUnit` and `description` are never inherited.
 - R11: The void-typed exception
@@ -512,7 +512,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     resolves there too with a slice of its own. A second channel omits its
     `bytesPerElement`, so it defaults to `4`, and its bit-field child is cut from
     that 4-byte word.
-    - Requirement: R8 (a 2D register and its channels).
+    - Requirement: R6 (a 2D register and its channels).
     - Necessary: every `channels` entry in the existing maps carries its own
       `address`; the existing bit-field `children` sit below such channels, so
       an address-less register passing its address to a channel and on to a
@@ -524,7 +524,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     register of its own with a 64-bit fixed-point word, and the grandchild is a
     `READ_ONLY` register on the same address with the parent's
     `numberOfElements`.
-    - Requirement: R7 (a grouping entry is a register), R4, R5.
+    - Requirement: R8 (a grouping entry is a register), R4, R5.
     - Necessary: the existing maps have modules above a register-bearing entry
       (`APP`, `MY_INTC`) and a module without any address (`MY_INTC.SUB0`), but no
       grouping entry below an address with properties to inherit. One level
@@ -547,7 +547,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     `numberOfElements` 2 and keeps the parent's `elementPitchBits`, the third gives
     `numberOfElements: 1` and keeps its own value even though it equals the
     default.
-    - Requirement: R5, R6 (inherited geometry and overrides).
+    - Requirement: R5, R7 (inherited geometry and overrides).
     - Necessary: no existing case has an address-less child below a parent with a
       non-default geometry; both overrides need a case, and the third child pins
       that the value `1` is told from an omitted field.
@@ -555,12 +555,12 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     `numberOfElements: 2` and `bytesPerElement: 4` that also gives a
     `representation`; it yields one register whose channels are exactly the named
     ones, so the own `representation` adds no channel of its own.
-    - Requirement: R8 (a `channels` entry may give a `representation`).
+    - Requirement: R6 (a `channels` entry may give a `representation`).
     - Necessary: no fixture gives both, and `Representation::fill` would append a
       channel to a 2D register.
   - `TestVoidChannelRejected`: a channel of a 2D register whose `representation`
     is `void` is rejected, and so is a bit-field child of a channel with one.
-    - Requirement: R8 (no void channel or channel child).
+    - Requirement: R6 (no void channel or channel child).
     - Necessary: no fixture has a void channel, and `Channel::fill` would emplace a
       VOID channel with the default width of `32` instead of rejecting it.
   - `TestChannelsKeepOwnGeometry`: a child of a parent with `numberOfElements: 2`
@@ -627,18 +627,18 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
   - `TestRegisterWithoutAncestorAddressRejected`: an entry with `channels` and an
     entry with a `representation`, each with no address anywhere in its ancestry,
     are rejected.
-    - Requirement: R8 (no address on the way up).
+    - Requirement: R6 (no address on the way up).
     - Necessary: no existing map has a register without an address in its
       ancestry. Both entries reach the same rejection, but they cover the two
       members that make an entry a register without an address.
   - `TestChannelsEntryWithoutPitchRejected`: a `channels` entry without `pitch`
     is rejected, now that an address-less `channels` entry parses.
-    - Requirement: R8 (`channels` requires `pitch`).
+    - Requirement: R6 (`channels` requires `pitch`).
     - Necessary: the schema requires `pitch` next to `channels`, the parser does
       not, and a pitch of 0 would otherwise be accepted silently.
   - `TestChannelWithoutOffsetRejected`: a channel of a 2D register with its
     `offset` removed is rejected.
-    - Requirement: R8 (a channel gives its `offset`).
+    - Requirement: R6 (a channel gives its `offset`).
     - Necessary: `Channel::offset` is uninitialised today, so no fixture reaches
       the rejection, and the schema's requirement is unenforced by the parser.
   - `TestZeroGeometryRejected`: a `numberOfElements: 0` and a `bytesPerElement: 0`
@@ -649,7 +649,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
       new reading needs its own case.
   - `TestPitchWithoutChannelsRejected`: an own `pitch` on a register that gives no
     `channels` is rejected.
-    - Requirement: R8 (`pitch` only with `channels`).
+    - Requirement: R6 (`pitch` only with `channels`).
     - Necessary: the schema forbids the combination and the
       parser ignores it today.
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register
