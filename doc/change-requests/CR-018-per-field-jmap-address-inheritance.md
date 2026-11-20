@@ -29,7 +29,7 @@ Aspect: inheritance.
 
 - R1: `address`
   - An omitted `address` is inherited as a whole.
-  - `offset` is not inherited and must be given.
+  - An own `address` must give `offset`; `offset` is never inherited.
   - `type` is inherited.
   - `channel` is inherited unless the entry gives `type`; then an omitted `channel`
     is `0`, since a channel means something different per `type`.
