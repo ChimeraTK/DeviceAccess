@@ -22,103 +22,97 @@ Status: IN PROGRESS
 Aspect: inheritance.
 
 - R1: Resolution is per JSON field: an entry inherits each value it does not give
-  itself from its parent, which resolves its own value by the same rule.
+  itself from its parent, which resolves its own value the same way.
 - R2: `address`
-  - An entry without an `address` takes the parent's whole address, `offset`
-    included.
-  - An own `address` must give its own `offset`, which is never inherited.
+  - An entry without an `address` takes the parent's address, `offset` included.
+  - An own `address` must give its own `offset`; `offset` is never inherited.
   - An omitted `type` takes the parent's `type` and with it its `channel`.
-  - An own `channel` wins. An own `type` drops the inherited `channel`, so an
-    omitted `channel` is then `0`, since a channel means something different per
-    `type`.
-  - Where the parent has no address, `type` and `channel` are `IO` and `0`. An
-    `offset` has no default.
-- R3: `secondaryBufferAddress` gives only its own `offset`, and both buffers lie on
-  the register's BAR. A `doubleBuffering` without `secondaryBufferAddress`, with an
-  offset-less one, or with a `type` or `channel` on it is rejected.
+  - An own `channel` wins; an own `type` drops the inherited `channel`, so an
+    omitted `channel` is `0` then. A channel means something different per `type`.
+  - Without a parent address, `type` and `channel` are `IO` and `0`; `offset` has
+    no default.
+- R3: `secondaryBufferAddress` gives only its own `offset`; both buffers lie on the
+  register's BAR. A `doubleBuffering` without `secondaryBufferAddress`, without
+  `offset`, or with a `type` or `channel` is rejected.
 - R4: `access` and `triggeredByInterrupt`
-  - `access` is inherited from the parent where the entry gives neither `access`
-    nor `triggeredByInterrupt`, with an own `address` or without.
-  - `triggeredByInterrupt` is inherited together with the `access` it implies,
-    unless the entry gives an `access` of its own. Giving `access` is how a child
-    stays a plain register.
+  - `access` is inherited from the parent unless the entry gives `access` or
+    `triggeredByInterrupt`, with an own `address` or without.
+  - `triggeredByInterrupt` is inherited with the `access` it implies, unless the
+    entry gives its own `access`, which is how a child stays a plain register.
   - The two are mutually exclusive on one entry.
-- R5: `numberOfElements` and `bytesPerElement`: inherited per value from the
-  parent, and only where the entry omits its whole `address` and gives no
-  `channels`, since they describe the element the entry is cut from. An own value
-  of either overrides the inherited one. A 2D parent gives no `bytesPerElement`, so
-  its children take their own or `4`.
-- R6: The pitch is inherited with them, so an own `bytesPerElement` changes the
-  element size only and the pitch stays the inherited one. A 2D parent gives no
-  pitch to inherit, so a child of one advances by its element size.
-- R7: A channel gives its own `bytesPerElement` or `4` and never inherits one; it is
-  the word context of the channel's bit-field `children`.
-- R8: `selectedBy`: inherited from the parent. A register-level `selectedBy` next
+- R5: `numberOfElements` and `bytesPerElement`
+  - Inherited per value from the parent, but only where the entry omits its whole
+    `address` and gives no `channels`; they describe the element the entry is cut
+    from.
+  - An own value of either overrides the inherited one.
+  - A 2D parent gives no `bytesPerElement`, so its children take their own or `4`.
+- R6: The pitch is inherited too, so an own `bytesPerElement` changes the element
+  size only. A 2D parent gives no pitch, so a child of one advances by its element
+  size.
+- R7: A channel gives its own `bytesPerElement` or `4`. It never inherits one, and
+  it is the word context of the channel's bit-field `children`.
+- R8: `selectedBy` is inherited from the parent. A register-level `selectedBy` next
   to `channels` applies to the register's channels.
 - R9: `representation`, `engineeringUnit` and `description` are never inherited.
-- R10: The search for an address stops at a void-typed entry, which has no data
-  word, so its children are in the position of top-level entries. `selectedBy`
-  passes through it like any other entry's; `access` and `triggeredByInterrupt` do
-  not, since a void-typed entry gives its own `triggeredByInterrupt` and that value
-  reaches its descendants.
+- R10: The search for an address stops at a void-typed entry: it has no data word,
+  so its children are in the position of top-level entries. `selectedBy` passes
+  through it; `access` and `triggeredByInterrupt` do not, since a void-typed entry
+  gives its own `triggeredByInterrupt`, which reaches its descendants like any
+  other register's.
 
 Aspect: registers, modules and valid maps.
 
-- R11: `register` or `module`
-  - An entry with an address in its ancestry, own or inherited, is a register.
-  - An entry that gives a `representation` or `channels` is a register as well,
-    which is how a void-typed entry is a register without an own `address`.
+- R11: register or module
+  - An entry with an address, own or inherited, is a register.
+  - An entry that gives a `representation` or `channels` is a register too, which
+    is how a void-typed entry is a register without an own `address`.
   - An entry with neither is a module. It may give `children`, `selectedBy`,
-    `engineeringUnit` and `description`, while `access`, `triggeredByInterrupt`,
-    `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering` on it are
-    rejected.
-- R12: A register without a `representation` and without `channels` is a fixed-point
-  word of its effective element size at its resolved address. A grouping entry
-  below an address is such a register, so it parses next to its children.
+    `engineeringUnit` and `description`; `access`, `triggeredByInterrupt`,
+    `numberOfElements`, `bytesPerElement`, `pitch` and `doubleBuffering` are
+    rejected on it.
+- R12: A register without `representation` and without `channels` is a fixed-point
+  word of its effective element size at its resolved address. An entry below an
+  address that gives only `children` is such a register, so it parses next to its
+  children.
 - R13: An entry with `channels` is a register on the address that resolves for it,
   with or without a non-void `representation` and with or without an own
-  `address`. Its channels take that address, and the bit-field `children` of a
-  channel work off the channel's word.
-- R14: An entry with a non-void `representation` or with `channels` is rejected where
-  no address resolves on the way up to a void entry or the top.
-- R15: A void-typed entry carries no data word: an own `address`, `doubleBuffering`,
+  `address`. Its channels take that address, and their bit-field `children` work
+  off the channel's word.
+- R14: An entry with a non-void `representation` or with `channels` and no address
+  on the way up to a void entry or the top is rejected.
+- R15: A void-typed entry has no data word: an own `address`, `doubleBuffering`,
   `channels`, `numberOfElements`, `bytesPerElement` or `pitch` on it is rejected,
-  and so is one without an own `triggeredByInterrupt`. It inherits neither
-  `access` nor `triggeredByInterrupt`, and its own `triggeredByInterrupt` reaches
-  its descendants like any other register's.
-- R16: A channel of a 2D register and a bit-field child of a channel must not have a
-  void `representation`: both need a width, so both are rejected.
-- R17: The geometry members and the channel `offset`
-  - `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`, since an
-    absent key states "not set" and `0` does not.
-  - A `channels` entry gives its `pitch`; `pitch` without `channels` is rejected.
-  - Every channel gives its `offset`, since `0` is a valid offset and cannot stand
-    for "not set".
+  and so is a missing own `triggeredByInterrupt`. It inherits neither `access` nor
+  `triggeredByInterrupt`; its own `triggeredByInterrupt` reaches its descendants.
+- R16: A channel and a bit-field child of a channel need a width, so a void
+  `representation` on either is rejected.
+- R17: `numberOfElements`, `bytesPerElement`, `pitch` and the channel `offset`
+  - The three geometry members reject the value `0`: an absent key states "not
+    set", `0` does not.
+  - A `channels` entry gives `pitch`; `pitch` without `channels` is rejected.
+  - Every channel gives its `offset`, a valid offset being `0`.
 
 Aspect: documentation, format version and tools.
 
 - R18: `doc/jmapFormat.dox` and `schemas/jmap.schema.json` state the rules above.
-- R19: The format version stays `1.0`: the rules apply to every file that declares
-  it, and a map that violates them stops parsing.
+- R19: The format version stays `1.0`, so the rules apply to every file that
+  declares it and a map that violates them stops parsing.
 - R20: These maps parse today and resolve differently without being violations:
-  - a register with an own `address` and no `access` below a parent whose
-    access is not `READ_WRITE` takes the inherited access and interrupt instead
-    of `READ_WRITE`
+  - a register with an own `address` and no `access` below a parent with a
+    non-`READ_WRITE` access takes the inherited access and interrupt
   - a child with an own `access` below an interrupt-bearing parent loses the
     inherited interrupt id
   - an own `address` with an omitted `type` below a parent on another BAR takes
     the parent's `type`, so its `bar` changes
-  - an own `numberOfElements` on an address-less child is honoured instead of
-    ignored
-  - an entry below an address that gives only `children` becomes a register of
-    its own
-  - an address-less child of a 2D register advances by its element size instead
-    of the 2D `pitch`
-  - a register without a `representation` gets a word of its effective width
-    instead of a 32-bit word
+  - an own `numberOfElements` on an address-less child is honoured
+  - an entry below an address that gives only `children` becomes a register
+  - an address-less child of a 2D register advances by its element size, not by
+    the 2D `pitch`
+  - a register without a `representation` gets a word of its effective width, not
+    32 bits
 - R21: `chimeratk-map-to-jmap` emits maps that satisfy the rules above: an `offset`
   in every `address`, an explicit `type`, and `access` explicit except on an
-  interrupt register, which carries `triggeredByInterrupt` instead.
+  interrupt register.
 
 ## Specifications
 
