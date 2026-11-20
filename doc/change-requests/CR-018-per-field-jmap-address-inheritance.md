@@ -693,7 +693,8 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     child also carries a `selectedBy` declared above the VOID entry, which passes
     through. The top-level VOID entries of the interrupt example in
     `doc/jmapFormat.dox` parse as well.
-    - Requirement: R11, R12 (the barrier), R9 (`selectedBy` passes through).
+    - Requirement: R11, R12 (the void exception), R9 (`selectedBy` passes
+      through).
     - Necessary: the VOID entries of the fixture (`BSP.VOID_INTERRUPT_0` and its
       sibling `BSP.VOID_INTERRUPT_3_0_1`) sit below an address-bearing entry and
       only their `pathName` is asserted today, so that they take no address over
@@ -703,8 +704,9 @@ its `Necessary:` states why no other case covers them. A rejection case expects
   they keep testing the ISR-child rule they exist for. `TestIsrDoubleBuffered` gives
   `type`/`channel` in its injected `secondaryBufferAddress`, which the same
   rejection catches first; it keeps only the `offset`.
-- `TestDoubleBufferDiffBarThrows` is removed with `tests/simpleJsonFile.diffBar.jmap`:
-  a secondary cannot name another channel any more.
+- The test that asserts the rejection of a second buffer on another channel is
+  removed together with its fixture: a secondary cannot name another channel any
+  more.
 - Fixtures (modified): `tests/simpleJsonFile.jmap`, `tests/muxedDataAccessor.jmap`
   and `tests/groupedDemux.jmap` lose the `type`/`channel` of every
   `secondaryBufferAddress`.
