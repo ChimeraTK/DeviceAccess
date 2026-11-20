@@ -16,8 +16,6 @@ Status: IN PROGRESS
 - 2D register: a register with `channels`.
 - void-typed entry: an entry whose `representation` is `void`.
 - element: one value a register reads or writes.
-- BAR: the bus address range a register sits on. The number of a BAR is `bar` in
-  the catalogue and `channel` in the map file, with `13` added for `DMA`.
 - pitch: the byte distance between two elements of the same channel in a 2D register.
 - grouping entry: an entry below an address that gives only `children`.
 
@@ -104,7 +102,8 @@ Aspect: documentation, format version and tools.
   - a child with an own `access` below an interrupt-bearing parent loses the
     inherited interrupt id
   - an own `address` with an omitted `type` below a parent on another channel
-    takes the parent's `type`, so its `bar` changes
+    takes the parent's `type`, so the register moves to another `type`/`channel`
+    combination
   - an own `numberOfElements` on an address-less child is honoured
   - an entry below an address that gives only `children` becomes a register
   - an address-less child of a 2D register advances by its element size, not by
@@ -137,11 +136,6 @@ Aspect: documentation, format version and tools.
     getter expresses the interrupt case with the catalogue's enum.
   - `parent` and `fullPath` are not in the macro's member list, so they are
     neither read from nor written to JSON.
-- `size_t Address::bar() const` (new): `channel + (type == DMA ? 13 : 0)`, the one
-  place for the formula inside the parser, used by `Address::fill`. The inverse
-  mapping stays in `_make_address` of `chimeratk-map-to-jmap` and in the `channel`
-  bullet of `doc/jmapFormat.dox`. `bar()` reads `type`/`channel` as values, so it
-  asserts that `resolve` ran, like `Address::fill`.
 - `const JsonAddressSpaceEntry* parent` (new): the direct parent entry, null at
   the top level.
   - The descent assigns it on every child where it recurses, so a getter always
@@ -244,7 +238,7 @@ Aspect: documentation, format version and tools.
     `NumericAddressedRegisterInfo` already creates a channel; `addInfos` no
     longer clears it.
   - A VOID-typed entry writes `elementPitchBits` 0, `nElements` 0 and the `nodata`
-    descriptor, leaves `bar`/`address` empty, and yields the single channel that
+    descriptor, leaves the address empty, and yields the single channel that
     `fill` emplaces today: bit offset 0, `VOID` type, width 0, fractional bits 0,
     unsigned.
 - `void addInfos(NumericAddressedRegisterCatalogue& catalogue)` (modified):
@@ -316,10 +310,9 @@ Aspect: documentation, format version and tools.
   inherited)` (new): resolves an own address to a fully populated `Address` whose
   `offset` is the `offset` of that own address. `inherited` must already be resolved by the
   caller, because `resolveTypeAndChannel` restarts at `IO`/`0` for an inherited
-  address with omitted fields. `effectiveAddress()` returns the result, so
-  `Address::fill` writes `info.address` and `info.bar` from it and
-  reads `*offset`; its `addressTypeNotSet` assertion becomes an assertion that
-  `resolve` ran.
+  address with omitted fields. `effectiveAddress()` returns the result, which
+  `Address::fill` writes into `info` as today; it reads `*offset`, and its
+  `addressTypeNotSet` assertion becomes an assertion that `resolve` ran.
 
 ### JsonAddressSpaceEntry::DoubleBufferingInfo (modified) in src/JsonMapFileParser.cc (modified)
 
@@ -587,9 +580,9 @@ its `Necessary:` states why no other case covers them. A rejection case expects
       case adds
       the `channels` half, which no other case reaches.
   - `TestAddressDefaultsWithoutAncestor`: a top-level entry whose `address` gives
-    only `offset` resolves to `bar` `0` at that offset.
+    only `offset` resolves to `IO`, channel `0`, at that offset.
     - Requirement: R2 (`IO`/`0` without a parent).
-    - Necessary: no case asserts `bar` or `address` for that default;
+    - Necessary: no case asserts the resolved `type`/`channel` default;
       `TestSelectedByInheritance` asserts selector values only.
   - `TestAddressWithoutOffsetRejected`: a present `address` without `offset` is
     rejected.
@@ -672,7 +665,7 @@ its `Necessary:` states why no other case covers them. A rejection case expects
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register
     without an own `address`, below an address-bearing entry, gets its `BUF0`
     view on the resolved address and its `BUF1` view on the address from
-    `secondaryBufferAddress`, both on the register's `bar`.
+    `secondaryBufferAddress`, both on the same channel.
     - Requirement: R3, R2 (a `doubleBuffering` register below an address).
     - Necessary: every existing `doubleBuffering` gives its own `address`, so an
       inherited one with its views is untested.
@@ -691,12 +684,13 @@ its `Necessary:` states why no other case covers them. A rejection case expects
       below an address-bearing entry. The missing `triggeredByInterrupt` is
       rejected by `fill` today and moves into `addInfos` with the other six.
   - `TestVoidEntryBlocksAddressInheritance`: a VOID-typed entry below an
-    address-bearing parent is a register with `bar` and `address` `0` and with
-    `nElements` 0, while that parent sits at a non-zero offset. A child injected
+    address-bearing parent is a register with `address` `0` and with `nElements`
+    0, while that parent sits at a non-zero offset. A child injected
     below the VOID entry that gives a `representation` but no own `address` is
     rejected. A sibling child whose `address` gives only `offset` and which gives
-    no `access` parses as an `INTERRUPT` register with the VOID entry's id and with
-    `bar` `0`, so it took the `IO` default rather than a value from above. That
+    no `access` parses as an `INTERRUPT` register with the VOID entry's id,
+    resolved to `IO` and channel `0`, so it took the `IO` default rather than a
+    value from above. That
     child also carries a `selectedBy` declared above the VOID entry, which passes
     through. The top-level VOID entries of the interrupt example in
     `doc/jmapFormat.dox` parse as well.
