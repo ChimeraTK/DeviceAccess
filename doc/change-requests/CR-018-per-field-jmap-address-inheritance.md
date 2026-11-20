@@ -51,8 +51,8 @@ Aspect: inheritance.
 - R3: `access` and `triggeredByInterrupt`
   - `access` is inherited unless the entry gives `access` or `triggeredByInterrupt`.
   - `triggeredByInterrupt` is inherited together with the `access` it implies.
-  - An own `access` suppresses that inheritance and keeps the child a plain
-    register.
+  - An own `access` replaces the inherited pair: the entry keeps its own access and
+    inherits no `triggeredByInterrupt`, so no interrupt id reaches it.
   - An entry cannot specify both `access` and `triggeredByInterrupt`.
 - R4: `numberOfElements` and `bytesPerElement`
   - Inherited only when the whole `address` is omitted and no `channels` are
@@ -90,7 +90,7 @@ Aspect: inheritance.
 - R9: `representation`, `engineeringUnit`, `description` and `channels` are never
   inherited.
 - R10: A void-typed entry
-  - It carries no data word, so `channels`, an own `address`, `numberOfElements`,
+  - It takes no data word, so `channels`, an own `address`, `numberOfElements`,
     `bytesPerElement` and `doubleBuffering` are rejected.
   - It must give its own `triggeredByInterrupt`.
   - It has no `selectedBy` of its own, while an inherited one passes through it.
@@ -99,7 +99,7 @@ Aspect: inheritance.
   - Its own `triggeredByInterrupt` reaches its descendants like the value of any
     other register.
 - R11: A module
-  - It carries no data word, so `numberOfElements`, `bytesPerElement` and
+  - It takes no data word, so `numberOfElements`, `bytesPerElement` and
     `doubleBuffering` are rejected, and `access` and `triggeredByInterrupt` as
     well.
 
@@ -115,8 +115,9 @@ Aspect: documentation, format version and tools.
   - gives `pitch` without `channels`,
   - gives `numberOfElements`, `bytesPerElement` or `pitch` as `0`, or
   - gives another member than `representation` on a bit field.
-- R14: The following maps parse today but resolve differently after the change.
-  These differences are accepted, so no migration follows:
+- R14: The following maps parse today but behave differently after the change:
+  they resolve differently, or they stop parsing as R13 lists. These differences
+  are accepted, so no migration follows:
   - a register with its own `address` and no `access` below a parent with a
     non-`READ_WRITE` access takes the inherited access and interrupt
   - a child with its own `access` below an interrupt-bearing parent loses the
@@ -243,12 +244,13 @@ after the parse.
   `info.pathName` from `getPath()` and the non-inheritable members, and takes every
   other value from the getters. It holds no inheritance logic, needs no path
   argument, and rejects nothing, `validate()` having run first.
-  - It applies the register-level selector through `applyRegisterSelectedBy`,
-    fed with `getSelectedBy()`, where the entry gives no `channels` and is
-    no VOID. The helper now takes the selector to apply and no longer chooses
-    between an own and an inherited one. Next to `channels` the selector reaches
-    the channels only, which `Channel::fill` and the slices use as today;
-    `getSelectedBySource()` feeds the read-only message.
+  - It applies the register-level selector through
+    `JsonAddressSpaceEntry::applyRegisterSelectedBy`, fed with `getSelectedBy()`,
+    where the entry gives no `channels` and is no VOID. The helper takes the
+    selector to apply and no longer chooses between an own and an inherited one.
+    Next to `channels`, `fill` hands the same `getSelectedBy()` to `Channel::fill`
+    and to the channel slices, so `getSelectedBySource()` feeds the read-only
+    message for them as well.
   - It writes the own `representation`. `validate()` has rejected one next to
     `channels`, so `Representation::fill` never appends a channel to a 2D register.
   - A register that gives no `representation` and no `channels` gets a fixed-point
@@ -290,12 +292,8 @@ after the parse.
     - a `doubleBuffering` whose `secondaryBufferAddress` is omitted, gives no
       `offset`, or gives a `type` or `channel`, which `DoubleBufferingInfo::fill`
       rejects today. No comparison of the two channels remains.
-  - It rejects a VOID entry that gives `doubleBuffering`, `channels`, an own
-    `address`, an own `selectedBy`, or an own `numberOfElements` or
-    `bytesPerElement`, because such an entry carries no data word, and a VOID entry
-    without an own `triggeredByInterrupt`.
-  - It rejects a module that gives `access` or `triggeredByInterrupt`; the
-    no-word members above apply to it as well.
+  - It rejects on a void-typed entry and on a module what R10 and R11 exclude,
+    including a void-typed entry without an own `triggeredByInterrupt`.
   - Every message names the entry by `getPath()` and is a `logic_error`.
 - `void addInfos(NumericAddressedRegisterCatalogue& catalogue, const std::string&
   name, const RegisterPath& parentName)` (modified): calls `validate()`, creates a
@@ -332,7 +330,7 @@ after the parse.
   `representation` and `_`-prefixed comments. Its slice carries neither of the two
   members.
 - A channel without a `representation` gets a fixed-point `Representation` whose
-  `width` is its `bytesPerElement` times 8.
+  `width` is its element size in bits.
 
 ### JsonAddressSpaceEntry::Address (modified) in src/JsonMapFileParser.cc (modified)
 
@@ -704,7 +702,7 @@ declaring path in the `selectedBy` message.
   - `TestTriggeredByInterruptInheritsName`: an address-bearing parent whose
     `triggeredByInterrupt` names another interrupt register of the fixture, and an
     address-less child with a `representation`; both resolve to that register's id
-    after `finaliseInterruptBookkeeping()`.
+    after `JsonMapFileParser::finaliseInterruptBookkeeping()`.
     - Requirement: R3 (`triggeredByInterrupt`).
     - Necessary: CR-020 lets the field name a register; the declaration is a
       variant and nothing covers a name inherited from a parent.
@@ -751,9 +749,8 @@ declaring path in the `selectedBy` message.
     - Necessary: `getSelectedBySource()` replaces the `addInfos` argument, and no
       case checks the declaring path in the message.
   - `TestSelectedByOverrideRejected`: a child below a `selectedBy`-declaring
-    parent that gives its own `selectedBy` is rejected, and so is a void-typed
-    entry with one.
-    - Requirement: R8 (`selectedBy` is inherited and never overridden), R10.
+    parent that gives its own `selectedBy` is rejected.
+    - Requirement: R8 (`selectedBy` is inherited and never overridden).
     - Necessary: the fixture's `selectedBy` cases declare it on one entry only, so
       an own value below a declarer parses today.
   - `TestAccessAndInterruptRejected`: an entry giving both `access` and
@@ -761,33 +758,65 @@ declaring path in the `selectedBy` message.
     - Requirement: R3 (mutually exclusive).
     - Necessary: the check moves from the entry branch into `addInfos`, and no
       existing case reaches it.
-  - `TestVoidEntryRejections`: a VOID-typed entry with a `doubleBuffering`, a
-    second one with `channels`, a third one with an own `address`, a fourth one with
-    an own `numberOfElements`, a fifth one with an own `bytesPerElement`, a sixth
-    one with an own `pitch` and a seventh one without `triggeredByInterrupt` are
-    rejected.
-    - Requirement: R10 (what a void-typed entry rejects).
-    - Necessary: the existing VOID entries carry none of the seven and all sit
-      below an address-bearing entry. The missing `triggeredByInterrupt` is
-      rejected by `fill` today and moves into `addInfos` with the other six. An
-      own `selectedBy` is covered by `TestSelectedByOverrideRejected`.
-  - `TestVoidEntryBlocksAddressInheritance`: a VOID-typed entry below an
-    address-bearing parent is a register with `address` `0` and with `nElements`
-    0, while that parent sits at a non-zero offset on `DMA` channel 3. A child
-    injected
-    below the VOID entry that gives a `representation` but no own `address` is
-    rejected. A sibling child whose `address` gives only `offset` and which gives
-    no `access` parses as an `INTERRUPT` register with the VOID entry's id,
-    resolved to `IO` and channel `0`, so it took the `IO` default rather than a
-    value from above. That
-    child also carries a `selectedBy` declared above the VOID entry, which passes
-    through. The top-level VOID entries of the interrupt example in
-    `doc/jmapFormat.dox` parse as well.
-    - Requirement: R10 (the void exception), R8 (`selectedBy` passes through).
+  - `TestVoidEntryWithDoubleBufferingRejected`: a VOID-typed entry that gives
+    `doubleBuffering` is rejected.
+    - Requirement: R10.
+    - Necessary: no fixture VOID entry gives one, and the parser ignored it today.
+  - `TestVoidEntryWithChannelsRejected`: a VOID-typed entry that gives `channels`
+    and a `pitch` is rejected.
+    - Requirement: R10.
+    - Necessary: no fixture VOID entry gives `channels`.
+  - `TestVoidEntryWithAddressRejected`: a VOID-typed entry that gives an own
+    `address` is rejected.
+    - Requirement: R10.
+    - Necessary: every fixture VOID entry has none, so no case reaches the rule.
+  - `TestVoidEntryWithNumberOfElementsRejected`: a VOID-typed entry that gives an
+    own `numberOfElements` is rejected.
+    - Requirement: R10.
+    - Necessary: no fixture VOID entry gives one.
+  - `TestVoidEntryWithBytesPerElementRejected`: a VOID-typed entry that gives an
+    own `bytesPerElement` is rejected.
+    - Requirement: R10.
+    - Necessary: no fixture VOID entry gives one.
+  - `TestVoidEntryWithPitchRejected`: a VOID-typed entry that gives an own `pitch`
+    is rejected by the `pitch`-without-`channels` rule.
+    - Requirement: R5 (`pitch` exactly where `channels` are), R10.
+    - Necessary: no fixture VOID entry gives `pitch`, and the rule that catches it
+      is the 2D one, so the case pins which of the two rules a VOID entry meets.
+  - `TestVoidEntryWithSelectedByRejected`: a VOID-typed entry that gives its own
+    `selectedBy` is rejected.
+    - Requirement: R10.
+    - Necessary: no fixture VOID entry gives one.
+  - `TestVoidEntryWithoutInterruptRejected`: a VOID-typed entry without an own
+    `triggeredByInterrupt` is rejected; `fill` rejects it today and the check moves
+    into `validate()`.
+    - Requirement: R10.
+    - Necessary: every fixture VOID entry gives one, so no case reaches the rule.
+  - `TestVoidEntryTakesNoAddress`: a VOID-typed entry below an address-bearing
+    parent on `DMA` channel 3 at a non-zero offset is a register with `address` 0
+    and `nElements` 0.
+    - Requirement: R10 (no inherited address).
     - Necessary: the VOID entries of the fixture (`BSP.VOID_INTERRUPT_0` and its
       sibling `BSP.VOID_INTERRUPT_3_0_1`) sit below an address-bearing entry and
-      only their `pathName` is asserted today, so that they take no address over
-      is untested; no fixture has children below a VOID entry, nor a top-level one.
+      only their `pathName` is asserted today.
+  - `TestVoidEntryChildWithoutAddressRejected`: a child below the VOID entry that
+    gives a `representation` but no own `address` is rejected, the VOID entry
+    passing none on.
+    - Requirement: R10, R1.
+    - Necessary: no fixture has children below a VOID entry.
+  - `TestVoidEntryChildStartsAddressChainAfresh`: a sibling child whose `address`
+    gives only `offset` and which gives no `access` parses as an `INTERRUPT`
+    register with the VOID entry's id, resolved to `IO` and channel `0`, so it took
+    the `IO` default rather than a value from above; a `selectedBy` declared above
+    the VOID entry reaches it.
+    - Requirement: R10, R8 (`selectedBy` passes through).
+    - Necessary: no fixture has children below a VOID entry, and no other case
+      reaches the default behind a VOID entry.
+  - `TestTopLevelVoidEntryParses`: the top-level VOID entries of the interrupt
+    example in `doc/jmapFormat.dox` parse.
+    - Requirement: R10.
+    - Necessary: no fixture has a top-level VOID entry.
+
 - `TestIsrChildWithChannels` and `TestIsrWithChannels` inject `channels` without a
   `pitch`, which the new rejection now catches first. Both tests get a `pitch` so
   they keep testing the ISR-child rule they exist for. `TestIsrDoubleBuffered` gives
