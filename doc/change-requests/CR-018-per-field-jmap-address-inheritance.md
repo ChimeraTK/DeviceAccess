@@ -53,7 +53,6 @@ Aspect: inheritance.
   - `numberOfElements` and `bytesPerElement` are inherited per value from the
     parent. Inheritance applies only where the entry omits its whole `address` and
     gives no `channels`. The values describe the element the entry is cut from.
-  - An own value of either overrides the inherited one.
   - `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`. An
     absent key means "not set"; a `0` does not.
 - R6: 2D registers and their channels
@@ -507,9 +506,10 @@ its `Necessary:` states why no other case covers them. A rejection case expects
     and the required `offset` (its `type` omitted) below a `DMA` address on
     channel 5; the inherited `type` applies and the `channel` is the entry's
     own, not the inherited 5.
-    - Requirement: R2 (an own `channel` wins).
+    - Requirement: R1, R2 (an own `channel` is kept, the `type` inherited).
     - Necessary: the other cases have the `channel` omitted; only this one pins
-      that an own `channel` wins over the inherited one.
+      that an own `channel` is kept while an omitted `type` still takes the
+      parent's `type`.
   - `TestChannelsEntryInheritsAddressBecomesRegister`: an entry with `channels`
     and a `pitch`, neither an own `address` nor a `representation`, below an
     address-bearing entry; it yields a register on that address with one element
