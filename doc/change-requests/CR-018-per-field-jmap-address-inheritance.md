@@ -49,16 +49,11 @@ Aspect: inheritance.
     `address` and gives no `channels`; they describe the element the entry is cut
     from.
   - An own value of either overrides the inherited one.
-  - A 2D parent gives no `bytesPerElement`, so its children take their own or `4`.
 - R6: The pitch is inherited too, so an own `bytesPerElement` changes the element
-  size only. A 2D parent gives no pitch, so a child of one advances by its element
-  size.
-- R7: A channel gives its own `bytesPerElement` or `4`. It never inherits one, and
-  it is the word context of the channel's bit-field `children`.
-- R8: `selectedBy` is inherited from the parent. A register-level `selectedBy` next
-  to `channels` applies to the register's channels.
-- R9: `representation`, `engineeringUnit` and `description` are never inherited.
-- R10: The search for an address stops at a void-typed entry: it has no data word,
+  size only.
+- R7: `selectedBy` is inherited from the parent.
+- R8: `representation`, `engineeringUnit` and `description` are never inherited.
+- R9: The search for an address stops at a void-typed entry: it has no data word,
   so its children are in the position of top-level entries. `selectedBy` passes
   through it; `access` and `triggeredByInterrupt` do not, since a void-typed entry
   gives its own `triggeredByInterrupt`, which reaches its descendants like any
@@ -66,6 +61,19 @@ Aspect: inheritance.
 
 Aspect: registers, modules and valid maps.
 
+- R10: 2D registers and their channels
+  - An entry with `channels` is a register on the address that resolves for it,
+    with or without a non-void `representation` and with or without an own
+    `address`.
+  - It gives `pitch`; `pitch` without `channels` is rejected. It gives no
+    `bytesPerElement` or pitch to its children, which take their own `4` and
+    advance by their element size.
+  - Its channels take its address; each gives its own `offset` (`0` is valid) and
+    its own `bytesPerElement` or `4`.
+  - A channel's `bytesPerElement` is the word context of its bit-field `children`.
+  - A channel and its bit-field child need a width, so a void `representation` on
+    either is rejected.
+  - A register-level `selectedBy` next to `channels` applies to the channels.
 - R11: register or module
   - An entry with an address, own or inherited, is a register.
   - An entry that gives a `representation` or `channels` is a register too, which
@@ -78,30 +86,21 @@ Aspect: registers, modules and valid maps.
   word of its effective element size at its resolved address. An entry below an
   address that gives only `children` is such a register, so it parses next to its
   children.
-- R13: An entry with `channels` is a register on the address that resolves for it,
-  with or without a non-void `representation` and with or without an own
-  `address`. Its channels take that address, and their bit-field `children` work
-  off the channel's word.
-- R14: An entry with a non-void `representation` or with `channels` and no address
+- R13: An entry with a non-void `representation` or with `channels` and no address
   on the way up to a void entry or the top is rejected.
-- R15: A void-typed entry has no data word: an own `address`, `doubleBuffering`,
+- R14: A void-typed entry has no data word: an own `address`, `doubleBuffering`,
   `channels`, `numberOfElements`, `bytesPerElement` or `pitch` on it is rejected,
   and so is a missing own `triggeredByInterrupt`. It inherits neither `access` nor
   `triggeredByInterrupt`; its own `triggeredByInterrupt` reaches its descendants.
-- R16: A channel and a bit-field child of a channel need a width, so a void
-  `representation` on either is rejected.
-- R17: `numberOfElements`, `bytesPerElement`, `pitch` and the channel `offset`
-  - The three geometry members reject the value `0`: an absent key states "not
-    set", `0` does not.
-  - A `channels` entry gives `pitch`; `pitch` without `channels` is rejected.
-  - Every channel gives its `offset`, a valid offset being `0`.
+- R15: `numberOfElements`, `bytesPerElement` and `pitch` reject the value `0`: an
+  absent key states "not set", `0` does not.
 
 Aspect: documentation, format version and tools.
 
-- R18: `doc/jmapFormat.dox` and `schemas/jmap.schema.json` state the rules above.
-- R19: The format version stays `1.0`, so the rules apply to every file that
+- R16: `doc/jmapFormat.dox` and `schemas/jmap.schema.json` state the rules above.
+- R17: The format version stays `1.0`, so the rules apply to every file that
   declares it and a map that violates them stops parsing.
-- R20: These maps parse today and resolve differently without being violations:
+- R18: These maps parse today and resolve differently without being violations:
   - a register with an own `address` and no `access` below a parent with a
     non-`READ_WRITE` access takes the inherited access and interrupt
   - a child with an own `access` below an interrupt-bearing parent loses the
@@ -114,7 +113,7 @@ Aspect: documentation, format version and tools.
     the 2D `pitch`
   - a register without a `representation` gets a word of its effective width, not
     32 bits
-- R21: `chimeratk-map-to-jmap` emits maps that satisfy the rules above: an `offset`
+- R19: `chimeratk-map-to-jmap` emits maps that satisfy the rules above: an `offset`
   in every `address`, an explicit `type`, and `access` explicit except on an
   interrupt register.
 
@@ -518,8 +517,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     resolves there too with a slice of its own. A second channel omits its
     `bytesPerElement`, so it defaults to `4`, and its bit-field child is cut from
     that 4-byte word.
-    - Requirement: R13 (`channels` makes a register), R7 (`bytesPerElement` of a
-      channel).
+    - Requirement: R10 (a 2D register and its channels).
     - Necessary: every `channels` entry in the existing maps carries its own
       `address`; the existing bit-field `children` sit below such channels, so
       an address-less register passing its address to a channel and on to a
@@ -562,12 +560,12 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     `numberOfElements: 2` and `bytesPerElement: 4` that also gives a
     `representation`; it yields one register whose channels are exactly the named
     ones, so the own `representation` adds no channel of its own.
-    - Requirement: R13 (a `channels` entry may give a `representation`).
+    - Requirement: R10 (a `channels` entry may give a `representation`).
     - Necessary: no fixture gives both, and `Representation::fill` would append a
       channel to a 2D register.
   - `TestVoidChannelRejected`: a channel of a 2D register whose `representation`
     is `void` is rejected, and so is a bit-field child of a channel with one.
-    - Requirement: R16 (no void channel or channel child).
+    - Requirement: R10 (no void channel or channel child).
     - Necessary: no fixture has a void channel, and `Channel::fill` would emplace a
       VOID channel with the default width of `32` instead of rejecting it.
   - `TestChannelsKeepOwnGeometry`: a child of a parent with `numberOfElements: 2`
@@ -608,7 +606,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     first gives its own `representation` and is not reinterpreted by the parent's;
     the second omits it and gets the defaulted fixed-point word, not the parent's.
     Both leave `engineeringUnit` and `description` empty, so neither is inherited.
-    - Requirement: R4 (`access`), R9 (never inherited).
+    - Requirement: R4 (`access`), R8 (never inherited).
     - Necessary: no fixture combines an own `address` with an omitted `access`
       below a parent whose access is not the default.
   - `TestTriggeredByInterruptInheritance`: an address-bearing parent with
@@ -627,29 +625,29 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
   - `TestRegisterWithoutAncestorAddressRejected`: an entry with `channels` and an
     entry with a `representation`, each with no address anywhere in its ancestry,
     are rejected.
-    - Requirement: R14 (no address on the way up).
+    - Requirement: R13 (no address on the way up).
     - Necessary: no existing map has a register without an address in its
       ancestry. Both entries reach the same rejection, but they cover the two
       members that make an entry a register without an address.
   - `TestChannelsEntryWithoutPitchRejected`: a `channels` entry without `pitch`
     is rejected, now that an address-less `channels` entry parses.
-    - Requirement: R17 (`channels` requires `pitch`).
+    - Requirement: R10 (`channels` requires `pitch`).
     - Necessary: the schema requires `pitch` next to `channels`, the parser does
       not, and a pitch of 0 would otherwise be accepted silently.
   - `TestChannelWithoutOffsetRejected`: a channel of a 2D register with its
     `offset` removed is rejected.
-    - Requirement: R17 (a channel gives its `offset`).
+    - Requirement: R10 (a channel gives its `offset`).
     - Necessary: `Channel::offset` is uninitialised today, so no fixture reaches
       the rejection, and the schema's requirement is unenforced by the parser.
   - `TestZeroGeometryRejected`: a `numberOfElements: 0` and a `bytesPerElement: 0`
     are rejected on an otherwise valid register, a channel's `bytesPerElement: 0`
     on a 2D register, and a `pitch: 0` on that 2D register.
-    - Requirement: R17 (`0` is no geometry value).
+    - Requirement: R15 (`0` is no geometry value).
     - Necessary: `0` means "not set" today and the generators can write it, so the
       new reading needs its own case.
   - `TestPitchWithoutChannelsRejected`: an own `pitch` on a register that gives no
     `channels` is rejected.
-    - Requirement: R17 (`pitch` only with `channels`).
+    - Requirement: R10 (`pitch` only with `channels`).
     - Necessary: the schema forbids the combination and the
       parser ignores it today.
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register
@@ -669,7 +667,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     an own `numberOfElements`, a fifth one with an own `bytesPerElement`, a sixth
     one with an own `pitch` and a seventh one without `triggeredByInterrupt` are
     rejected.
-    - Requirement: R15 (what a void-typed entry rejects).
+    - Requirement: R14 (what a void-typed entry rejects).
     - Necessary: the existing VOID entries carry none of the seven and all sit
       below an address-bearing entry. The missing `triggeredByInterrupt` is
       rejected by `fill` today and moves into `addInfos` with the other six.
@@ -682,7 +680,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     so it took the `IO` default rather than a value from above; it also carries a
     `selectedBy` declared above the VOID entry, which passes through. The top-level
     VOID entries of the interrupt example in `doc/jmapFormat.dox` parse as well.
-    - Requirement: R10, R15 (the barrier), R8 (`selectedBy` passes through).
+    - Requirement: R9, R14 (the barrier), R7 (`selectedBy` passes through).
     - Necessary: the VOID entries of the fixture (`BSP.VOID_INTERRUPT_0` and its
       sibling `BSP.VOID_INTERRUPT_3_0_1`) sit below an address-bearing entry and
       only their `pathName` is asserted today, so that they take no address over
