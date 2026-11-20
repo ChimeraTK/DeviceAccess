@@ -122,6 +122,8 @@ Aspect: documentation, format version and tools.
     a data member and a member function cannot share a name.
   - `numberOfElements`, `bytesPerElement` and `pitch` become `std::optional<size_t>`,
     so an own value is told from an omitted one and a module can reject them.
+  - `triggeredByInterrupt` keeps CR-020's optional `InterruptId`, so the getters
+    pass a register name on like a numeric array.
   - `access` becomes `std::optional<Access>`, and `Access::accessNotSet` is
     deleted. Its value collided with
     `NumericAddressedRegisterInfo::Access::INTERRUPT`; with the sentinel gone, the
@@ -169,18 +171,20 @@ Aspect: documentation, format version and tools.
     writes an address into the register info nor passes one on, and the search of
     a child stops at it.
 - `NumericAddressedRegisterInfo::Access effectiveAccess() const` (new): the own
-  `access`; else `INTERRUPT` where the entry gives its own `triggeredByInterrupt`;
+  `access`; else `INTERRUPT` where `triggeredByInterrupt` is present, name or
+  array;
   else the parent's, and `READ_WRITE` at the top. The catalogue's enum is the
   return type because it has an `INTERRUPT` value; the own `access` member stays
   the parser's `Access`, converted here once.
   - A VOID-typed entry inherits neither and takes its own `triggeredByInterrupt`,
     which gives it `INTERRUPT`.
-- `std::vector<size_t> effectiveInterruptId() const` (new): the own
-  `triggeredByInterrupt`; else the parent's where `effectiveAccess()` is
-  `INTERRUPT`; empty where the entry gives an `access` of its own, which
-  suppresses the inheritance. An own `access` next to an own
-  `triggeredByInterrupt` stays rejected, so the tie lives in `effectiveAccess()`
-  and this getter derives from it.
+- `std::optional<NumericAddressedRegisterInfo::InterruptId>
+  effectiveTriggeredByInterrupt() const` (new): the own declaration; else the
+  parent's where `effectiveAccess()` is `INTERRUPT`; empty where the entry gives
+  an `access` of its own, which suppresses the inheritance. `fill` writes it into
+  `info.interruptId`, which CR-020 resolves after the parse. An own `access` next
+  to an own `triggeredByInterrupt` stays rejected, so the tie lives in
+  `effectiveAccess()` and this getter derives from it.
 - `size_t effectiveNumberOfElements() const`, `size_t effectiveElementBytes()
   const` and `size_t effectiveElementPitchBits() const` (new): the geometry is
   inherited per JSON field, and only where the entry omits its whole `address`
@@ -210,8 +214,8 @@ Aspect: documentation, format version and tools.
 - `void fill(NumericAddressedRegisterInfo& info) const` (modified): writes
   `info.pathName` from `path()` and the non-inheritable members, and takes every
   other value from the getters. It holds no inheritance logic, needs no path
-  argument, and adds no rejection; the existing read-only `selectedBy` check stays
-  here.
+  argument, and adds no rejection; the existing read-only `selectedBy` check and
+  CR-020's checks for an empty `triggeredByInterrupt` stay here.
   - It applies the register-level selector through `applyRegisterSelectedBy`,
     whose signature stays as it is, fed with `effectiveSelectedBy()`, where the
     entry gives no `channels` and is no VOID. Next to `channels` the selector
@@ -613,6 +617,13 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
       `triggeredByInterrupt` but stand alone, and the interrupt registers that use
       `channels` have bit-field children in a reduced struct that never reaches
       `fill`.
+  - `TestTriggeredByInterruptInheritsName`: an address-bearing parent whose
+    `triggeredByInterrupt` names another interrupt register of the fixture, and an
+    address-less child with a `representation`; both resolve to that register's id
+    after `finaliseInterruptBookkeeping()`.
+    - Requirement: R4 (`triggeredByInterrupt`).
+    - Necessary: CR-020 lets the field name a register; the declaration is a
+      variant and nothing covers a name inherited from a parent.
   - `TestRegisterWithoutAncestorAddressRejected`: an entry with `channels` and an
     entry with a `representation`, each with no address anywhere in its ancestry,
     are rejected.
