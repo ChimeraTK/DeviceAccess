@@ -90,7 +90,7 @@ Aspect: inheritance.
 - R9: `representation`, `engineeringUnit`, `description` and `channels` are never
   inherited.
 - R10: A void-typed entry
-  - It takes no data word, so `channels`, an own `address`, `numberOfElements`,
+  - It holds no data, so `channels`, an own `address`, `numberOfElements`,
     `bytesPerElement` and `doubleBuffering` are rejected.
   - It must give its own `triggeredByInterrupt`.
   - It has no `selectedBy` of its own, while an inherited one passes through it.
@@ -99,7 +99,7 @@ Aspect: inheritance.
   - Its own `triggeredByInterrupt` reaches its descendants like the value of any
     other register.
 - R11: A module
-  - It takes no data word, so `numberOfElements`, `bytesPerElement` and
+  - It holds no data, so `numberOfElements`, `bytesPerElement` and
     `doubleBuffering` are rejected, and `access` and `triggeredByInterrupt` as
     well.
 
@@ -510,7 +510,7 @@ after the parse.
   `validate()`, which names the entry through `getPath()`; a throwing getter would
   keep the same check in a second place.
 - Requiring a void-typed entry to have an address in its ancestry, as a register
-  is located by one: rejected. A void-typed entry carries no data word to locate.
+  is located by one: rejected. A void-typed entry carries no data to locate.
   Taking the parent's address instead would make the top-level interrupt
   example of `doc/jmapFormat.dox` an error and force both generators to
   invent an address-bearing parent. Letting it inherit nothing terminates the
