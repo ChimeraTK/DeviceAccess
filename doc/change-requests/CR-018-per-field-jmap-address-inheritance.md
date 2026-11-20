@@ -14,6 +14,8 @@ Status: IN PROGRESS
 - 2D register: a register with `channels`.
 - void-typed entry: an entry whose `representation` is `void`.
 - element: one value a register reads or writes.
+- BAR: the bus address range a register sits on; its number is `bar` in the
+  catalogue, `channel` in the map file, plus 13 for `DMA`.
 - pitch: the byte distance between two elements of the same channel in a 2D register.
 - grouping entry: an entry below an address that gives only `children`.
 
@@ -32,7 +34,7 @@ Aspect: inheritance.
   - Without a parent address, `type` and `channel` are `IO` and `0`; `offset` has
     no default.
 - R3: `secondaryBufferAddress` gives only its own `offset`; both buffers lie on the
-  register's BAR. A `doubleBuffering` without `secondaryBufferAddress`, without
+  same channel. A `doubleBuffering` without `secondaryBufferAddress`, without
   `offset`, or with a `type` or `channel` is rejected.
 - R4: `access` and `triggeredByInterrupt`
   - `access` is inherited from the parent unless the entry gives `access` or
@@ -102,8 +104,8 @@ Aspect: documentation, format version and tools.
     non-`READ_WRITE` access takes the inherited access and interrupt
   - a child with an own `access` below an interrupt-bearing parent loses the
     inherited interrupt id
-  - an own `address` with an omitted `type` below a parent on another BAR takes
-    the parent's `type`, so its `bar` changes
+  - an own `address` with an omitted `type` below a parent on another channel
+    takes the parent's `type`, so its `bar` changes
   - an own `numberOfElements` on an address-less child is honoured
   - an entry below an address that gives only `children` becomes a register
   - an address-less child of a 2D register advances by its element size, not by
@@ -318,10 +320,10 @@ Aspect: documentation, format version and tools.
   so an omitted `secondaryBufferAddress` is told from a present one.
 - `void fill(NumericAddressedRegisterInfo& info) const` (modified): writes the
   secondary `offset` into `info.doubleBuffer->address`; the second buffer lies on
-  the register's BAR.
+  the same channel.
   - It rejects an omitted `secondaryBufferAddress`, one without `offset`, and one
-    that gives `type` or `channel`, all with `logic_error`. The resolves and the
-    same-BAR check of the primary path are gone.
+    that gives `type` or `channel`, all with `logic_error`. No comparison remains:
+    both buffers share the channel by construction.
 
 ### Format documentation (modified) in doc/jmapFormat.dox (modified)
 
@@ -332,7 +334,7 @@ Aspect: documentation, format version and tools.
   with an own `address` inherits as well.
 - `doubleBuffering`: `secondaryBufferAddress` is mandatory and gives only its
   `offset`; a `type` or `channel` on it is invalid, and both buffers lie on the
-  register's BAR.
+  same channel.
 - `jmap_representation`: a register that omits its whole `representation` and
   gives no `channels` gets a fixed-point word of its effective element size, not a
   32-bit word.
@@ -457,8 +459,8 @@ Aspect: documentation, format version and tools.
   a channel means something different per `type`, so an inherited channel across
   a type change is meaningless.
 - Keeping `type`/`channel` on `secondaryBufferAddress`, as the schema `$ref` to
-  `address` suggests: rejected, a secondary on another BAR is unsupported anyway,
-  so the fields could only restate the primary's BAR.
+  `address` suggests: rejected, a secondary on another channel is unsupported
+  anyway, so the fields could only restate the same channel.
 - Inheriting an omitted `secondaryBufferAddress` `offset` from the register:
   rejected, the second buffer would share the primary's address and the two
   buffers would be indistinguishable.
@@ -597,7 +599,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
     - Requirement: R3 (`type`/`channel` are invalid).
     - Necessary: every existing map gives a `type` there, so both mutations are
       new; without the rejection the value would silently have to match the
-      primary BAR.
+      primary channel.
   - `TestAccessInheritanceWithOwnAddress`: an address-bearing parent with
     `access: RO`, a `representation`, `engineeringUnit` and `description` and two
     children whose own `address` carries only `offset`; both are `READ_ONLY`. The
@@ -689,7 +691,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
   `type`/`channel` in its injected `secondaryBufferAddress`, which the same
   rejection catches first; it keeps only the `offset`.
 - `TestDoubleBufferDiffBarThrows` is removed with `tests/simpleJsonFile.diffBar.jmap`:
-  a secondary cannot name another BAR any more.
+  a secondary cannot name another channel any more.
 - Fixtures (modified): `tests/simpleJsonFile.jmap`, `tests/muxedDataAccessor.jmap`
   and `tests/groupedDemux.jmap` lose the `type`/`channel` of every
   `secondaryBufferAddress`.
