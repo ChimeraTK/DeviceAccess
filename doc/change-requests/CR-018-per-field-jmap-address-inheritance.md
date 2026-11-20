@@ -11,7 +11,7 @@ Status: IN PROGRESS
 - JSON field: one member of a JSON object.
 - register: an entry that describes data, be it one word, several or a 2D block.
 - module: an entry that only groups nested entries and describes no data.
-- 2D register: a register whose samples are split into named channels, given by its `channels` member.
+- 2D register: a register with `channels`.
 - void-typed entry: an entry whose `representation` is `void`.
 - sample: one element a register reads or writes.
 - sample width: the length of a sample in bytes, `bytesPerElement`.
