@@ -5,7 +5,7 @@ and differently per value. The change gives each value one rule, resolves it in 
 `const` getter, rejects the invalid cases in a single `validate()` step, and states
 the result in the format documentation and the schema.
 
-Status: IN PROGRESS (from READY TO IMPLEMENT)
+Status: PLANNED
 
 ## Requirements
 
@@ -55,8 +55,8 @@ own passes on the one it inherited.
   - The `children` of a channel are bit fields of its element. A bit field gives only
     a `representation`; its address and element size are the channel's, so any other
     member on it is rejected.
-  - A bit field must give `bitShift` and `width`, and `bitShift + width` must not
-    exceed the channel's element width.
+  - A bit field must give `bitShift`. Its `width` defaults to the element width, and
+    `bitShift + width` must not exceed the channel's element width.
   - A void `representation` on a channel or a bit field is rejected.
 - R6: a `pitch` is never inherited: only an entry with `channels` gives one, and such
   an entry has no `children`. An own `bytesPerElement` changes the element size only.
@@ -106,8 +106,9 @@ Aspect: documentation, format version and tools.
   - gives a data member on a module,
   - gives `pitch` without `channels`, or `channels` without `pitch`,
   - gives `numberOfElements`, `bytesPerElement` or `pitch` as `0`,
-  - gives a bit field without `bitShift` or `width`, one that spans beyond the
-    channel's element, or one with another member than `representation`,
+  - gives a bit field without `bitShift`, one whose `bitShift` plus its effective
+    `width` exceeds the channel's element, or one with another member than
+    `representation`,
   - gives a void `representation` on a channel or on a bit field,
   - gives `access` and `triggeredByInterrupt` together,
   - gives a void-typed entry an own `address`, `channels`, then geometry,
@@ -210,9 +211,13 @@ Location: src/JsonMapFileParser.cc (modified)
 - `bool isRegister() const` (new): true where the entry gives a `representation` (a
   void one included), gives `channels`, or has a `getAddress()`. An entry with none
   of the three is a module.
-- `std::optional<Address> getAddress() const` (new): the resolved address.
-  - An own `address` resolves with `Address::resolveTypeAndChannel` to the parent's
-    resolved `type`/`channel`; its `offset` is its own and mandatory.
+- `struct ResolvedAddress` (new): an `AddressType type`, a `size_t channel` and a
+  `HexValue offset`, all present, so no caller reads an optional field of a resolved
+  address.
+- `std::optional<ResolvedAddress> getAddress() const` (new): the resolved address.
+  - An own `address` resolves with `Address::resolve` from its own `type`, `channel`
+    and `offset` and the parent's resolved address; its `offset` is its own and
+    mandatory.
   - Without an own `address` the entry returns the parent's `getAddress()`, so the
     per-field search up the chain continues above it, and `std::nullopt` where the
     parent has none.
@@ -294,20 +299,15 @@ Location: src/JsonMapFileParser.cc (modified)
     - an own `address` without `offset`,
     - a non-void register whose `getAddress()` is empty, with the message
       `Address not set but representation or channels given`,
-    - a channel without `offset`,
     - a `channels` entry without `pitch`, or an own `pitch` without `channels`,
     - an own `representation` next to `channels`,
-    - an own `selectedBy` below an entry that declares one, on a channel or on a bit
-      field as well,
+    - an own `selectedBy` below an entry that declares one, for the entry itself,
     - `children` next to `channels`,
-    - any member other than `representation` on a bit field, `_`-prefixed comments
-      excepted,
-    - a bit field without `bitShift` or `width`, or with `bitShift + width` beyond
-      the channel's element width,
     - an own `access` next to an own `triggeredByInterrupt`,
-    - a `numberOfElements`, `bytesPerElement` or `pitch` of `0` on an entry or a
-      channel,
-    - a void `representation` on a channel or on a bit-field child of one,
+    - a `numberOfElements`, `bytesPerElement` or `pitch` of `0` on an entry,
+    - what `Channel::validate` rejects for each channel and its bit fields,
+      which `validate()` calls once per channel because only the channel knows its
+      element width and its `children`,
     - the read-only selector that `fill` rejects today,
     - a `doubleBuffering` whose `secondaryBufferAddress` is omitted, gives no
       `offset`, or gives a `type` or `channel`, which `DoubleBufferingInfo::fill`
@@ -362,6 +362,17 @@ Location: src/JsonMapFileParser.cc (modified)
 - A channel without a `representation` gets a fixed-point `Representation` whose
   `width` is its element size in bits, from the same code path that serves the
   register.
+- `void validate(const RegisterPath& path, bool selectedByDeclaredAbove, const
+  RegisterPath& selectedBySource) const` (new): rejects, for this channel, an omitted
+  `offset`, a `bytesPerElement` of `0`, a void `representation` and an own
+  `selectedBy` where an entry above declares one; and for each of its bit fields an
+  omitted `representation` or one without `width`, any member other than
+  `representation` (`_`-prefixed comments excepted), and a `bitShift` plus the
+  effective `width` (the element width where omitted) beyond the channel's element
+  width.
+  - The channel is the only place that knows an element width and its own
+    `children`, so `JsonAddressSpaceEntry::validate()` calls this once per channel
+    instead of identifying bit fields by their position in the entry tree.
 - A bit field gives only a `representation`; address, element size and pitch are the
   channel's.
   - `ChannelChild` keeps only `representation`, so `additionalProperties: false`
@@ -385,20 +396,22 @@ Location: src/JsonMapFileParser.cc (modified)
   `std::optional<Address>` and therefore needs the complete type.
 - `static std::pair<AddressType, size_t> resolveTypeAndChannel(const
   std::optional<AddressType>& ownType, const std::optional<size_t>& ownChannel,
-  const std::optional<Address>& inherited)` (new): the single copy of the
-  `type`/`channel` tie, used by `getAddress()`.
-  - It starts from the inherited pair, or `IO`/`0` where `inherited` is empty or
-    gives `type` as `std::nullopt`.
+  const std::optional<ResolvedAddress>& inherited)` (new): the single copy of the
+  `type`/`channel` tie, used by `resolve`.
+  - It starts from the inherited pair, or `IO`/`0` where `inherited` is empty.
   - It replaces the `type` where the entry gives one, and with it the `channel`.
   - It replaces the `channel` where the entry gives one.
-- `static Address resolve(const Address& own, const std::optional<Address>&
-  inherited)` (new): resolves an own address to a fully populated `Address` whose
-  `offset` is the `offset` of that own address. `inherited` is the parent's resolved
-  address and may be empty, for an entry below an address-less or void-typed entry;
-  `resolveTypeAndChannel` then takes the `IO`/`0` default. `validate()` has rejected
-  an own address without `offset`, so no field is read absent. `getAddress()` returns
-  the result, from which `fill` writes `info.address` and `info.bar`; `Address::fill`
-  is no longer used and goes, since a resolved address always has every field.
+- `static ResolvedAddress resolve(const std::optional<AddressType>& ownType, const
+  std::optional<size_t>& ownChannel, const HexValue& ownOffset, const
+  std::optional<ResolvedAddress>& inherited)` (new): resolves an own address to a
+  `ResolvedAddress` whose `offset` is `ownOffset`. Passing the three own fields keeps
+  the resolution free of a second representation of the own address.
+  `inherited` is the parent's resolved address and may be empty, for an entry below
+  an address-less or void-typed entry; `resolveTypeAndChannel` then takes the
+  `IO`/`0` default. `validate()` has rejected an own address without `offset`, so no
+  field is read absent. `getAddress()` returns the result, from which `fill` writes
+  `info.address` and `info.bar`; `Address::fill` is no longer used and goes, since a
+  resolved address always has every field.
 
 ### JsonAddressSpaceEntry::DoubleBufferingInfo (modified)
 
@@ -946,86 +959,19 @@ mutation and one parse per rule.
 
 ## Deferred issue
 
-- DI-1 [ACCEPTED] `chimeratk-map-to-jmap` has no test harness, so nothing
-  verifies the maps it emits under the rules of this change; its output shape is
-  checked by review only.
-- DI-2 [SPEC-EDIT] The nested Address type cannot express the specified
-  resolve(own, inherited) signature. Replace ``static Address resolve(const
-  Address& own, const std::optional<Address>& inherited)` (new): resolves an own
-  address to a fully populated `Address` whose `offset` is the `offset` of that
-  own address.`` by ``static JsonAddress resolve(const
-  std::optional<AddressType>& ownType, const std::optional<size_t>& ownChannel,
-  const HexValue& ownOffset, const std::optional<JsonAddress>& inherited)`
-  (new): resolves an own address to a fully populated address whose `offset` is
-  the own one. `getAddress()` passes the own `type`, `channel` and `offset`,
-  which `validate()` has shown to be present, and no field is read absent.``.
-  The address object of an entry lives in the enclosing JsonAddressSpaceEntry; a
-  nested Address type cannot refer to it from getAddress(). Passing the three
-  own fields keeps Address::resolve the single copy of the resolution and needs
-  no std::optional<Address> copy of the own address.
-- DI-3 [SPEC-EDIT] validate() cannot identify a bit field or its channel element
-  width from the specified members alone. Replace ``- `_parent` and `_fullPath`
-  are not among the keys, so they are neither read from nor written to JSON.``
-  by ``- `_parent` and `_fullPath` are not among the keys, so they are neither
-  read from nor written to JSON. - `_bitFieldElementBits` (new) is likewise
-  outside the keys: it is set on a parent entry while `addInfos` creates the
-  slices of a 2D register, and tells `validate()` the element width of the
-  channel that a recursion below it walks. Every other entry holds `0`, so
-  `isBitField()` reduces to `_parent != nullptr && _parent->_bitFieldElementBits
-  != 0`.``. A bit-field child cannot tell from its own members that it is a bit
-  field: a register-level child of an address-bearing 2D register is also a
-  child of an entry with channels. Carrying the channel's element width on the
-  parent during that recursion is what distinguishes the two, and the
-  specification names no mechanism for the channel-element bound the bit-field
-  rejection needs.
-- DI-4 [SPEC-EDIT] DoubleBufferingInfo::fill cannot write a bar, since
-  NumericAddressedRegisterInfo::DoubleBufferInfo has no such member. Replace ``-
-  `void fill(NumericAddressedRegisterInfo& info) const` (modified): writes the
-  secondary `offset` into `info.doubleBuffer->address` and takes the buffer's
-  `bar` from the primary address's resolved `type`/`channel`, so the second
-  buffer lies on the same channel.`` by ``- `void
-  fill(NumericAddressedRegisterInfo& info) const` (modified): writes the
-  secondary `offset` into `info.doubleBuffer->address`. It writes no channel:
-  `NumericAddressedRegisterInfo::DoubleBufferInfo` has no bar member, and the
-  register info already carries the primary address, so the second buffer lies
-  on the same channel as the primary.``.
-  NumericAddressedRegisterInfo::DoubleBufferInfo
-  (include/NumericAddressedRegisterCatalogue.h) has only address,
-  enableRegisterPath, inactiveBufferRegisterPath and index; there is no member
-  to hold the channel.
-- DI-5 [SPEC-EDIT] The specified Address::fill is superseded by writing the
-  resolved address directly in fill. Replace `` `resolveTypeAndChannel` then
-  takes the `IO`/`0` default. `validate()` has rejected an own address without
-  `offset`, so no field is read absent. `getAddress()` returns the result, which
-  `Address::fill` writes into `info` as today; the assertion there documents
-  that `resolve` ran.`` by `` `resolveTypeAndChannel` then takes the `IO`/`0`
-  default. `validate()` has rejected an own address without `offset`, so no
-  field is read absent. `getAddress()` returns the result, from which `fill`
-  writes `info.address` and `info.bar`; `Address::fill` is no longer used and
-  goes, since a resolved address always has every field.``. After getAddress()
-  resolves the whole chain, fill receives a fully populated address and writes
-  the two fields directly; the specified Address::fill with its
-  addressTypeNotSet assertion would be dead code and cannot be written against
-  the resolved type.
-- DI-6 [SPEC-EDIT] The bit-field rejection bullet repeats the missing-bitShift
-  case and leaves the effective width of an omitted width undefined. Replace ``-
-  a bit field without `bitShift` or `width`, or with `bitShift + width` beyond
-  the channel's element width,`` by ``- a bit field whose `representation` is
-  omitted or gives no `width`, or whose `bitShift` plus its effective `width`
-  (the element width where omitted) exceeds the channel's element width,``. The
-  following bullet already rejects a bit field without bitShift, so the first
-  bullet only has to cover width; and the effective width of a bit field, like a
-  register's and a channel's, is the element size where omitted, which the
-  parser must use to make the bound well defined.
-- DI-7 [SPEC-EDIT] makeChannelInfo needs the resolved width, which the plan's
-  signature does not carry. Replace ``Both build their `ChannelInfo` through
-  `makeChannelInfo` from the same resolved `Representation` that `fill` writes,
-  so the word defaults of R5 and R7 exist in one place.`` by ``Both build their
-  `ChannelInfo` through `makeChannelInfo` from the same resolved
-  `Representation` that `fill` writes, so the word defaults of R5 and R7 exist
-  in one place; the one `effectiveRepresentation` helper serves the register and
-  the channel and `makeChannelInfo` takes its width from it.``. makeChannelInfo
-  as specified takes only the Representation and the word bits, while the
-  effective width of an omitted width is no longer a member default but a
-  function of the element size; the resolved representation therefore has to
-  carry it.
+- DI-1 [ACCEPTED] `chimeratk-map-to-jmap` has no test harness, so nothing verifies
+  the maps it emits under the rules of this change; its output shape is checked by
+  review only.
+- DI-2 [FOLDED-IN] The nested `Address` type cannot carry a resolved address, since
+  its fields are optional; folded in as the nested `ResolvedAddress` type.
+- DI-3 [FOLDED-IN] `validate()` cannot tell a bit field or its channel's element
+  width from the entry's own members; folded in as `Channel::validate()`, which the
+  entry's `validate()` calls once per channel.
+- DI-4 [FOLDED-IN] `DoubleBufferingInfo::fill` cannot write a bar, since
+  `NumericAddressedRegisterInfo::DoubleBufferInfo` has no such member.
+- DI-5 [FOLDED-IN] The specified `Address::fill` is superseded by writing the
+  resolved address directly in `fill`.
+- DI-6 [FOLDED-IN] The bit-field rejection repeated the missing-`bitShift` case and
+  left the effective width of an omitted `width` undefined.
+- DI-7 [FOLDED-IN] `makeChannelInfo` needs the resolved width, which the plan's
+  signature does not carry.
