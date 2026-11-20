@@ -9,7 +9,7 @@ Status: IN PROGRESS
 ## Terms
 
 - JSON field: one member of a JSON object.
-- register: an entry that describes a data word.
+- register: an entry that describes data, be it one word, several or a 2D block.
 - module: an entry that only groups nested entries and describes no data.
 - `channels` entry: a 2D register.
 - void-typed entry: an entry whose `representation` is `void`.
