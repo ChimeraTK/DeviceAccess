@@ -35,6 +35,8 @@ Aspect: inheritance.
     omitted `channel` is `0` then. A channel means something different per `type`.
   - Without a parent address, `type` and `channel` are `IO` and `0`; `offset` has
     no default.
+  - An entry that gives a non-void `representation` or `channels` needs an address,
+    own or inherited; without one it is rejected.
 - R3: `doubleBuffering`
   - `secondaryBufferAddress` is mandatory, and the second buffer lies on the same
     channel as the register.
@@ -54,9 +56,8 @@ Aspect: inheritance.
   - `0` is rejected for `numberOfElements`, `bytesPerElement` and `pitch`; an
     absent key states "not set", `0` does not.
 - R6: 2D registers and their channels
-  - An entry with `channels` is a register on the address that resolves for it and
-    is rejected where none resolves; its `representation` may be non-void, and it
-    may give its own `address`.
+  - A `representation` next to `channels` adds no channel; the register's channels
+    are exactly those named.
   - It gives `pitch`; `pitch` without `channels` is rejected. It gives no
     `bytesPerElement` or pitch to its children, which take their own `4` and
     advance by their element size.
@@ -627,7 +628,7 @@ shows up in review. A case's `Requirement:` names the `R` bullets it covers, its
   - `TestRegisterWithoutAncestorAddressRejected`: an entry with `channels` and an
     entry with a `representation`, each with no address anywhere in its ancestry,
     are rejected.
-    - Requirement: R6 (no address on the way up).
+    - Requirement: R2 (no address on the way up).
     - Necessary: no existing map has a register without an address in its
       ancestry. Both entries reach the same rejection, but they cover the two
       members that make an entry a register without an address.
