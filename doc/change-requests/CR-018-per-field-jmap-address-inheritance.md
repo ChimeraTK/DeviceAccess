@@ -5,7 +5,7 @@ and differently per value. The change gives each value one rule, resolves it in 
 `const` getter, rejects the invalid cases in a single `validate()` step, and states
 the result in the format documentation and the schema.
 
-Status: PLANNED
+Status: READY TO IMPLEMENT
 
 ## Requirements
 
