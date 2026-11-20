@@ -804,5 +804,10 @@ declaring path in the `selectedBy` message.
   covered by `TestSelectedByInheritance`, whose assertions on a child's own
   selector go with the two fixture entries that `TestSelectedByOverrideRejected`
   now rejects. `chimeratk-device-to-jmap` is unchanged and keeps its round trips;
-  nothing runs `chimeratk-map-to-jmap`, which has no test harness, so its new
-  output shape stays unverified.
+  nothing runs `chimeratk-map-to-jmap`, which has no test harness (DI-1).
+
+## Deferred issue
+
+- DI-1 [ACCEPTED] `chimeratk-map-to-jmap` has no test harness, so nothing
+  verifies the maps it emits under the rules of this change; its output shape is
+  checked by review only.
