@@ -209,21 +209,20 @@ Location: src/JsonMapFileParser.cc (modified)
   `address` is a `std::nullopt` and an `address: {}` is a present value whose fields
   are all omitted.
 - `bool isRegister() const` (new): true where the entry gives a `representation` (a
-  void one included), gives `channels`, or has a `getAddress()`. An entry with none
+  void one included), gives `channels`, or resolves an `offset`. An entry with none
   of the three is a module.
-- `struct ResolvedAddress` (new): an `AddressType type`, a `size_t channel` and a
-  `HexValue offset`, all present, so no caller reads an optional field of a resolved
-  address.
-- `std::optional<ResolvedAddress> getAddress() const` (new): the resolved address.
-  - An own `address` resolves with `Address::resolve` from its own `type`, `channel`
-    and `offset` and the parent's resolved address; its `offset` is its own and
-    mandatory.
-  - Without an own `address` the entry returns the parent's `getAddress()`, so the
-    per-field search up the chain continues above it, and `std::nullopt` where the
-    parent has none.
+- `std::optional<HexValue> getOffset() const` (new): the own `offset`, else the
+  parent's, so the search continues up the chain; `std::nullopt` at the top.
   - A void-typed entry returns `std::nullopt` whatever the parent gives, so it is
-    the one register without a resolved address. It consequently writes no address
-    into the register info and passes none on, so the search of a child stops at it.
+    the one register without a resolved address, writes none into the register info
+    and passes none on: the search of a child stops at it.
+- `std::pair<AddressType, size_t> getTypeAndChannel() const` (new): the resolved
+  pair, formed on each call from the entry and its parent, never stored.
+  - An own `address` starts from the parent's pair, or `IO`/`0` where the parent has
+    no address, and an own `type` replaces the pair by its `type` and channel `0`.
+  - An own `channel` replaces the inherited one.
+  - Without an own `address` the entry returns the parent's pair, and `IO`/`0` at
+    the top or below a void-typed entry, which passes no address on.
 - `NumericAddressedRegisterInfo::Access getAccess() const` (new): the own `access`.
   Otherwise `INTERRUPT` where `triggeredByInterrupt` is present, whether a name or an
   array. Otherwise the parent's value, and `READ_WRITE` at the top. The catalogue's
@@ -266,6 +265,9 @@ Location: src/JsonMapFileParser.cc (modified)
   `info.pathName` from `getPath()` and the non-inheritable members, and takes every
   other value from the getters. It holds no inheritance logic, needs no path
   argument, and rejects nothing, `validate()` having run first.
+  - It writes `info.address` from `getOffset()` and `info.bar` from
+    `getTypeAndChannel()`, the two resolved values it needs; a void-typed entry
+    leaves both at their defaults.
   - It applies the register-level selector through
     `JsonAddressSpaceEntry::applyRegisterSelectedBy`, fed with `getSelectedBy()`,
     where the entry gives no `channels` and is no VOID. The helper takes the
@@ -297,7 +299,7 @@ Location: src/JsonMapFileParser.cc (modified)
   value.
   - It rejects, for every entry:
     - an own `address` without `offset`,
-    - a non-void register whose `getAddress()` is empty, with the message
+    - a non-void register whose `getOffset()` is empty, with the message
       `Address not set but representation or channels given`,
     - a `channels` entry without `pitch`, or an own `pitch` without `channels`,
     - an own `representation` next to `channels`,
@@ -394,24 +396,8 @@ Location: src/JsonMapFileParser.cc (modified)
     told apart from an omitted one. `WITH_DEFAULT` keeps that absence.
 - `Address` moves above `DoubleBufferingInfo`, which holds a
   `std::optional<Address>` and therefore needs the complete type.
-- `static std::pair<AddressType, size_t> resolveTypeAndChannel(const
-  std::optional<AddressType>& ownType, const std::optional<size_t>& ownChannel,
-  const std::optional<ResolvedAddress>& inherited)` (new): the single copy of the
-  `type`/`channel` tie, used by `resolve`.
-  - It starts from the inherited pair, or `IO`/`0` where `inherited` is empty.
-  - It replaces the `type` where the entry gives one, and with it the `channel`.
-  - It replaces the `channel` where the entry gives one.
-- `static ResolvedAddress resolve(const std::optional<AddressType>& ownType, const
-  std::optional<size_t>& ownChannel, const HexValue& ownOffset, const
-  std::optional<ResolvedAddress>& inherited)` (new): resolves an own address to a
-  `ResolvedAddress` whose `offset` is `ownOffset`. Passing the three own fields keeps
-  the resolution free of a second representation of the own address.
-  `inherited` is the parent's resolved address and may be empty, for an entry below
-  an address-less or void-typed entry; `resolveTypeAndChannel` then takes the
-  `IO`/`0` default. `validate()` has rejected an own address without `offset`, so no
-  field is read absent. `getAddress()` returns the result, from which `fill` writes
-  `info.address` and `info.bar`; `Address::fill` is no longer used and goes, since a
-  resolved address always has every field.
+- It keeps its members only: `Address::fill` goes, since `getOffset()` and
+  `getTypeAndChannel()` resolve the fields and `fill` writes the result.
 
 ### JsonAddressSpaceEntry::DoubleBufferingInfo (modified)
 
@@ -963,7 +949,8 @@ mutation and one parse per rule.
   the maps it emits under the rules of this change; its output shape is checked by
   review only.
 - DI-2 [FOLDED-IN] The nested `Address` type cannot carry a resolved address, since
-  its fields are optional; folded in as the nested `ResolvedAddress` type.
+  its fields are optional; the resolution stays in `getOffset()` and
+  `getTypeAndChannel()`, which form the values on each call.
 - DI-3 [FOLDED-IN] `validate()` cannot tell a bit field or its channel's element
   width from the entry's own members; folded in as `Channel::validate()`, which the
   entry's `validate()` calls once per channel.
