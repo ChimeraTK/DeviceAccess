@@ -55,8 +55,10 @@ own passes on the one it inherited.
   - The `children` of a channel are bit fields of its element. A bit field gives only
     a `representation`; its address and element size are the channel's, so any other
     member on it is rejected.
-  - A bit field must give `bitShift`. Its `width` defaults to the element width, and
-    `bitShift + width` must not exceed the channel's element width.
+  - A bit field gives `bitShift`; its `width` may be omitted and is then the element
+    width. A child that spans the whole element or whose `bitShift + width` exceeds
+    it is ignored, with no slice for it, as CR-003 requires for forward
+    compatibility.
   - A void `representation` on a channel or a bit field is rejected.
 - R6: a `pitch` is never inherited: only an entry with `channels` gives one, and such
   an entry has no `children`. An own `bytesPerElement` changes the element size only.
@@ -106,8 +108,7 @@ Aspect: documentation, format version and tools.
   - gives a data member on a module,
   - gives `pitch` without `channels`, or `channels` without `pitch`,
   - gives `numberOfElements`, `bytesPerElement` or `pitch` as `0`,
-  - gives a bit field without `bitShift`, one whose `bitShift` plus its effective
-    `width` exceeds the channel's element, or one with another member than
+  - gives a bit field without `bitShift`, or one with another member than
     `representation`,
   - gives a void `representation` on a channel or on a bit field,
   - gives `access` and `triggeredByInterrupt` together,
@@ -368,10 +369,8 @@ Location: src/JsonMapFileParser.cc (modified)
   RegisterPath& selectedBySource) const` (new): rejects, for this channel, an omitted
   `offset`, a `bytesPerElement` of `0`, a void `representation` and an own
   `selectedBy` where an entry above declares one; and for each of its bit fields an
-  omitted `representation` or one without `width`, any member other than
-  `representation` (`_`-prefixed comments excepted), and a `bitShift` plus the
-  effective `width` (the element width where omitted) beyond the channel's element
-  width.
+  omitted `representation`, and any member other than `representation`
+  (`_`-prefixed comments excepted).
   - The channel is the only place that knows an element width and its own
     `children`, so `JsonAddressSpaceEntry::validate()` calls this once per channel
     instead of identifying bit fields by their position in the entry tree.
@@ -381,8 +380,8 @@ Location: src/JsonMapFileParser.cc (modified)
     rejects every other member, and `_`-prefixed comments.
   - Its slice is a copy of the channel slice with `engineeringUnit` and `description`
     cleared, since R9 keeps both off the bit field.
-  - The former silent skip of a bit field whose `bitShift`/`width` spans the whole
-    word or exceeds it is replaced by the rejection of R13.
+  - The skip of a bit field that spans the whole element or exceeds it stays, as
+    CR-003 requires: no slice is created for it and the parse continues.
 
 ### JsonAddressSpaceEntry::Address (modified)
 
@@ -451,9 +450,10 @@ Location: doc/jmapFormat.dox (modified)
   its own `type`, the inherited `channel` is dropped and an omitted `channel` is
   `0`. Only where no entry above gives an address do they default to `IO`/`0`.
 - `jmap_channel_bitfields`: a bit field gives only a `representation`, with
-  `bitShift` and `width` inside the channel's element; the channel supplies its
-  address and element size. A bit field without them, or one that spans beyond the
-  element, is invalid, as the parser now rejects what it used to skip.
+  `bitShift` and an optional `width` inside the channel's element; the channel
+  supplies its address and element size. A bit field without a `representation` or
+  without `bitShift` is invalid. A child that spans the whole element or exceeds it
+  stays ignored, as CR-003 states.
 - `jmap_2d`: a 2D register has `channels`, not `children`, and no register-level
   `representation`, the two being mutually exclusive. A `channels` entry gives
   `pitch`. Its `numberOfElements` is its own and `1` where omitted, since an entry
@@ -605,6 +605,9 @@ Location: tools/src/chimeratk-device-to-jmap.cc (modified)
 - Making `pitch` inherited like the rest of the geometry: rejected. A `pitch` exists
   only next to `channels`, and a `channels` entry has no `children`, so no entry can
   observe an inherited one.
+- Rejecting a bit-range child that spans the whole element or exceeds it, where the
+  parser ignores it today: rejected. CR-003 requires the child to be ignored for
+  forward compatibility, and a map written for a later format must keep parsing.
 - Reusing `RepresentationType` instead of the parser's own enum: rejected for this
   change. The namespace of the catalogue type differs and the conversion would move
   into the getters, which R7 keeps free of catalogue concerns.
@@ -737,13 +740,11 @@ mutation and one parse per rule.
     (two mutations, one case, since both restate the same rule).
     - Requirement: R5, R13.
     - Necessary: no fixture gives either, and the parser ignored the extra members.
-  - `TestChannelChildWithoutBitRangeRejected`: a bit field without `width`, one
-    without `bitShift`, and one whose `bitShift + width` exceeds the channel's
-    element are rejected.
+  - `TestChannelChildWithoutBitShiftRejected`: a bit field without `bitShift` is
+    rejected.
     - Requirement: R5, R13.
-    - Necessary: the parser skipped a full-word or oversized bit field silently and
-      defaulted a missing `width`; `TestNamedChannelBitRangeIgnoredChildren` pins
-      the old skip with `tests/bitRangeChildCases.jmap`.
+    - Necessary: the parser defaulted a missing `bitShift` to `0`, so the case
+      reached no rejection before.
   - `TestChannelsEntryWithoutPitchRejected`: a `channels` entry without `pitch` is
     rejected.
     - Requirement: R5.
@@ -938,6 +939,9 @@ mutation and one parse per rule.
   - `TestNamedChannelBitRangeMuxedChildSelectedBy` keeps passing: a bit field still
     takes the selector of its channel, and `DAQ.MUXED_WITH_STATUS` declares none
     above it.
+  - `TestNamedChannelBitRangeIgnoredChildren` keeps passing: the whole-element and
+    the overflowing child of `tests/bitRangeChildCases.jmap` stay ignored, since
+    CR-003 requires it.
 - `tests/executables_src/testDeviceToJmap.cc` (modified)
   - Its `compareRegisters` compares a `representation` width of `0` (unset) with the
     resolved width, so a register whose width is now derived from its element size
@@ -959,6 +963,12 @@ mutation and one parse per rule.
 - DI-5 [FOLDED-IN] The specified `Address::fill` is superseded by writing the
   resolved address directly in `fill`.
 - DI-6 [FOLDED-IN] The bit-field rejection repeated the missing-`bitShift` case and
-  left the effective width of an omitted `width` undefined.
+  left the effective width of an omitted `width` undefined; folded in as the ignore
+  rule of CR-003, with `width` optional and `bitShift` required.
 - DI-7 [FOLDED-IN] `makeChannelInfo` needs the resolved width, which the plan's
   signature does not carry.
+- DI-8 [ACCEPTED] CR-016 (`mhier-agent/CR-016-runtime-selectedby-enforcement`)
+  renames `selectedBy` to `gatedBy`, records the 2D register-level gate as
+  `registerGatedBy` and states that it is not inherited by channel slices. It must
+  therefore depend on this change and be rebased onto the `selectedBy` rules here;
+  the `Depends on: CR-018` line belongs into CR-016, not into this document.
