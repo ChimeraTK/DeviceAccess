@@ -64,7 +64,10 @@ own passes on the one it inherited.
   an entry has no `children`. An own `bytesPerElement` changes the element size only.
 - R7: a register that gives neither `representation` nor `channels` gets a fixed-point
   word at its resolved address whose width is its element size in bits; a
-  `representation` that omits `width` takes that width as well. Every entry that
+  `representation` that omits `width` takes that width as well. A `string`
+  `representation` is the exception: its width is `8`, the size of one ASCII
+  character, whatever the element size, since a character width in bits is no
+  property of the map. Every entry that
   gives neither `representation` nor `channels` and resolves an `offset` is such a
   register, a grouping entry among them, and the parser emits it in addition to its
   children.
@@ -108,10 +111,11 @@ Aspect: documentation, format version and tools.
   - gives a data member on a module,
   - gives `pitch` without `channels`, or `channels` without `pitch`,
   - gives `numberOfElements`, `bytesPerElement` or `pitch` as `0`,
+  - gives a `width` on a `string` `representation`, which always has `8`,
   - gives a bit field without `bitShift`,
   - gives a void `representation` on a channel or on a bit field,
   - gives `access` and `triggeredByInterrupt` together,
-  - gives a void-typed entry an own `address`, `channels`, then geometry,
+  - gives a void-typed entry an own `address`, `channels`, its geometry,
     `doubleBuffering` or `selectedBy`, or omits its `triggeredByInterrupt`.
 - R14: The following maps parse today but behave differently after the change: they
   resolve differently, or they stop parsing as R13 lists. These differences are
@@ -128,6 +132,8 @@ Aspect: documentation, format version and tools.
     once an `offset` resolves for it, which the parser ignored until now,
   - an address-less entry with `channels` is accepted and gets its slices,
   - a `secondaryBufferAddress` without `type` or `channel` is accepted,
+  - a `string` `representation` gets width `8` instead of 32 bits, whether it omits
+    its `width` or gives one, and a map that gives one stops parsing as R13 lists,
   - a register without a `representation` gets a word of its effective width, not
     32 bits, and a given `representation` that omits `width` gets its element size in
     bits instead of 32,
@@ -136,8 +142,9 @@ Aspect: documentation, format version and tools.
   - a void-typed entry writes no address and `elementPitchBits` 0, where it took the
     parent register's address and pitch from the catalogue.
 - R15: `chimeratk-map-to-jmap` emits maps that satisfy the rules above:
-  - an `offset` in every `address`, an explicit `type`, and an explicit `access` on
-    every register except an interrupt register,
+  - an `offset` in every `address`, an explicit `type` from `_make_address` for every
+    bar and not only a DMA one, and an explicit `access` on every register except an
+    interrupt register,
   - no zero geometry: a member it cannot give a value for is omitted, not written as
     `0`,
   - an explicit `representation` width wherever omitting it would change the
@@ -172,8 +179,11 @@ Location: src/JsonMapFileParser.cc (modified)
   - The reader builds every entry in place in its `std::map` node before the descent
     starts, and nothing copies or moves a linked entry afterwards, so no copy can
     carry a stale `_parent`.
-- Data members become private and carry a leading underscore, and every getter
-  starts with `get`, so a member and its getter cannot share a name. All inheritance
+- Data members of `JsonAddressSpaceEntry` itself become private and carry a leading
+  underscore, and every getter starts with `get`, so a member and its getter cannot
+  share a name. The nested JSON shapes (`Address`, `Representation`, `Channel`,
+  `ChannelChild`, `DoubleBufferingInfo`) are not reached by a getter and keep their
+  names and their macro reader. All inheritance
   is resolved by `const` getters that consult `_parent`. The only non-`const` steps
   are the descent recording `_fullPath` and each child's parent link. Each rule is
   stated in one getter only, no resolved value is threaded down the parsing
@@ -224,6 +234,11 @@ Location: src/JsonMapFileParser.cc (modified)
   - Without an own `address` the entry returns the parent's pair.
   - A void-typed entry returns `IO`/`0` whatever the parent gives, so a child that
     brings its own `address` starts from the default pair.
+- `Representation effectiveRepresentation(const std::optional<Representation>&
+  given, size_t elementBits) const` (new): the given representation with its omitted
+  `width` set to `elementBits`, or `8` for a `string`; where the entry gives none, a
+  fixed-point representation of `elementBits`. `fill` and the slice creation both
+  use it, so the width default of R7 exists once and not per call site.
 - `NumericAddressedRegisterInfo::Access getAccess() const` (new): the own `access`.
   Otherwise `INTERRUPT` where `triggeredByInterrupt` is present, whether a name or an
   array. Otherwise the parent's value, and `READ_WRITE` at the top. The catalogue's
@@ -279,18 +294,10 @@ Location: src/JsonMapFileParser.cc (modified)
     Next to `channels`, `fill` hands the same `getSelectedBy()` to `Channel::fill`
     and to the channel slices, so `getSelectedBySource()` feeds the read-only
     message for them as well.
-  - It writes the own `representation`. `validate()` has rejected one next to
+  - It writes the register's `representation` through `effectiveRepresentation`
+    below, which supplies the fixed-point word of an entry that gives none and the
+    `width` an own `representation` omits. `validate()` has rejected one next to
     `channels`, so `Representation::fill` never appends a channel to a 2D register.
-  - A register that gives no `representation` and no `channels` gets a fixed-point
-    `Representation` whose `width` is the element size in bits and whose
-    `bytesPerElement` is the effective value, so `bytesPerElement: 8` yields a
-    64-bit word.
-  - A given `representation` that omits `width` gets the same width, the element
-    size in bits. `_width` becomes `std::optional<size_t>` so that an own width is
-    told from an omitted one, and the member initialiser no longer supplies `32`.
-    An omitted `representation` leaves its type at `representationNotSet`; the
-    `representationNotSet` recursion in `Representation::fill` goes, since `fill`
-    supplies an explicit representation for every register and every channel.
   - It clears `info.channels` before filling, since the default constructor of
     `NumericAddressedRegisterInfo` already creates a channel; `addInfos` no longer
     clears it.
@@ -390,6 +397,19 @@ Location: src/JsonMapFileParser.cc (modified)
   - The skip of a bit field that spans the whole element or exceeds it stays, as
     CR-003 requires: no slice is created for it and the parse continues.
 
+### JsonAddressSpaceEntry::Representation (modified)
+
+Location: src/JsonMapFileParser.cc (modified)
+
+- `_width` becomes `std::optional<size_t>`, so an own width is told from an omitted
+  one; the member initialiser no longer supplies `32`.
+- `Representation::fill` no longer recurses into `channels`: `fill` supplies an
+  explicit representation for every register and every channel, and writes
+  `info.channels` itself.
+- A `string` type has width `8`, and `validate()` rejects an own `width` on it.
+- The nested type keeps `WITH_DEFAULT`, since its keys carry no leading underscore
+  and the macro reads them directly.
+
 ### JsonAddressSpaceEntry::Address (modified)
 
 Location: src/JsonMapFileParser.cc (modified)
@@ -436,7 +456,9 @@ Location: doc/jmapFormat.dox (modified)
   `address`" drop `type`/`channel` accordingly.
 - `jmap_representation`: a register that omits its whole `representation` and gives
   no `channels` gets a fixed-point word of its element size, not a 32-bit word, and
-  a `representation` that omits `width` gets that width. A channel without a
+  a `representation` that omits `width` gets that width. A `string`
+  `representation` always has width `8`, and one that gives a `width` is invalid. A
+  channel without a
   `representation` gets a word of its own element size.
 - `jmap_elements`: `numberOfElements` and `bytesPerElement` are inherited from the
   parent where the entry omits its whole `address` and gives no `channels`, with own
@@ -509,13 +531,14 @@ Location: schemas/jmap.schema.json (modified)
 - The 2D-register block drops its `selectedBy: false` and the "must not combine"
   description, since the register-level selector is the default for the channels.
   It gains `"children": false` and `"representation": false`, since a 2D register has
-  neither, and requires `pitch`.
+  neither.
 - The `type`, `channel` and `selectedBy` fields: the inheritance rules of the
   `address` and `jmap_channel_selection` bullets above, the latter as description
   only, since a per-entry schema cannot see the ancestor; the void-typed entry's
   `allOf` block rejects an own `selectedBy`.
 - `width` and the `representation` description: the defaults of
-  `jmap_representation` above.
+  `jmap_representation` above, including the fixed `8` of a `string` and the
+  rejection of an own `width` on it.
 - `access` and `triggeredByInterrupt`: state the inheritance and the exclusion of the
   pair.
 - `channel` and `channelChild`: a `void` `representation` is rejected, since both
@@ -560,12 +583,18 @@ Location: tools/chimeratk-map-to-jmap (modified)
   void-typed entry parses without an address-bearing parent, and the synthetic one
   would become a register under the new rules.
 
-### chimeratk-device-to-jmap (modified)
+### chimeratk-device-to-jmap (not modified)
 
-Location: tools/src/chimeratk-device-to-jmap.cc (modified)
+Location: tools/src/chimeratk-device-to-jmap.cc
 
-- Writes an explicit `representation` width for every register whose element size
-  differs from 32 bits, so a string register does not change its word under R7.
+- It keeps emitting `{"type": "string"}` without a `width`, which now resolves to
+  `8` on the parser's side, so it needs no change.
+
+- Making the width of a `string` `representation` follow the element size like a
+  fixed-point one: rejected. A character is 8 bits, and `bytesPerElement: 40` would
+  otherwise turn a string register into a 320-bit word.
+- Making the two generators emit an explicit width instead of giving `string` a fixed
+  one: rejected. It would force both tools to restate a rule of the format.
 
 ### Alternatives considered
 
@@ -627,9 +656,10 @@ Location: tools/src/chimeratk-device-to-jmap.cc (modified)
 All parser cases go into `tests/executables_src/testJsonMapFileParser.cpp`. Each
 loads `tests/simpleJsonFile.jmap`, or the fixture it names, and applies its mutation
 through one shared helper that injects it, writes a temporary file and parses it. The
-helper is the generalised form of `parseInjectedInterruptMap` and replaces
-`parseInjectedSelectedByFault`, `parseWithMapFormatVersion` and the inline writer
-sequences of the existing cases, so no fault-only fixture is added.
+helper is the generalised form of `parseInjectedInterruptMap`: it takes the base
+document as well as the mutation, so it serves the whole-document cases that
+`parseWithMapFormatVersion` and the selectedBy fault helpers build today, and they
+fold into it. No fault-only fixture is added.
 
 The fixture is shared with the backend test binaries and with
 `TestAllTwoDimensionalSkipped` of `testDeviceToJmap.cc`, which reads
@@ -670,7 +700,7 @@ mutation and one parse per rule.
       observable because the parent's is `DMA`, not the `IO` default.
   - `TestGoodMapFileParse` (modified): its assertions move to the resolved values
     that the change produces, among them `BSP.SOME_INFO`, whose `representation`
-    omits `width`, so its word grows from 32 bits to its 320-bit element.
+    omits `width`, so its word becomes the `8` bits of a string character.
     - Requirement: R7, R14.
     - Necessary: it is the only case that walks the whole shared fixture, so it is
       where a fixture entry whose resolution changed shows up.
@@ -752,6 +782,11 @@ mutation and one parse per rule.
     - Requirement: R5, R13.
     - Necessary: the parser defaulted a missing `bitShift` to `0`, so the case
       reached no rejection before.
+  - `TestStringWidthRejected`: a `string` `representation` that gives a `width` is
+    rejected.
+    - Requirement: R7, R13.
+    - Necessary: a string's width is fixed at `8`, and a map that states another one
+      must not be overridden silently.
   - `TestChannelsEntryWithoutPitchRejected`: a `channels` entry without `pitch` is
     rejected.
     - Requirement: R5.
@@ -853,6 +888,11 @@ mutation and one parse per rule.
   - `TestZeroPitchRejected`: a `pitch: 0` on a 2D register is rejected.
     - Requirement: R4.
     - Necessary: the pitch half of the rule.
+  - `TestDoubleBufferingNotInherited`: a register below a double-buffered parent and
+    without a `doubleBuffering` of its own is not double-buffered.
+    - Requirement: R9.
+    - Necessary: nothing checks that `doubleBuffering` stays off a child, and the
+      parser reads only the own member.
   - `TestDoubleBufferingWithInheritedAddress`: a `doubleBuffering` register without
     an own `address`, below an address-bearing entry on `DMA` channel 3 at a non-zero
     offset, gets its `BUF0` view on the resolved address and its `BUF1` view on the
